@@ -2,7 +2,7 @@
 
 use crate::app::file_change::{ChangeType, FileChange};
 use crate::error::Error;
-use crate::fs::Filesystem;
+use crate::fs::LpFs;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -17,14 +17,14 @@ use hashbrown::HashMap;
 /// 3. Mutate the filesystem
 /// 4. Get changes and pass to tick()
 /// 5. Validate that the project matches expectations
-pub struct InMemoryFilesystem {
+pub struct LpFsMemory {
     /// File storage: path -> contents
     files: HashMap<String, Vec<u8>>,
     /// Tracked changes since last get_changes() call
     changes: Vec<FileChange>,
 }
 
-impl InMemoryFilesystem {
+impl LpFsMemory {
     /// Create a new empty in-memory filesystem
     pub fn new() -> Self {
         Self {
@@ -85,13 +85,13 @@ impl InMemoryFilesystem {
     }
 }
 
-impl Default for InMemoryFilesystem {
+impl Default for LpFsMemory {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Filesystem for InMemoryFilesystem {
+impl LpFs for LpFsMemory {
     fn read_file(&self, path: &str) -> Result<Vec<u8>, Error> {
         self.validate_path(path)?;
         self.files
@@ -151,14 +151,14 @@ mod tests {
 
     #[test]
     fn test_create_and_read_file() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         fs.write_file_mut("/test.txt", b"hello").unwrap();
         assert_eq!(fs.read_file("/test.txt").unwrap(), b"hello");
     }
 
     #[test]
     fn test_file_exists() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         assert!(!fs.file_exists("/test.txt").unwrap());
         fs.write_file_mut("/test.txt", b"hello").unwrap();
         assert!(fs.file_exists("/test.txt").unwrap());
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_change_tracking() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         fs.write_file_mut("/test.txt", b"hello").unwrap();
         let changes = fs.get_changes();
         assert_eq!(changes.len(), 1);
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_list_dir() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         fs.write_file_mut("/src/file1.txt", b"content1").unwrap();
         fs.write_file_mut("/src/file2.txt", b"content2").unwrap();
         fs.write_file_mut("/src/nested/file3.txt", b"content3")
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn test_path_validation() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         assert!(fs.write_file_mut("invalid", b"data").is_err());
         assert!(fs.write_file_mut("/valid", b"data").is_ok());
     }

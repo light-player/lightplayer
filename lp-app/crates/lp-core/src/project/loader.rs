@@ -1,7 +1,7 @@
 //! Project loader for filesystem-based projects
 
 use crate::error::Error;
-use crate::fs::Filesystem;
+use crate::fs::LpFs;
 use crate::nodes::{FixtureNode, OutputNode, ShaderNode, TextureNode};
 use crate::project::config::ProjectConfig;
 use alloc::{collections::BTreeMap, format, string::String, string::ToString, vec::Vec};
@@ -10,7 +10,7 @@ use alloc::{collections::BTreeMap, format, string::String, string::ToString, vec
 ///
 /// Reads `/project.json` to get the top-level project configuration.
 /// Node discovery is handled separately via `discover_nodes()`.
-pub fn load_from_filesystem(fs: &dyn Filesystem) -> Result<ProjectConfig, Error> {
+pub fn load_from_filesystem(fs: &dyn LpFs) -> Result<ProjectConfig, Error> {
     log::debug!("Reading project.json");
     // Read project.json
     let project_json = fs.read_file("/project.json")?;
@@ -32,7 +32,7 @@ pub fn load_from_filesystem(fs: &dyn Filesystem) -> Result<ProjectConfig, Error>
 ///
 /// Returns a list of node IDs (full paths from project root with leading slash,
 /// e.g., `["/src/my-shader.shader", "/src/nested/effects/rainbow.shader"]`).
-pub fn discover_nodes(fs: &dyn Filesystem) -> Result<Vec<String>, Error> {
+pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<String>, Error> {
     log::debug!("Discovering nodes in /src");
     let mut nodes = Vec::new();
     discover_nodes_recursive(fs, "/src", &mut nodes)?;
@@ -42,7 +42,7 @@ pub fn discover_nodes(fs: &dyn Filesystem) -> Result<Vec<String>, Error> {
 
 /// Recursively discover node directories
 fn discover_nodes_recursive(
-    fs: &dyn Filesystem,
+    fs: &dyn LpFs,
     dir_path: &str,
     nodes: &mut Vec<String>,
 ) -> Result<(), Error> {
@@ -116,7 +116,7 @@ pub enum NodeConfig {
 /// Validates that the directory suffix matches the node type.
 ///
 /// Returns the node ID (full path) and the node configuration.
-pub fn load_node(fs: &dyn Filesystem, node_path: &str) -> Result<(String, NodeConfig), Error> {
+pub fn load_node(fs: &dyn LpFs, node_path: &str) -> Result<(String, NodeConfig), Error> {
     log::debug!("Loading node: {}", node_path);
     // Validate node path format
     let node_id = extract_node_id(node_path)
@@ -232,7 +232,7 @@ pub fn load_node(fs: &dyn Filesystem, node_path: &str) -> Result<(String, NodeCo
 /// Discovers all node directories and loads each node configuration.
 /// Returns maps of node ID to node configuration for each node type.
 pub fn load_all_nodes(
-    fs: &dyn Filesystem,
+    fs: &dyn LpFs,
 ) -> Result<
     (
         BTreeMap<String, TextureNode>,
@@ -282,12 +282,12 @@ pub fn load_all_nodes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::fs::memory::InMemoryFilesystem;
+    use crate::fs::memory::LpFsMemory;
     use alloc::string::ToString;
 
     #[test]
     fn test_load_from_filesystem() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         fs.write_file(
             "/project.json",
             br#"{"uid":"test-uid","name":"Test Project"}"#,
@@ -301,14 +301,14 @@ mod tests {
 
     #[test]
     fn test_load_from_filesystem_missing_file() {
-        let fs = InMemoryFilesystem::new();
+        let fs = LpFsMemory::new();
         let result = load_from_filesystem(&fs);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_discover_nodes() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         // Create node directories by creating files in them
         fs.write_file("/src/shader1.shader/node.json", b"{}")
             .unwrap();
@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_discover_nodes_nested() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         // Create nested node directories
         fs.write_file("/src/nested/effects/rainbow.shader/node.json", b"{}")
             .unwrap();
@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_discover_nodes_empty_src() {
-        let fs = InMemoryFilesystem::new();
+        let fs = LpFsMemory::new();
         let nodes = discover_nodes(&fs).unwrap();
         assert_eq!(nodes.len(), 0);
     }
@@ -374,7 +374,7 @@ mod tests {
 
     #[test]
     fn test_load_node_shader() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         fs.write_file(
             "/src/my-shader.shader/node.json",
             br#"{"$type":"Single","texture_id":"/src/my-texture.texture"}"#,
@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn test_load_node_texture() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         fs.write_file(
             "/src/my-texture.texture/node.json",
             br#"{"$type":"Memory","size":[64,64],"format":"RGB8"}"#,
@@ -425,7 +425,7 @@ mod tests {
 
     #[test]
     fn test_load_all_nodes() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         // Create a shader
         fs.write_file(
             "/src/shader.shader/node.json",

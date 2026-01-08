@@ -1,7 +1,7 @@
 //! Host filesystem implementation using std::fs
 
 use lp_core::error::Error;
-use lp_core::fs::Filesystem;
+use lp_core::fs::LpFs;
 use std::fs;
 use std::path::PathBuf;
 
@@ -99,7 +99,7 @@ impl HostFilesystem {
     }
 }
 
-impl Filesystem for HostFilesystem {
+impl LpFs for HostFilesystem {
     fn read_file(&self, path: &str) -> Result<Vec<u8>, Error> {
         let full_path = self.resolve_and_validate(path)?;
         fs::read(&full_path)

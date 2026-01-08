@@ -1445,20 +1445,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fw-host"
-version = "0.1.0"
-dependencies = [
- "eframe",
- "egui",
- "hashbrown 0.15.5",
- "log",
- "lp-core",
- "notify",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2073,6 +2059,20 @@ dependencies = [
  "lp-glsl-compiler",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "lp-core-cli"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "egui",
+ "hashbrown 0.15.5",
+ "log",
+ "lp-core",
+ "notify",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

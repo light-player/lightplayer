@@ -13,7 +13,7 @@ use crate::error::Error;
 ///
 /// All paths are relative to the project root. `/project.json` is always the project
 /// configuration file. Filesystem instances have a root path for security.
-pub trait Filesystem {
+pub trait LpFs {
     /// Read a file from the filesystem
     ///
     /// Path is relative to project root (e.g., `/project.json`, `/src/my-shader.shader/main.glsl`).

@@ -11,15 +11,14 @@ use fs::HostFilesystem;
 use led_output::render_leds;
 use lp_core::app::{LpApp, MsgIn, MsgOut, Platform};
 use lp_core::error::Error;
-use lp_core::fs::memory::InMemoryFilesystem;
-use lp_core::protocol::message::parse_command;
-use lp_core::traits::{Filesystem, Transport};
+use lp_core::traits::{LpFs, Transport};
 use output_provider::HostOutputProvider;
 use std::env;
 use std::fs as std_fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use lp_core::fs::LpFsMemory;
 use transport::HostTransport;
 use watcher::FileWatcher;
 
@@ -76,32 +75,32 @@ fn collect_messages(transport: &Arc<Mutex<dyn Transport>>) -> Vec<MsgIn> {
     let mut messages = Vec::new();
 
     // Try to receive messages (non-blocking, collect all available)
-    loop {
-        let message = {
-            let mut transport = transport.lock().unwrap();
-            transport.receive_message()
-        };
-
-        match message {
-            Ok(msg) => match parse_command(&msg) {
-                Ok(command) => {
-                    let msg_in: MsgIn = command.into();
-                    messages.push(msg_in);
-                }
-                Err(e) => {
-                    log::warn!("Failed to parse command: {}", e);
-                    break; // Stop on parse error
-                }
-            },
-            Err(e) => {
-                // "No message available" means no more messages
-                if !e.to_string().contains("No message available") {
-                    log::warn!("Error receiving message: {}", e);
-                }
-                break;
-            }
-        }
-    }
+    // loop {
+    //     let message = {
+    //         let mut transport = transport.lock().unwrap();
+    //         transport.receive_message()
+    //     };
+    //
+    //     match message {
+    //         Ok(msg) => match parse_command(&msg) {
+    //             Ok(command) => {
+    //                 let msg_in: MsgIn = command.into();
+    //                 messages.push(msg_in);
+    //             }
+    //             Err(e) => {
+    //                 log::warn!("Failed to parse command: {}", e);
+    //                 break; // Stop on parse error
+    //             }
+    //         },
+    //         Err(e) => {
+    //             // "No message available" means no more messages
+    //             if !e.to_string().contains("No message available") {
+    //                 log::warn!("Error receiving message: {}", e);
+    //             }
+    //             break;
+    //         }
+    //     }
+    // }
 
     messages
 }
@@ -112,15 +111,15 @@ fn handle_outgoing_messages(
     transport: &Arc<Mutex<dyn Transport>>,
 ) -> Result<(), Error> {
     for msg_out in messages {
-        match msg_out {
-            MsgOut::Project { project } => {
-                // Send project via transport
-                let json = serde_json::to_string(&project)
-                    .map_err(|e| Error::Serialization(format!("{}", e)))?;
-                let mut transport = transport.lock().unwrap();
-                transport.send_message(&json)?;
-            }
-        }
+        // match msg_out {
+        //     MsgOut::Project { project } => {
+        //         // Send project via transport
+        //         let json = serde_json::to_string(&project)
+        //             .map_err(|e| Error::Serialization(format!("{}", e)))?;
+        //         let mut transport = transport.lock().unwrap();
+        //         transport.send_message(&json)?;
+        //     }
+        // }
     }
     Ok(())
 }
@@ -402,11 +401,11 @@ fn main() -> eframe::Result<()> {
             std::process::exit(1);
         }
 
-        let fs: Box<dyn Filesystem> = Box::new(HostFilesystem::new(project_root.clone()));
+        let fs: Box<dyn LpFs> = Box::new(HostFilesystem::new(project_root.clone()));
         (fs, project_root, true)
     } else {
         // Use in-memory filesystem with sample project (testing mode)
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
 
         // Create sample project in memory
         fs.write_file_mut("/project.json", br#"{"uid":"test","name":"Test Project"}"#)
@@ -498,7 +497,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         log::info!("Running in testing mode (in-memory filesystem with sample project)");
         log::info!("Use --project-dir <path> to use a real project directory");
 
-        let fs_box: Box<dyn Filesystem> = Box::new(fs);
+        let fs_box: Box<dyn LpFs> = Box::new(fs);
         (fs_box, PathBuf::from("."), false)
     };
 

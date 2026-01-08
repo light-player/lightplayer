@@ -150,32 +150,9 @@ impl LpApp {
     ) -> Result<alloc::vec::Vec<crate::app::MsgOut>, Error> {
         let mut outgoing = alloc::vec::Vec::new();
 
-        match msg {
-            crate::app::MsgIn::UpdateProject { project } => {
-                // Save project to filesystem
-                let json = serde_json::to_string(&project).map_err(|e| {
-                    Error::Serialization(format!("Failed to serialize project: {}", e))
-                })?;
-                self.platform
-                    .fs
-                    .write_file("/project.json", json.as_bytes())?;
-
-                // Load the project (this will initialize the runtime)
-                self.load_project("/project.json")?;
-            }
-            crate::app::MsgIn::GetProject => {
-                // Get current project config
-                if let Some(ref config) = self.config {
-                    outgoing.push(crate::app::MsgOut::Project {
-                        project: config.clone(),
-                    });
-                }
-            }
-            crate::app::MsgIn::Log { level, message } => {
-                // Log message (for now, just ignore - firmware can handle logging)
-                let _ = (level, message);
-            }
-        }
+        // match msg {
+        //  TODO: Implement message handling
+        // }
 
         Ok(outgoing)
     }
@@ -297,7 +274,7 @@ fn get_node_path_from_file_path(file_path: &str) -> Option<String> {
 mod tests {
     use super::*;
     use crate::app::{ChangeType, FileChange};
-    use crate::fs::memory::InMemoryFilesystem;
+    use crate::fs::memory::LpFsMemory;
     use crate::traits::OutputProvider;
     use alloc::string::ToString;
 
@@ -347,7 +324,7 @@ mod tests {
 
     #[test]
     fn test_handle_file_changes_project_json() {
-        let fs = alloc::boxed::Box::new(InMemoryFilesystem::new());
+        let fs = alloc::boxed::Box::new(LpFsMemory::new());
         let output = alloc::boxed::Box::new(MockOutputProvider);
         let platform = Platform::new(fs, output);
         let mut app = LpApp::new(platform);
@@ -367,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_handle_file_changes_node_file() {
-        let mut fs = InMemoryFilesystem::new();
+        let mut fs = LpFsMemory::new();
         // Create a project with a shader
         fs.write_file("/project.json", br#"{"uid":"test","name":"Test"}"#)
             .unwrap();
