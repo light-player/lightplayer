@@ -353,8 +353,8 @@ mod tests {
             format: formats::RGB8.to_string(),
         });
         let config = FixtureNode::CircleList {
-            output_id,
-            texture_id,
+            output_id: output_id.clone(),
+            texture_id: texture_id.clone(),
             channel_order: "rgb".to_string(),
             mapping: vec![Mapping {
                 channel: 0,
@@ -374,6 +374,7 @@ mod tests {
 
         assert!(runtime.init(&config, &ctx).is_ok());
         assert_eq!(runtime.output_id, output_id);
+        assert_eq!(runtime.texture_id, texture_id);
         assert_eq!(runtime.channel_order, "rgb");
         assert_eq!(runtime.mapping.len(), 1);
         assert!(!runtime.kernel.samples.is_empty());
@@ -394,10 +395,10 @@ mod tests {
         let project_config = builder.build().unwrap();
         let init_ctx = crate::runtime::contexts::InitContext::new(
             &project_config,
-            textures,
-            shaders,
-            outputs,
-            fixtures,
+            &textures,
+            &shaders,
+            &outputs,
+            &fixtures,
         );
         texture_runtime.init(&texture_config, &init_ctx).unwrap();
 
@@ -436,8 +437,8 @@ mod tests {
         // Create fixture runtime
         let mut fixture_runtime = FixtureNodeRuntime::new();
         let fixture_config = FixtureNode::CircleList {
-            output_id,
-            texture_id,
+            output_id: output_id.clone(),
+            texture_id: texture_id.clone(),
             channel_order: "rgb".to_string(),
             mapping: vec![Mapping {
                 channel: 0,
@@ -463,10 +464,10 @@ mod tests {
         let frame_time = crate::runtime::frame_time::FrameTime::new(16, 1000);
         let mut textures: HashMap<TextureId, crate::nodes::texture::TextureNodeRuntime> =
             HashMap::new();
-        textures.insert(texture_id, texture_runtime);
+        textures.insert(texture_id.clone(), texture_runtime);
         let mut outputs: HashMap<OutputId, crate::nodes::output::OutputNodeRuntime> =
             HashMap::new();
-        outputs.insert(output_id, output_runtime);
+        outputs.insert(output_id.clone(), output_runtime);
         let mut ctx = FixtureRenderContext::new(frame_time, &textures, &mut outputs);
 
         // Update fixture
@@ -482,7 +483,7 @@ mod tests {
     #[test]
     fn test_fixture_node_runtime_update_missing_texture() {
         let mut runtime = FixtureNodeRuntime::new();
-        runtime.texture_id = TextureId(999); // Non-existent texture
+        runtime.texture_id = TextureId("/src/nonexistent.texture".to_string()); // Non-existent texture
 
         let frame_time = crate::runtime::frame_time::FrameTime::new(16, 1000);
         let textures: HashMap<TextureId, crate::nodes::texture::TextureNodeRuntime> =
@@ -498,7 +499,7 @@ mod tests {
     #[test]
     fn test_fixture_node_runtime_update_missing_output() {
         let mut runtime = FixtureNodeRuntime::new();
-        runtime.output_id = OutputId(999); // Non-existent output
+        runtime.output_id = OutputId("/src/nonexistent.output".to_string()); // Non-existent output
 
         let frame_time = crate::runtime::frame_time::FrameTime::new(16, 1000);
         let textures: HashMap<TextureId, crate::nodes::texture::TextureNodeRuntime> =

@@ -230,6 +230,7 @@ impl NodeLifecycle for ShaderNodeRuntime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::nodes::texture::TextureNode;
     use hashbrown::HashMap;
 
     #[test]
@@ -255,10 +256,10 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         let project_config = builder.build().unwrap();
         let ctx = crate::runtime::contexts::InitContext::new(
             &project_config,
-            textures,
-            shaders,
-            outputs,
-            fixtures,
+            &textures,
+            &shaders,
+            &outputs,
+            &fixtures,
         );
 
         assert!(runtime.init(&config, &ctx).is_ok());
@@ -279,15 +280,14 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
             glsl: glsl.to_string(),
             texture_id,
         };
-        let builder = crate::project::builder::ProjectBuilder::new_test();
         let (textures, shaders, outputs, fixtures) = builder.node_maps();
         let project_config = builder.build().unwrap();
         let ctx = crate::runtime::contexts::InitContext::new(
             &project_config,
-            textures,
-            shaders,
-            outputs,
-            fixtures,
+            &textures,
+            &shaders,
+            &outputs,
+            &fixtures,
         );
 
         assert!(runtime.init(&config, &ctx).is_err());
@@ -329,10 +329,10 @@ vec3 main(vec2 fragCoord, vec2 outputSize, float time) {
         let project_config = builder.build().unwrap();
         let ctx = crate::runtime::contexts::InitContext::new(
             &project_config,
-            textures,
-            shaders,
-            outputs,
-            fixtures,
+            &textures,
+            &shaders,
+            &outputs,
+            &fixtures,
         );
 
         assert!(runtime.init(&config, &ctx).is_err());
@@ -360,10 +360,10 @@ vec4 main(vec2 fragCoord, float time) {
         let project_config = builder.build().unwrap();
         let ctx = crate::runtime::contexts::InitContext::new(
             &project_config,
-            textures,
-            shaders,
-            outputs,
-            fixtures,
+            &textures,
+            &shaders,
+            &outputs,
+            &fixtures,
         );
 
         assert!(runtime.init(&config, &ctx).is_err());
@@ -384,10 +384,10 @@ vec4 main(vec2 fragCoord, float time) {
         let project_config = builder.build().unwrap();
         let init_ctx = crate::runtime::contexts::InitContext::new(
             &project_config,
-            textures,
-            shaders,
-            outputs,
-            fixtures,
+            &textures,
+            &shaders,
+            &outputs,
+            &fixtures,
         );
         texture_runtime.init(&texture_config, &init_ctx).unwrap();
 

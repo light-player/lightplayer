@@ -455,10 +455,20 @@ mod tests {
                 .to_string(),
             texture_id,
         });
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
         let config = builder.build().unwrap();
 
         let output_provider = MockOutputProvider;
-        runtime.init(&config, &output_provider).unwrap();
+        runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider,
+            )
+            .unwrap();
 
         // Update with 16ms delta
         assert!(runtime.update(16, &output_provider).is_ok());
@@ -487,10 +497,20 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
             .to_string(),
             texture_id,
         });
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
         let config = builder.build().unwrap();
 
         let output_provider = MockOutputProvider;
-        runtime.init(&config, &output_provider).unwrap();
+        runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider,
+            )
+            .unwrap();
 
         // Verify texture is initially zero (or at least check initial state)
         let texture_before = runtime.get_texture(texture_id).unwrap();
@@ -601,10 +621,20 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
                 size: [64, 64],
                 format: formats::RGBA8.to_string(),
             });
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
         let config = builder.build().unwrap();
 
         let output_provider = MockOutputProvider;
-        runtime.init(&config, &output_provider).unwrap();
+        runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider,
+            )
+            .unwrap();
 
         let runtime_nodes = runtime.get_runtime_nodes();
         assert_eq!(runtime_nodes.textures.len(), 1);
@@ -618,10 +648,20 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
                 size: [64, 64],
                 format: formats::RGBA8.to_string(),
             });
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
         let config = builder.build().unwrap();
 
         let output_provider = MockOutputProvider;
-        runtime.init(&config, &output_provider).unwrap();
+        runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider,
+            )
+            .unwrap();
 
         assert!(runtime.destroy().is_ok());
     }
@@ -654,12 +694,22 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
                 radius: 0.1,
             }],
         });
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
         let config = builder.build().unwrap();
 
         // Init runtime
         let mut runtime = ProjectRuntime::new("test".to_string());
         let output_provider = MockOutputProvider;
-        assert!(runtime.init(&config, &output_provider).is_ok());
+        assert!(runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider
+            )
+            .is_ok());
 
         // Update multiple times
         assert!(runtime.update(16, &output_provider).is_ok());
@@ -707,7 +757,17 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         // Init and update
         let mut runtime = ProjectRuntime::new("test".to_string());
         let output_provider = MockOutputProvider;
-        runtime.init(&config, &output_provider).unwrap();
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
+        runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider,
+            )
+            .unwrap();
         runtime.update(16, &output_provider).unwrap();
 
         // Verify pipeline worked: shader wrote to texture, fixture sampled texture, output got data
@@ -764,7 +824,17 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 
         let mut runtime = ProjectRuntime::new("test".to_string());
         let output_provider = MockOutputProvider;
-        runtime.init(&config, &output_provider).unwrap();
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
+        runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider,
+            )
+            .unwrap();
         runtime.update(16, &output_provider).unwrap();
 
         // Both fixtures should have written to the same output
@@ -784,7 +854,17 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 
         let mut runtime = ProjectRuntime::new("test".to_string());
         let output_provider = MockOutputProvider;
-        runtime.init(&config, &output_provider).unwrap();
+        let (textures, shaders, outputs, fixtures) = builder.node_maps();
+        runtime
+            .init(
+                &config,
+                &textures,
+                &shaders,
+                &outputs,
+                &fixtures,
+                &output_provider,
+            )
+            .unwrap();
 
         // Initial state
         assert_eq!(runtime.frame_time.delta_ms, 0);
