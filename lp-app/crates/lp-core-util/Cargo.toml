@@ -14,5 +14,8 @@ std = []
 log = { version = "0.4", default-features = false }
 hashbrown = { workspace = true }
 
+[dev-dependencies]
+tempfile = "3"
+
 [lints]
 workspace = true

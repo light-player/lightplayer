@@ -19,17 +19,55 @@ impl LpFsMemory {
         }
     }
 
+    /// Normalize a path string
+    ///
+    /// - Removes leading "./" or "."
+    /// - Ensures path starts with "/"
+    /// - Collapses "//" to "/"
+    /// - Removes trailing "/" (except for root "/")
+    fn normalize_path(path: &str) -> String {
+        let mut normalized = path.trim();
+        
+        // Remove leading "./" or "."
+        if normalized.starts_with("./") {
+            normalized = &normalized[2..];
+        } else if normalized == "." {
+            normalized = "";
+        }
+        
+        // Ensure it starts with "/"
+        let normalized = if normalized.is_empty() {
+            "/".to_string()
+        } else if normalized.starts_with('/') {
+            normalized.to_string()
+        } else {
+            format!("/{}", normalized)
+        };
+        
+        // Collapse multiple slashes
+        let normalized = normalized.replace("//", "/");
+        
+        // Remove trailing "/" unless it's the root
+        if normalized.len() > 1 && normalized.ends_with('/') {
+            normalized[..normalized.len() - 1].to_string()
+        } else {
+            normalized
+        }
+    }
+
     /// Write a file (mutable version)
     pub fn write_file_mut(&mut self, path: &str, data: &[u8]) -> Result<(), FsError> {
         self.validate_path(path)?;
-        self.files.insert(path.to_string(), data.to_vec());
+        let normalized = Self::normalize_path(path);
+        self.files.insert(normalized, data.to_vec());
         Ok(())
     }
 
     /// Delete a file
     pub fn delete_file(&mut self, path: &str) -> Result<(), FsError> {
         self.validate_path(path)?;
-        if self.files.remove(path).is_none() {
+        let normalized = Self::normalize_path(path);
+        if self.files.remove(&normalized).is_none() {
             return Err(FsError::NotFound(path.to_string()));
         }
         Ok(())
@@ -37,7 +75,8 @@ impl LpFsMemory {
 
     /// Validate that a path is relative to project root (starts with /)
     fn validate_path(&self, path: &str) -> Result<(), FsError> {
-        if !path.starts_with('/') {
+        let normalized = Self::normalize_path(path);
+        if !normalized.starts_with('/') {
             return Err(FsError::InvalidPath(format!(
                 "Path must be relative to project root (start with /): {}",
                 path
@@ -56,8 +95,9 @@ impl Default for LpFsMemory {
 impl LpFs for LpFsMemory {
     fn read_file(&self, path: &str) -> Result<Vec<u8>, FsError> {
         self.validate_path(path)?;
+        let normalized = Self::normalize_path(path);
         self.files
-            .get(path)
+            .get(&normalized)
             .cloned()
             .ok_or_else(|| FsError::NotFound(path.to_string()))
     }
@@ -72,16 +112,18 @@ impl LpFs for LpFsMemory {
 
     fn file_exists(&self, path: &str) -> Result<bool, FsError> {
         self.validate_path(path)?;
-        Ok(self.files.contains_key(path))
+        let normalized = Self::normalize_path(path);
+        Ok(self.files.contains_key(&normalized))
     }
 
     fn list_dir(&self, path: &str) -> Result<Vec<String>, FsError> {
         self.validate_path(path)?;
+        let normalized = Self::normalize_path(path);
         let mut entries = Vec::new();
-        let prefix = if path.ends_with('/') {
-            path.to_string()
+        let prefix = if normalized.ends_with('/') {
+            normalized.clone()
         } else {
-            alloc::format!("{}/", path)
+            alloc::format!("{}/", normalized)
         };
 
         for file_path in self.files.keys() {
@@ -107,14 +149,7 @@ impl LpFs for LpFsMemory {
 
     fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {
         // Normalize the subdirectory path
-        // Remove leading "./" if present, then ensure it starts with "/"
-        let normalized_subdir = if subdir.starts_with("./") {
-            format!("/{}", &subdir[2..])
-        } else if subdir.starts_with('/') {
-            subdir.to_string()
-        } else {
-            format!("/{}", subdir)
-        };
+        let normalized_subdir = Self::normalize_path(subdir);
 
         // Ensure it ends with / for prefix matching
         let prefix = if normalized_subdir.ends_with('/') {
@@ -147,8 +182,9 @@ impl LpFs for LpFsMemory {
         impl LpFs for ChrootedLpFsMemory {
             fn read_file(&self, path: &str) -> Result<alloc::vec::Vec<u8>, FsError> {
                 self.validate_path(path)?;
+                let normalized = LpFsMemory::normalize_path(path);
                 self.files
-                    .get(path)
+                    .get(&normalized)
                     .cloned()
                     .ok_or_else(|| FsError::NotFound(path.to_string()))
             }
@@ -161,16 +197,18 @@ impl LpFs for LpFsMemory {
 
             fn file_exists(&self, path: &str) -> Result<bool, FsError> {
                 self.validate_path(path)?;
-                Ok(self.files.contains_key(path))
+                let normalized = LpFsMemory::normalize_path(path);
+                Ok(self.files.contains_key(&normalized))
             }
 
             fn list_dir(&self, path: &str) -> Result<alloc::vec::Vec<alloc::string::String>, FsError> {
                 self.validate_path(path)?;
+                let normalized = LpFsMemory::normalize_path(path);
                 let mut entries = Vec::new();
-                let prefix = if path.ends_with('/') {
-                    path.to_string()
+                let prefix = if normalized.ends_with('/') {
+                    normalized.clone()
                 } else {
-                    format!("{}/", path)
+                    format!("{}/", normalized)
                 };
 
                 for file_path in self.files.keys() {
@@ -193,11 +231,7 @@ impl LpFs for LpFsMemory {
 
             fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {
                 // Recursive chroot - normalize path
-                let normalized_subdir = if subdir.starts_with('/') {
-                    subdir.to_string()
-                } else {
-                    format!("/{}", subdir)
-                };
+                let normalized_subdir = LpFsMemory::normalize_path(subdir);
 
                 let prefix = if normalized_subdir.ends_with('/') {
                     normalized_subdir.clone()
@@ -278,7 +312,87 @@ mod tests {
     #[test]
     fn test_path_validation() {
         let mut fs = LpFsMemory::new();
-        assert!(fs.write_file_mut("invalid", b"data").is_err());
+        // Paths without leading slash are normalized to have one, so they're valid
+        fs.write_file_mut("relative", b"data").unwrap();
+        assert!(fs.file_exists("/relative").unwrap());
         assert!(fs.write_file_mut("/valid", b"data").is_ok());
+        
+        // Test that normalization works correctly
+        fs.write_file_mut("./normalized", b"data2").unwrap();
+        assert!(fs.file_exists("/normalized").unwrap());
+    }
+
+    #[test]
+    fn test_chroot_basic() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/projects/test/project.json", b"{}").unwrap();
+        fs.write_file_mut("/projects/test/src/file.txt", b"content").unwrap();
+        fs.write_file_mut("/projects/other/file.txt", b"other").unwrap();
+
+        let chrooted = fs.chroot("/projects/test").unwrap();
+        assert!(chrooted.file_exists("/project.json").unwrap());
+        assert!(chrooted.file_exists("/src/file.txt").unwrap());
+        assert!(!chrooted.file_exists("/projects/other/file.txt").unwrap());
+    }
+
+    #[test]
+    fn test_chroot_with_relative_path() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/test-projects/test/project.json", b"{}").unwrap();
+        fs.write_file_mut("/test-projects/test/src/file.txt", b"content").unwrap();
+
+        // Test with "./test-projects/test"
+        let chrooted = fs.chroot("./test-projects/test").unwrap();
+        assert!(chrooted.file_exists("/project.json").unwrap());
+        assert!(chrooted.file_exists("/src/file.txt").unwrap());
+    }
+
+    #[test]
+    fn test_chroot_path_normalization() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/a/b/c/file.txt", b"content").unwrap();
+
+        // All these should work and point to the same directory
+        let chroot1 = fs.chroot("/a/b").unwrap();
+        let chroot2 = fs.chroot("./a/b").unwrap();
+        let chroot3 = fs.chroot("a/b").unwrap();
+
+        assert!(chroot1.file_exists("/c/file.txt").unwrap());
+        assert!(chroot2.file_exists("/c/file.txt").unwrap());
+        assert!(chroot3.file_exists("/c/file.txt").unwrap());
+    }
+
+    #[test]
+    fn test_chroot_nested() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/a/b/c/file.txt", b"content").unwrap();
+
+        let chroot1 = fs.chroot("/a").unwrap();
+        let chroot2 = chroot1.chroot("b").unwrap();
+        assert!(chroot2.file_exists("/c/file.txt").unwrap());
+    }
+
+    #[test]
+    fn test_chroot_read_file() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/projects/test/project.json", b"{\"name\":\"test\"}").unwrap();
+
+        let chrooted = fs.chroot("/projects/test").unwrap();
+        let content = chrooted.read_file("/project.json").unwrap();
+        assert_eq!(content, b"{\"name\":\"test\"}");
+    }
+
+    #[test]
+    fn test_chroot_list_dir() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/projects/test/src/file1.txt", b"1").unwrap();
+        fs.write_file_mut("/projects/test/src/file2.txt", b"2").unwrap();
+        fs.write_file_mut("/projects/test/other.txt", b"other").unwrap();
+
+        let chrooted = fs.chroot("/projects/test").unwrap();
+        let entries = chrooted.list_dir("/src").unwrap();
+        assert!(entries.contains(&"/src/file1.txt".to_string()));
+        assert!(entries.contains(&"/src/file2.txt".to_string()));
+        assert!(!entries.contains(&"/projects/test/src/file1.txt".to_string()));
     }
 }

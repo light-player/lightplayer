@@ -25,7 +25,10 @@ mod test_logger {
         fn log(&self, record: &Record) {
             // Use eprintln! for test output (goes to stderr, doesn't interfere with test output)
             #[cfg(feature = "std")]
-            eprintln!("[{}] {}", record.level(), record.args());
+            #[cfg(feature = "std")]
+            {
+                std::eprintln!("[{}] {}", record.level(), record.args());
+            }
         }
 
         fn flush(&self) {

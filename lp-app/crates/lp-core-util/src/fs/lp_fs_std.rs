@@ -2,7 +2,7 @@
 
 use crate::error::FsError;
 use crate::fs::LpFs;
-use alloc::{format, string::String, vec::Vec};
+use alloc::{format, string::{String, ToString}, vec::Vec};
 use std::fs;
 use std::path::PathBuf;
 
@@ -27,15 +27,53 @@ impl LpFsStd {
         Self { root_path }
     }
 
+    /// Normalize a path string
+    ///
+    /// - Removes leading "./" or "."
+    /// - Ensures path starts with "/"
+    /// - Collapses "//" to "/"
+    /// - Removes trailing "/" (except for root "/")
+    fn normalize_path(path: &str) -> String {
+        let mut normalized = path.trim();
+        
+        // Remove leading "./" or "."
+        if normalized.starts_with("./") {
+            normalized = &normalized[2..];
+        } else if normalized == "." {
+            normalized = "";
+        }
+        
+        // Ensure it starts with "/"
+        let normalized = if normalized.is_empty() {
+            "/".to_string()
+        } else if normalized.starts_with('/') {
+            normalized.to_string()
+        } else {
+            format!("/{}", normalized)
+        };
+        
+        // Collapse multiple slashes
+        let normalized = normalized.replace("//", "/");
+        
+        // Remove trailing "/" unless it's the root
+        if normalized.len() > 1 && normalized.ends_with('/') {
+            normalized[..normalized.len() - 1].to_string()
+        } else {
+            normalized
+        }
+    }
+
     /// Resolve a path relative to the root and validate it stays within root
     ///
     /// Returns an error if the path would escape the root directory.
     fn resolve_and_validate(&self, path: &str) -> Result<PathBuf, FsError> {
-        // Normalize the input path (remove leading slash for joining)
-        let normalized_path = if path.starts_with('/') {
-            &path[1..]
+        // Normalize the input path
+        let normalized = Self::normalize_path(path);
+        // Remove leading slash for joining with root_path
+        let normalized_path = if normalized == "/" {
+            ""
         } else {
-            path
+            &normalized[1..]
         };
 
         // Join with root path
@@ -70,10 +108,12 @@ impl LpFsStd {
     /// Still validates that the path would be within root.
     fn get_path(&self, path: &str) -> Result<PathBuf, FsError> {
         // Normalize the input path
-        let normalized_path = if path.starts_with('/') {
-            &path[1..]
+        let normalized = Self::normalize_path(path);
+        // Remove leading slash for joining with root_path
+        let normalized_path = if normalized == "/" {
+            ""
         } else {
-            path
+            &normalized[1..]
         };
 
         let full_path = self.root_path.join(normalized_path);
@@ -182,11 +222,13 @@ impl LpFs for LpFsStd {
     }
 
     fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {
-        // Normalize the subdirectory path (remove leading slash for joining)
-        let normalized_subdir = if subdir.starts_with('/') {
-            &subdir[1..]
+        // Normalize the subdirectory path
+        let normalized = Self::normalize_path(subdir);
+        // Remove leading slash for joining with root_path
+        let normalized_subdir = if normalized == "/" {
+            ""
         } else {
-            subdir
+            &normalized[1..]
         };
 
         // Join with root path
@@ -216,7 +258,7 @@ impl LpFs for LpFsStd {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
     use std::fs;
