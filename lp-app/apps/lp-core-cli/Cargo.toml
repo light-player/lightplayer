@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 log = "0.4"
 lp-core = { path = "../../crates/lp-core" }
+lp-core-util = { path = "../../crates/lp-core-util", default-features = false, features = ["std"] }
 eframe = "0.28"
 egui = "0.28"
 serde_json = "1.0"

@@ -2075,6 +2075,7 @@ dependencies = [
  "hashbrown 0.15.5",
  "log",
  "lp-core",
+ "lp-core-util",
  "notify",
  "serde_json",
  "tempfile",
@@ -2083,6 +2084,10 @@ dependencies = [
 [[package]]
 name = "lp-core-util"
 version = "40.0.0"
+dependencies = [
+ "hashbrown 0.15.5",
+ "log",
+]
 
 [[package]]
 name = "lp-glsl-compiler"
@@ -2114,6 +2119,9 @@ dependencies = [
 [[package]]
 name = "lp-server"
 version = "40.0.0"
+dependencies = [
+ "lp-core-util",
+]
 
 [[package]]
 name = "mach2"

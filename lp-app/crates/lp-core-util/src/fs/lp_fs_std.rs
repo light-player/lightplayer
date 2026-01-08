@@ -1,9 +1,10 @@
 //! Host filesystem implementation using std::fs
 
-use lp_core::error::Error;
+use crate::error::FsError;
+use crate::fs::LpFs;
+use alloc::{format, string::String, vec::Vec};
 use std::fs;
 use std::path::PathBuf;
-use crate::fs::LpFs;
 
 /// LP filesystem implementation using std::fs
 ///
@@ -29,7 +30,7 @@ impl LpFsStd {
     /// Resolve a path relative to the root and validate it stays within root
     ///
     /// Returns an error if the path would escape the root directory.
-    fn resolve_and_validate(&self, path: &str) -> Result<PathBuf, Error> {
+    fn resolve_and_validate(&self, path: &str) -> Result<PathBuf, FsError> {
         // Normalize the input path (remove leading slash for joining)
         let normalized_path = if path.starts_with('/') {
             &path[1..]
@@ -51,10 +52,10 @@ impl LpFsStd {
         let canonical_root = self
             .root_path
             .canonicalize()
-            .map_err(|e| Error::Filesystem(format!("Failed to canonicalize root path: {}", e)))?;
+            .map_err(|e| FsError::Filesystem(format!("Failed to canonicalize root path: {}", e)))?;
 
         if !canonical_path.starts_with(&canonical_root) {
-            return Err(Error::Filesystem(format!(
+            return Err(FsError::InvalidPath(format!(
                 "Path {:?} would escape root directory {:?}",
                 path, self.root_path
             )));
@@ -67,7 +68,7 @@ impl LpFsStd {
     ///
     /// This is used when we need to create files that don't exist yet.
     /// Still validates that the path would be within root.
-    fn get_path(&self, path: &str) -> Result<PathBuf, Error> {
+    fn get_path(&self, path: &str) -> Result<PathBuf, FsError> {
         // Normalize the input path
         let normalized_path = if path.starts_with('/') {
             &path[1..]
@@ -84,7 +85,7 @@ impl LpFsStd {
         for component in components {
             if component == ".." {
                 if depth == 0 {
-                    return Err(Error::Filesystem(format!(
+                    return Err(FsError::InvalidPath(format!(
                         "Path {:?} would escape root directory",
                         path
                     )));
@@ -100,38 +101,38 @@ impl LpFsStd {
 }
 
 impl LpFs for LpFsStd {
-    fn read_file(&self, path: &str) -> Result<Vec<u8>, Error> {
+    fn read_file(&self, path: &str) -> Result<Vec<u8>, FsError> {
         let full_path = self.resolve_and_validate(path)?;
         fs::read(&full_path)
-            .map_err(|e| Error::Filesystem(format!("Failed to read file {:?}: {}", full_path, e)))
+            .map_err(|e| FsError::Filesystem(format!("Failed to read file {:?}: {}", full_path, e)))
     }
 
-    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), Error> {
+    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), FsError> {
         let full_path = self.get_path(path)?;
         // Create parent directory if it doesn't exist
         if let Some(parent) = full_path.parent() {
             if let Err(e) = fs::create_dir_all(parent) {
-                return Err(Error::Filesystem(format!(
+                return Err(FsError::Filesystem(format!(
                     "Failed to create directory {:?}: {}",
                     parent, e
                 )));
             }
         }
         fs::write(&full_path, data)
-            .map_err(|e| Error::Filesystem(format!("Failed to write file {:?}: {}", full_path, e)))
+            .map_err(|e| FsError::Filesystem(format!("Failed to write file {:?}: {}", full_path, e)))
     }
 
-    fn file_exists(&self, path: &str) -> Result<bool, Error> {
+    fn file_exists(&self, path: &str) -> Result<bool, FsError> {
         let full_path = self.get_path(path)?;
         Ok(full_path.exists())
     }
 
-    fn list_dir(&self, path: &str) -> Result<Vec<String>, Error> {
+    fn list_dir(&self, path: &str) -> Result<Vec<String>, FsError> {
         let full_path = self.resolve_and_validate(path)?;
 
         // Check if it's actually a directory
         if !full_path.is_dir() {
-            return Err(Error::Filesystem(format!(
+            return Err(FsError::Filesystem(format!(
                 "Path {:?} is not a directory",
                 path
             )));
@@ -139,25 +140,25 @@ impl LpFs for LpFsStd {
 
         // Read directory contents
         let entries = fs::read_dir(&full_path).map_err(|e| {
-            Error::Filesystem(format!("Failed to read directory {:?}: {}", full_path, e))
+            FsError::Filesystem(format!("Failed to read directory {:?}: {}", full_path, e))
         })?;
 
         // Get canonical root for comparison
         let canonical_root = self
             .root_path
             .canonicalize()
-            .map_err(|e| Error::Filesystem(format!("Failed to canonicalize root path: {}", e)))?;
+            .map_err(|e| FsError::Filesystem(format!("Failed to canonicalize root path: {}", e)))?;
 
         let mut results = Vec::new();
         for entry in entries {
             let entry = entry
-                .map_err(|e| Error::Filesystem(format!("Failed to read directory entry: {}", e)))?;
+                .map_err(|e| FsError::Filesystem(format!("Failed to read directory entry: {}", e)))?;
 
             let entry_path = entry.path();
 
             // Canonicalize the entry path
             let canonical_entry = entry_path.canonicalize().map_err(|e| {
-                Error::Filesystem(format!(
+                FsError::Filesystem(format!(
                     "Failed to canonicalize entry path {:?}: {}",
                     entry_path, e
                 ))
@@ -165,7 +166,7 @@ impl LpFs for LpFsStd {
 
             // Build the relative path from canonical root
             let relative_path = canonical_entry.strip_prefix(&canonical_root).map_err(|_| {
-                Error::Filesystem(format!(
+                FsError::Filesystem(format!(
                     "Failed to compute relative path from root: entry={:?}, root={:?}",
                     canonical_entry, canonical_root
                 ))

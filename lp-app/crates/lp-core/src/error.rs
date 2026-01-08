@@ -1,7 +1,8 @@
 //! Error types for lp-core
 
-use alloc::string::String;
+use alloc::{format, string::String};
 use core::fmt;
+use lp_core_util::error::FsError;
 
 /// Error type for lp-core operations
 #[derive(Debug, Clone)]
@@ -31,6 +32,16 @@ impl fmt::Display for Error {
                 // with line numbers and carets, so we don't want to modify it
                 write!(f, "{}", msg)
             }
+        }
+    }
+}
+
+impl From<FsError> for Error {
+    fn from(err: FsError) -> Self {
+        match err {
+            FsError::Filesystem(msg) => Error::Filesystem(msg),
+            FsError::NotFound(msg) => Error::Filesystem(format!("File not found: {}", msg)),
+            FsError::InvalidPath(msg) => Error::Filesystem(format!("Invalid path: {}", msg)),
         }
     }
 }

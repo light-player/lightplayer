@@ -7,7 +7,7 @@
 //! Filesystem instances have a root path (especially for real filesystem implementations) to
 //! provide security by preventing access outside the project directory.
 
-use lp_core::error::Error;
+use crate::error::FsError;
 
 /// Platform-agnostic filesystem trait
 ///
@@ -20,19 +20,19 @@ pub trait LpFs {
     ///
     /// Returns the file contents as a byte vector, or an error if the file doesn't exist
     /// or cannot be read.
-    fn read_file(&self, path: &str) -> Result<alloc::vec::Vec<u8>, Error>;
+    fn read_file(&self, path: &str) -> Result<alloc::vec::Vec<u8>, FsError>;
 
     /// Write data to a file in the filesystem
     ///
     /// Path is relative to project root.
     ///
     /// Creates the file if it doesn't exist, overwrites if it does.
-    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), Error>;
+    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), FsError>;
 
     /// Check if a file exists in the filesystem
     ///
     /// Path is relative to project root.
-    fn file_exists(&self, path: &str) -> Result<bool, Error>;
+    fn file_exists(&self, path: &str) -> Result<bool, FsError>;
 
     /// List directory contents (files and subdirectories)
     ///
@@ -40,5 +40,5 @@ pub trait LpFs {
     ///
     /// Returns paths relative to project root. The returned paths include the directory
     /// path prefix (e.g., listing `/src` might return `["/src/my-shader.shader", "/src/my-texture.texture"]`).
-    fn list_dir(&self, path: &str) -> Result<alloc::vec::Vec<alloc::string::String>, Error>;
+    fn list_dir(&self, path: &str) -> Result<alloc::vec::Vec<alloc::string::String>, FsError>;
 }
