@@ -371,105 +371,74 @@ fn main() -> eframe::Result<()> {
     let args = parse_args();
 
     // Determine project setup
-    let (projects_base_dir, project_name, use_watcher, project_root) = if let Some(project_dir) = args.project_dir {
-        // Use real filesystem with specified project directory
-        let project_root = project_dir.canonicalize().unwrap_or(project_dir.clone());
-        
-        // Extract project name from directory name
-        let project_name = project_root
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("current")
-            .to_string();
-        
-        // Use parent directory as projects base, or current directory if no parent
-        let projects_base_dir = project_root
-            .parent()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_else(|| ".".to_string());
+    let (projects_base_dir, project_name, use_watcher, project_root) =
+        if let Some(project_dir) = args.project_dir {
+            // Use real filesystem with specified project directory
+            let project_root = project_dir.canonicalize().unwrap_or(project_dir.clone());
 
-        // Handle --create flag
-        if args.create {
-            // Create filesystem at server root
-            let server_root = PathBuf::from(&projects_base_dir);
-            let fs: Box<dyn LpFs> = Box::new(HostFilesystem::new(server_root.clone()));
-            
-            // Initialize output provider
-            let output_provider = Arc::new(HostOutputProvider::new());
-            let platform_output_provider: Box<dyn lp_core::traits::OutputProvider> =
-                Box::new(HostOutputProviderWrapper {
-                    inner: Arc::clone(&output_provider),
-                });
-            let platform = Platform::new(fs, platform_output_provider);
-            
-            // Create ProjectManager and create project
-            let mut project_manager = ProjectManager::new(projects_base_dir.clone());
-            match project_manager.create_project(project_name.clone(), platform) {
-                Ok(()) => {
-                    log::info!("Project created successfully!");
+            // Extract project name from directory name
+            let project_name = project_root
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("current")
+                .to_string();
+
+            // Use parent directory as projects base, or current directory if no parent
+            let projects_base_dir = project_root
+                .parent()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|| ".".to_string());
+
+            // Handle --create flag
+            if args.create {
+                // Create filesystem at server root
+                let server_root = PathBuf::from(&projects_base_dir);
+                let fs: Box<dyn LpFs> = Box::new(HostFilesystem::new(server_root.clone()));
+
+                // Initialize output provider
+                let output_provider = Arc::new(HostOutputProvider::new());
+                let platform_output_provider: Box<dyn lp_core::traits::OutputProvider> =
+                    Box::new(HostOutputProviderWrapper {
+                        inner: Arc::clone(&output_provider),
+                    });
+                let platform = Platform::new(fs, platform_output_provider);
+
+                // Create ProjectManager and create project
+                let mut project_manager = ProjectManager::new(projects_base_dir.clone());
+                match project_manager.create_project(project_name.clone(), platform) {
+                    Ok(()) => {
+                        log::info!("Project created successfully!");
+                    }
+                    Err(e) => {
+                        eprintln!("Error creating project: {}", e);
+                        std::process::exit(1);
+                    }
                 }
-                Err(e) => {
-                    eprintln!("Error creating project: {}", e);
+            } else {
+                // Check if project.json exists
+                let project_json_path = project_root.join("project.json");
+                if !project_json_path.exists() {
+                    eprintln!("Error: Project not found at {:?}", project_root);
+                    eprintln!("Use --create to create a new project");
                     std::process::exit(1);
                 }
             }
+
+            (projects_base_dir, project_name, true, project_root)
         } else {
-            // Check if project.json exists
-            let project_json_path = project_root.join("project.json");
-            if !project_json_path.exists() {
-                eprintln!("Error: Project not found at {:?}", project_root);
-                eprintln!("Use --create to create a new project");
-                std::process::exit(1);
-            }
-        }
+            // Use in-memory filesystem with sample project (testing mode)
+            log::info!("Running in testing mode (in-memory filesystem with sample project)");
+            log::info!("Use --project-dir <path> to use a real project directory");
 
-        (projects_base_dir, project_name, true, project_root)
-    } else {
-        // Use in-memory filesystem with sample project (testing mode)
-        log::info!("Running in testing mode (in-memory filesystem with sample project)");
-        log::info!("Use --project-dir <path> to use a real project directory");
-        
-        // For in-memory, use "." as base and "test" as project name
-        ("./test-projects".to_string(), "test".to_string(), false, PathBuf::from("."))
-    };
+            // For in-memory, use "." as base and "test" as project name
+            (
+                "./test-projects".to_string(),
+                "test".to_string(),
+                false,
+                PathBuf::from("."),
+            )
+        };
 
-    // Create filesystem at server root
-    let server_root = if use_watcher {
-        PathBuf::from(&projects_base_dir)
-    } else {
-        // For in-memory mode, create the filesystem with sample project
-        let mut fs = LpFsMemory::new();
-        fs.write_file_mut("/test/project.json", br#"{"uid":"test","name":"Test Project"}"#)
-            .unwrap();
-        fs.write_file_mut(
-            "/test/src/texture.texture/node.json",
-            br#"{"$type":"Memory","size":[64,64],"format":"RGB8"}"#,
-        )
-        .unwrap();
-        fs.write_file_mut(
-            "/test/src/shader.shader/node.json",
-            br#"{"$type":"Single","texture_id":"/src/texture.texture"}"#,
-        )
-        .unwrap();
-        fs.write_file_mut(
-            "/test/src/shader.shader/main.glsl",
-            br#"vec4 main(vec2 fragCoord, vec2 outputSize, float time) { return vec4(1.0); }"#,
-        )
-        .unwrap();
-        fs.write_file_mut(
-            "/test/src/output.output/node.json",
-            br#"{"$type":"gpio_strip","chip":"ws2812","gpio_pin":4,"count":128}"#,
-        )
-        .unwrap();
-        fs.write_file_mut(
-            "/test/src/fixture.fixture/node.json",
-            br#"{"$type":"circle-list","output_id":"/src/output.output","texture_id":"/src/texture.texture","channel_order":"rgb","mapping":[]}"#,
-        )
-        .unwrap();
-        
-        // Return a dummy path since we're using in-memory
-        PathBuf::from(".")
-    };
 
     // Initialize output provider
     let output_provider = Arc::new(HostOutputProvider::new());
@@ -477,66 +446,74 @@ fn main() -> eframe::Result<()> {
         Box::new(HostOutputProviderWrapper {
             inner: Arc::clone(&output_provider),
         });
-    
-    // Create filesystem
+
+    // Create filesystem at server root
     let filesystem: Box<dyn LpFs> = if use_watcher {
-        Box::new(HostFilesystem::new(server_root))
+        Box::new(HostFilesystem::new(PathBuf::from(&projects_base_dir)))
     } else {
-        // For in-memory mode, we'll create it in the ProjectManager
+        // For in-memory mode, create filesystem with sample project
+        // ProjectManager expects: projects_base_dir = "./test-projects", project_name = "test"
+        // So files should be at: /test-projects/test/project.json
         let mut fs = LpFsMemory::new();
-        fs.write_file_mut("/test/project.json", br#"{"uid":"test","name":"Test Project"}"#)
-            .unwrap();
         fs.write_file_mut(
-            "/test/src/texture.texture/node.json",
+            "/test-projects/test/project.json",
+            br#"{"uid":"test","name":"Test Project"}"#,
+        )
+        .unwrap();
+        fs.write_file_mut(
+            "/test-projects/test/src/texture.texture/node.json",
             br#"{"$type":"Memory","size":[64,64],"format":"RGB8"}"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/test/src/shader.shader/node.json",
+            "/test-projects/test/src/shader.shader/node.json",
             br#"{"$type":"Single","texture_id":"/src/texture.texture"}"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/test/src/shader.shader/main.glsl",
+            "/test-projects/test/src/shader.shader/main.glsl",
             br#"vec4 main(vec2 fragCoord, vec2 outputSize, float time) { return vec4(1.0); }"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/test/src/output.output/node.json",
+            "/test-projects/test/src/output.output/node.json",
             br#"{"$type":"gpio_strip","chip":"ws2812","gpio_pin":4,"count":128}"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/test/src/fixture.fixture/node.json",
+            "/test-projects/test/src/fixture.fixture/node.json",
             br#"{"$type":"circle-list","output_id":"/src/output.output","texture_id":"/src/texture.texture","channel_order":"rgb","mapping":[]}"#,
         )
         .unwrap();
         Box::new(fs)
     };
-    
+
     let platform = Platform::new(filesystem, platform_output_provider);
-    
+
     // Create ProjectManager and load project
     let mut project_manager = ProjectManager::new(projects_base_dir.clone());
-    
+
     // Wrap in catch_unwind to handle panics from cranelift
+    log::info!("Loading project '{}' from base directory '{}'", project_name, projects_base_dir);
     let load_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         project_manager.load_project(project_name.clone(), platform)
     }));
 
     match load_result {
         Ok(Ok(())) => {
-            // Success
+            log::info!("Project loaded successfully");
         }
         Ok(Err(e)) => {
-            log::error!("Failed to load project: {}", e);
+            log::error!("Failed to load project '{}': {}", project_name, e);
+            eprintln!("Error: Failed to load project: {}", e);
             std::process::exit(1);
         }
-        Err(_) => {
+        Err(panic_info) => {
             log::warn!(
                 "Project loading panicked (possibly due to unimplemented platform features in cranelift)"
             );
             log::warn!("This is a known issue on macOS - shader compilation may not work");
+            eprintln!("Warning: Project loading panicked");
             // Continue anyway - the app will show errors in the debug UI
         }
     }
@@ -607,7 +584,7 @@ impl AppState {
             .get_project_mut(&self.current_project_name)
             .map(|p| p.app_mut())
     }
-    
+
     /// Get immutable access to the current project's LpApp
     fn lp_app(&self) -> Option<&LpApp> {
         self.project_manager
@@ -668,7 +645,7 @@ impl eframe::App for AppState {
             log::error!("No project loaded");
             return;
         };
-        
+
         match tick_result {
             Ok(outgoing) => {
                 // Handle outgoing messages
