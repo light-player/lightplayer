@@ -1,0 +1,65 @@
+[workspace]
+resolver = '2'
+members = [
+    "crates/lp-core",
+    "apps/fw-host",
+]
+
+[workspace.package]
+version = "40.0.0"
+authors = ["The Wasmtime Project Developers"]
+edition = "2024"
+license = "Apache-2.0 WITH LLVM-exception"
+rust-version = "1.90.0"
+
+[workspace.lints.rust]
+unused_extern_crates = 'warn'
+trivial_numeric_casts = 'warn'
+unstable_features = 'warn'
+unused_import_braces = 'warn'
+unused-lifetimes = 'warn'
+unused-macro-rules = 'warn'
+
+[workspace.lints.clippy]
+all = { level = 'allow', priority = -1 }
+clone_on_copy = 'warn'
+map_clone = 'warn'
+uninlined_format_args = 'warn'
+unnecessary_to_owned = 'warn'
+manual_strip = 'warn'
+useless_conversion = 'warn'
+unnecessary_mut_passed = 'warn'
+unnecessary_fallible_conversions = 'warn'
+unnecessary_cast = 'warn'
+allow_attributes_without_reason = 'warn'
+from_over_into = 'warn'
+redundant_field_names = 'warn'
+multiple_bound_locations = 'warn'
+extra_unused_type_parameters = 'warn'
+
+[workspace.dependencies]
+# Cranelift crates - reference parent workspace
+cranelift-codegen = { path = "../cranelift/codegen", version = "0.127.0", default-features = false }
+cranelift-frontend = { path = "../cranelift/frontend", version = "0.127.0", default-features = false }
+cranelift-module = { path = "../cranelift/module", version = "0.127.0", default-features = false }
+cranelift-jit = { path = "../cranelift/jit", version = "0.127.0", default-features = false }
+cranelift-native = { path = "../cranelift/native", version = "0.127.0" }
+cranelift-object = { path = "../cranelift/object", version = "0.127.0" }
+cranelift-reader = { path = "../cranelift/reader", version = "0.127.0" }
+cranelift-control = { path = "../cranelift/control", version = "0.127.0", default-features = false }
+
+# Common dependencies
+target-lexicon = "0.13.0"
+hashbrown = { version = "0.15", default-features = false, features = ["alloc", "default-hasher"] }
+anyhow = { version = "1.0.100", default-features = false }
+regex = "1.9.1"
+glob = "0.3.3"
+object = { version = "0.37.3", default-features = false, features = ['read_core', 'elf'] }
+critical-section = { version = "1.2.0", default-features = false, features = ["restore-state-u32"] }
+serde = { version = "1.0.228", default-features = false, features = ["alloc"] }
+serde_json = { version = "1.0.80", default-features = false, features = ["alloc"] }
+
+[profile.release]
+# Link-time optimization for all release builds - saves ~100-300 KB
+# This applies to all packages in the workspace
+lto = true
