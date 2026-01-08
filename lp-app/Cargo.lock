@@ -2080,6 +2080,7 @@ dependencies = [
  "log",
  "lp-core",
  "lp-core-util",
+ "lp-server",
  "notify",
  "serde_json",
  "tempfile",

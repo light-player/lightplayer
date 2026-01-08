@@ -13,6 +13,7 @@ use lp_core::app::{LpApp, MsgIn, MsgOut, Platform};
 use lp_core::error::Error;
 use lp_core::traits::{LpFs, Transport};
 use lp_core_util::fs::LpFsMemory;
+use lp_server::ProjectManager;
 use output_provider::HostOutputProvider;
 use std::env;
 use std::fs as std_fs;
@@ -369,156 +370,158 @@ fn main() -> eframe::Result<()> {
     // Parse command-line arguments
     let args = parse_args();
 
-    // Handle --create flag
-    if args.create {
-        let project_dir = match args.project_dir.as_ref() {
-            Some(dir) => dir,
-            None => {
-                eprintln!("Error: --create requires a project directory to be specified");
-                std::process::exit(1);
-            }
-        };
-
-        match create_project(project_dir) {
-            Ok(()) => {
-                log::info!("Project created successfully!");
-                // Continue running the app
-            }
-            Err(e) => {
-                eprintln!("Error creating project: {}", e);
-                std::process::exit(1);
-            }
-        }
-    }
-
-    // Determine filesystem and project root
-    let (filesystem, project_root, use_watcher) = if let Some(project_dir) = args.project_dir {
+    // Determine project setup
+    let (projects_base_dir, project_name, use_watcher, project_root) = if let Some(project_dir) = args.project_dir {
         // Use real filesystem with specified project directory
-        let project_root = project_dir.canonicalize().unwrap_or(project_dir);
+        let project_root = project_dir.canonicalize().unwrap_or(project_dir.clone());
+        
+        // Extract project name from directory name
+        let project_name = project_root
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("current")
+            .to_string();
+        
+        // Use parent directory as projects base, or current directory if no parent
+        let projects_base_dir = project_root
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| ".".to_string());
 
-        // Check if project.json exists (fail if it doesn't, unless --create was used)
-        let project_json_path = project_root.join("project.json");
-        if !project_json_path.exists() {
-            eprintln!("Error: Project not found at {:?}", project_root);
-            eprintln!("Use --create to create a new project");
-            std::process::exit(1);
+        // Handle --create flag
+        if args.create {
+            // Create filesystem at server root
+            let server_root = PathBuf::from(&projects_base_dir);
+            let fs: Box<dyn LpFs> = Box::new(HostFilesystem::new(server_root.clone()));
+            
+            // Initialize output provider
+            let output_provider = Arc::new(HostOutputProvider::new());
+            let platform_output_provider: Box<dyn lp_core::traits::OutputProvider> =
+                Box::new(HostOutputProviderWrapper {
+                    inner: Arc::clone(&output_provider),
+                });
+            let platform = Platform::new(fs, platform_output_provider);
+            
+            // Create ProjectManager and create project
+            let mut project_manager = ProjectManager::new(projects_base_dir.clone());
+            match project_manager.create_project(project_name.clone(), platform) {
+                Ok(()) => {
+                    log::info!("Project created successfully!");
+                }
+                Err(e) => {
+                    eprintln!("Error creating project: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        } else {
+            // Check if project.json exists
+            let project_json_path = project_root.join("project.json");
+            if !project_json_path.exists() {
+                eprintln!("Error: Project not found at {:?}", project_root);
+                eprintln!("Use --create to create a new project");
+                std::process::exit(1);
+            }
         }
 
-        let fs: Box<dyn LpFs> = Box::new(HostFilesystem::new(project_root.clone()));
-        (fs, project_root, true)
+        (projects_base_dir, project_name, true, project_root)
     } else {
         // Use in-memory filesystem with sample project (testing mode)
-        let mut fs = LpFsMemory::new();
+        log::info!("Running in testing mode (in-memory filesystem with sample project)");
+        log::info!("Use --project-dir <path> to use a real project directory");
+        
+        // For in-memory, use "." as base and "test" as project name
+        ("./test-projects".to_string(), "test".to_string(), false, PathBuf::from("."))
+    };
 
-        // Create sample project in memory
-        fs.write_file_mut("/project.json", br#"{"uid":"test","name":"Test Project"}"#)
+    // Create filesystem at server root
+    let server_root = if use_watcher {
+        PathBuf::from(&projects_base_dir)
+    } else {
+        // For in-memory mode, create the filesystem with sample project
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/test/project.json", br#"{"uid":"test","name":"Test Project"}"#)
             .unwrap();
         fs.write_file_mut(
-            "/src/texture.texture/node.json",
+            "/test/src/texture.texture/node.json",
             br#"{"$type":"Memory","size":[64,64],"format":"RGB8"}"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/src/shader.shader/node.json",
+            "/test/src/shader.shader/node.json",
             br#"{"$type":"Single","texture_id":"/src/texture.texture"}"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/src/shader.shader/main.glsl",
-            br#"// HSV to RGB conversion function
-vec3 hsv_to_rgb(float h, float s, float v) {
-    // h in [0, 1], s in [0, 1], v in [0, 1]
-    float c = v * s;
-    float x = c * (1.0 - abs(mod(h * 6.0, 2.0) - 1.0));
-    float m = v - c;
-    
-    vec3 rgb;
-    if (h < 1.0/6.0) {
-        rgb = vec3(v, m + x, m);
-    } else if (h < 2.0/6.0) {
-        rgb = vec3(m + x, v, m);
-    } else if (h < 3.0/6.0) {
-        rgb = vec3(m, v, m + x);
-    } else if (h < 4.0/6.0) {
-        rgb = vec3(m, m + x, v);
-    } else if (h < 5.0/6.0) {
-        rgb = vec3(m + x, m, v);
-    } else {
-        rgb = vec3(v, m, m + x);
-    }
-    
-    return rgb;
-}
-
-vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
-    // Center of texture
-    vec2 center = outputSize * 0.5;
-    
-    // Direction from center to fragment
-    vec2 dir = fragCoord - center;
-    
-    // Calculate angle (atan2 gives angle in [-PI, PI])
-    float angle = atan(dir.y, dir.x);
-    
-    // Rotate angle with time (full rotation every 2 seconds)
-    angle = (angle + time * 3.14159);
-    
-    // Normalize angle to [0, 1] for hue
-    // atan returns [-PI, PI], map to [0, 1] by: (angle + PI) / (2 * PI)
-    // Wrap hue to [0, 1] using mod to handle large time values
-    float hue = mod((angle + 3.14159) / (2.0 * 3.14159), 1.0);
-    
-    // Distance from center (normalized to [0, 1])
-    float maxDist = length(outputSize * 0.5);
-    float dist = length(dir) / maxDist;
-    
-    // Clamp distance to prevent issues
-    dist = min(dist, 1.0);
-    
-    // Value (brightness): highest at center, darker at edges
-    float value = 1.0 - dist * 0.5;
-    
-    // Convert HSV to RGB
-    vec3 rgb = hsv_to_rgb(hue, 1.0, value);
-    
-    // Clamp to [0, 1] and return
-    return vec4(max(vec3(0.0), min(vec3(1.0), rgb)), 1.0);
-}"#,
+            "/test/src/shader.shader/main.glsl",
+            br#"vec4 main(vec2 fragCoord, vec2 outputSize, float time) { return vec4(1.0); }"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/src/output.output/node.json",
+            "/test/src/output.output/node.json",
             br#"{"$type":"gpio_strip","chip":"ws2812","gpio_pin":4,"count":128}"#,
         )
         .unwrap();
         fs.write_file_mut(
-            "/src/fixture.fixture/node.json",
-            br#"{"$type":"circle-list","output_id":"/src/output.output","texture_id":"/src/texture.texture","channel_order":"rgb","mapping":[{"channel":0,"center":[0.03125,0.0625],"radius":0.05},{"channel":1,"center":[0.09375,0.0625],"radius":0.05},{"channel":2,"center":[0.15625,0.0625],"radius":0.05},{"channel":3,"center":[0.21875,0.0625],"radius":0.05},{"channel":4,"center":[0.28125,0.0625],"radius":0.05},{"channel":5,"center":[0.34375,0.0625],"radius":0.05},{"channel":6,"center":[0.40625,0.0625],"radius":0.05},{"channel":7,"center":[0.46875,0.0625],"radius":0.05},{"channel":8,"center":[0.53125,0.0625],"radius":0.05},{"channel":9,"center":[0.59375,0.0625],"radius":0.05},{"channel":10,"center":[0.65625,0.0625],"radius":0.05},{"channel":11,"center":[0.71875,0.0625],"radius":0.05}]}"#,
+            "/test/src/fixture.fixture/node.json",
+            br#"{"$type":"circle-list","output_id":"/src/output.output","texture_id":"/src/texture.texture","channel_order":"rgb","mapping":[]}"#,
         )
         .unwrap();
-
-        log::info!("Running in testing mode (in-memory filesystem with sample project)");
-        log::info!("Use --project-dir <path> to use a real project directory");
-
-        let fs_box: Box<dyn LpFs> = Box::new(fs);
-        (fs_box, PathBuf::from("."), false)
+        
+        // Return a dummy path since we're using in-memory
+        PathBuf::from(".")
     };
 
-    // Initialize output provider (store separately for UI access)
+    // Initialize output provider
     let output_provider = Arc::new(HostOutputProvider::new());
-    // Create Platform (wrap in a boxed trait object)
     let platform_output_provider: Box<dyn lp_core::traits::OutputProvider> =
         Box::new(HostOutputProviderWrapper {
             inner: Arc::clone(&output_provider),
         });
+    
+    // Create filesystem
+    let filesystem: Box<dyn LpFs> = if use_watcher {
+        Box::new(HostFilesystem::new(server_root))
+    } else {
+        // For in-memory mode, we'll create it in the ProjectManager
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/test/project.json", br#"{"uid":"test","name":"Test Project"}"#)
+            .unwrap();
+        fs.write_file_mut(
+            "/test/src/texture.texture/node.json",
+            br#"{"$type":"Memory","size":[64,64],"format":"RGB8"}"#,
+        )
+        .unwrap();
+        fs.write_file_mut(
+            "/test/src/shader.shader/node.json",
+            br#"{"$type":"Single","texture_id":"/src/texture.texture"}"#,
+        )
+        .unwrap();
+        fs.write_file_mut(
+            "/test/src/shader.shader/main.glsl",
+            br#"vec4 main(vec2 fragCoord, vec2 outputSize, float time) { return vec4(1.0); }"#,
+        )
+        .unwrap();
+        fs.write_file_mut(
+            "/test/src/output.output/node.json",
+            br#"{"$type":"gpio_strip","chip":"ws2812","gpio_pin":4,"count":128}"#,
+        )
+        .unwrap();
+        fs.write_file_mut(
+            "/test/src/fixture.fixture/node.json",
+            br#"{"$type":"circle-list","output_id":"/src/output.output","texture_id":"/src/texture.texture","channel_order":"rgb","mapping":[]}"#,
+        )
+        .unwrap();
+        Box::new(fs)
+    };
+    
     let platform = Platform::new(filesystem, platform_output_provider);
-    // Create LpApp
-    let mut lp_app = LpApp::new(platform);
-
-    // Load project (will create default if not found)
-    // Wrap in catch_unwind to handle panics from cranelift (e.g., unimplemented features on macOS)
+    
+    // Create ProjectManager and load project
+    let mut project_manager = ProjectManager::new(projects_base_dir.clone());
+    
+    // Wrap in catch_unwind to handle panics from cranelift
     let load_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        lp_app.load_project("/project.json")
+        project_manager.load_project(project_name.clone(), platform)
     }));
 
     match load_result {
@@ -527,6 +530,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         }
         Ok(Err(e)) => {
             log::error!("Failed to load project: {}", e);
+            std::process::exit(1);
         }
         Err(_) => {
             log::warn!(
@@ -570,7 +574,8 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         options,
         Box::new(move |_cc| {
             Ok(Box::new(AppState {
-                lp_app,
+                project_manager,
+                current_project_name: project_name,
                 transport,
                 output_provider,
                 file_watcher,
@@ -584,7 +589,8 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 
 struct AppState {
-    lp_app: LpApp,
+    project_manager: ProjectManager,
+    current_project_name: String,
     transport: Arc<Mutex<dyn Transport>>,
     output_provider: Arc<HostOutputProvider>,
     file_watcher: Option<FileWatcher>,
@@ -592,6 +598,22 @@ struct AppState {
     last_frame_time: Option<Instant>,
     frame_count: u64,
     fps_history: Vec<f32>, // Store last N frame times for average FPS
+}
+
+impl AppState {
+    /// Get mutable access to the current project's LpApp
+    fn lp_app_mut(&mut self) -> Option<&mut LpApp> {
+        self.project_manager
+            .get_project_mut(&self.current_project_name)
+            .map(|p| p.app_mut())
+    }
+    
+    /// Get immutable access to the current project's LpApp
+    fn lp_app(&self) -> Option<&LpApp> {
+        self.project_manager
+            .get_project(&self.current_project_name)
+            .map(|p| p.app())
+    }
 }
 
 impl eframe::App for AppState {
@@ -640,10 +662,14 @@ impl eframe::App for AppState {
         }
 
         // Update runtime with tick() - processes messages and updates runtime
-        match self
-            .lp_app
-            .tick(delta_ms, &incoming_messages, &file_changes)
-        {
+        let tick_result = if let Some(lp_app) = self.lp_app_mut() {
+            lp_app.tick(delta_ms, &incoming_messages, &file_changes)
+        } else {
+            log::error!("No project loaded");
+            return;
+        };
+        
+        match tick_result {
             Ok(outgoing) => {
                 // Handle outgoing messages
                 if let Err(e) = handle_outgoing_messages(outgoing, &self.transport) {
@@ -670,26 +696,30 @@ impl eframe::App for AppState {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false; 2])
                     .show(ui, |ui| {
-                        if let Some(project) = self.lp_app.config() {
-                            // Show project info
-                            ui.group(|ui| {
-                                ui.label(format!("Project: {}", project.name));
-                                ui.label(format!("UID: {}", project.uid));
-                            });
-                            ui.separator();
+                        if let Some(lp_app) = self.lp_app() {
+                            if let Some(project) = lp_app.config() {
+                                // Show project info
+                                ui.group(|ui| {
+                                    ui.label(format!("Project: {}", project.name));
+                                    ui.label(format!("UID: {}", project.uid));
+                                });
+                                ui.separator();
 
-                            // Show textures
-                            render_textures_panel(ui, project, self.lp_app.runtime());
+                                // Show textures
+                                render_textures_panel(ui, project, lp_app.runtime());
 
-                            ui.separator();
+                                ui.separator();
 
-                            // Show shaders
-                            render_shaders_panel(ui, project, self.lp_app.runtime());
+                                // Show shaders
+                                render_shaders_panel(ui, project, lp_app.runtime());
 
-                            ui.separator();
+                                ui.separator();
 
-                            // Show fixtures
-                            render_fixtures_panel(ui, project, self.lp_app.runtime());
+                                // Show fixtures
+                                render_fixtures_panel(ui, project, lp_app.runtime());
+                            } else {
+                                ui.label("No project config loaded");
+                            }
                         } else {
                             ui.label("No project loaded");
                         }
@@ -715,22 +745,30 @@ impl eframe::App for AppState {
                 ui.label(format!("Current FPS: {:.1}", current_fps));
                 ui.label(format!("Average FPS: {:.1}", avg_fps));
 
-                if let Some(runtime) = self.lp_app.runtime() {
-                    let frame_time = runtime.frame_time();
-                    ui.label(format!(
-                        "Total Time: {:.2}s",
-                        frame_time.total_ms as f32 / 1000.0
-                    ));
-                    ui.label(format!("Delta: {}ms", frame_time.delta_ms));
+                if let Some(lp_app) = self.lp_app() {
+                    if let Some(runtime) = lp_app.runtime() {
+                        let frame_time = runtime.frame_time();
+                        ui.label(format!(
+                            "Total Time: {:.2}s",
+                            frame_time.total_ms as f32 / 1000.0
+                        ));
+                        ui.label(format!("Delta: {}ms", frame_time.delta_ms));
+                    } else {
+                        ui.label("Runtime not initialized");
+                    }
                 } else {
-                    ui.label("Runtime not initialized");
+                    ui.label("No project loaded");
                 }
             });
             ui.separator();
 
             // Show project info
-            if let Some(project) = self.lp_app.config() {
-                ui.label(format!("Project: {} ({})", project.name, project.uid));
+            if let Some(lp_app) = self.lp_app() {
+                if let Some(project) = lp_app.config() {
+                    ui.label(format!("Project: {} ({})", project.name, project.uid));
+                } else {
+                    ui.label("No project config loaded");
+                }
             } else {
                 ui.label("No project loaded");
             }
