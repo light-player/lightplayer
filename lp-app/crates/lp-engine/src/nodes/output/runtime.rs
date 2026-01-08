@@ -1,7 +1,7 @@
 //! Output node runtime
 
 use crate::error::Error;
-use crate::nodes::output::config::OutputNode;
+use lp_shared::nodes::output::config::OutputNode;
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::OutputRenderContext;
 use crate::runtime::lifecycle::NodeLifecycle;
@@ -167,7 +167,7 @@ mod tests {
             gpio_pin: 4,
             count: 128,
         };
-        let project_config = crate::project::config::ProjectConfig {
+        let project_config = lp_shared::project::config::ProjectConfig {
             uid: "test".to_string(),
             name: "Test".to_string(),
         };
@@ -198,7 +198,7 @@ mod tests {
             gpio_pin: 4,
             count: 128,
         };
-        let project_config = crate::project::config::ProjectConfig {
+        let project_config = lp_shared::project::config::ProjectConfig {
             uid: "test".to_string(),
             name: "Test".to_string(),
         };
@@ -226,7 +226,7 @@ mod tests {
             gpio_pin: 4,
             count: 10,
         };
-        let project_config = crate::project::config::ProjectConfig {
+        let project_config = lp_shared::project::config::ProjectConfig {
             uid: "test".to_string(),
             name: "Test".to_string(),
         };

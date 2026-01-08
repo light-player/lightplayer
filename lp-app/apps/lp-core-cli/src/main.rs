@@ -5,21 +5,21 @@ mod output_provider;
 mod transport;
 mod watcher;
 
+use std::env;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
+
 use debug_ui::{render_fixtures_panel, render_shaders_panel, render_textures_panel};
 use eframe::egui;
 use fs::HostFilesystem;
 use led_output::render_leds;
-use lp_engine::app::{LpApp, MsgIn, MsgOut, Platform};
+use lp_engine::app::{EngineEnv, LpEngine, MsgIn, MsgOut};
 use lp_engine::error::Error;
 use lp_engine::traits::{LpFs, Transport};
-use lp_shared::fs::LpFsMemory;
 use lp_server::ProjectManager;
+use lp_shared::fs::LpFsMemory;
 use output_provider::HostOutputProvider;
-use std::env;
-use std::fs as std_fs;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
 use transport::HostTransport;
 use watcher::FileWatcher;
 
@@ -64,8 +64,8 @@ struct HostOutputProviderWrapper {
 impl lp_engine::traits::OutputProvider for HostOutputProviderWrapper {
     fn create_output(
         &self,
-        config: &lp_engine::nodes::output::config::OutputNode,
-        output_id: Option<lp_engine::nodes::id::OutputId>,
+        config: &lp_engine::nodes::OutputNode,
+        output_id: Option<lp_engine::nodes::OutputId>,
     ) -> Result<std::boxed::Box<dyn lp_engine::traits::LedOutput>, lp_engine::error::Error> {
         self.inner.create_output(config, output_id)
     }
@@ -207,14 +207,14 @@ fn parse_args() -> CliArgs {
 fn create_test_project_files(project_dir: &Path) -> Result<(), Error> {
     // Create src/ directory
     let src_dir = project_dir.join("src");
-    std_fs::create_dir_all(&src_dir)
+    std::fs::create_dir_all(&src_dir)
         .map_err(|e| Error::Filesystem(format!("Failed to create src directory: {}", e)))?;
 
     // Create texture node
     let texture_dir = src_dir.join("texture.texture");
-    std_fs::create_dir_all(&texture_dir)
+    std::fs::create_dir_all(&texture_dir)
         .map_err(|e| Error::Filesystem(format!("Failed to create texture directory: {}", e)))?;
-    std_fs::write(
+    std::fs::write(
         texture_dir.join("node.json"),
         br#"{"$type":"Memory","size":[64,64],"format":"RGB8"}"#,
     )
@@ -222,14 +222,14 @@ fn create_test_project_files(project_dir: &Path) -> Result<(), Error> {
 
     // Create shader node
     let shader_dir = src_dir.join("shader.shader");
-    std_fs::create_dir_all(&shader_dir)
+    std::fs::create_dir_all(&shader_dir)
         .map_err(|e| Error::Filesystem(format!("Failed to create shader directory: {}", e)))?;
-    std_fs::write(
+    std::fs::write(
         shader_dir.join("node.json"),
         br#"{"$type":"Single","texture_id":"/src/texture.texture"}"#,
     )
     .map_err(|e| Error::Filesystem(format!("Failed to write shader node.json: {}", e)))?;
-    std_fs::write(
+    std::fs::write(
         shader_dir.join("main.glsl"),
         br#"// HSV to RGB conversion function
 vec3 hsv_to_rgb(float h, float s, float v) {
@@ -295,9 +295,9 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 
     // Create output node
     let output_dir = src_dir.join("output.output");
-    std_fs::create_dir_all(&output_dir)
+    std::fs::create_dir_all(&output_dir)
         .map_err(|e| Error::Filesystem(format!("Failed to create output directory: {}", e)))?;
-    std_fs::write(
+    std::fs::write(
         output_dir.join("node.json"),
         br#"{"$type":"gpio_strip","chip":"ws2812","gpio_pin":4,"count":128}"#,
     )
@@ -305,9 +305,9 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 
     // Create fixture node
     let fixture_dir = src_dir.join("fixture.fixture");
-    std_fs::create_dir_all(&fixture_dir)
+    std::fs::create_dir_all(&fixture_dir)
         .map_err(|e| Error::Filesystem(format!("Failed to create fixture directory: {}", e)))?;
-    std_fs::write(
+    std::fs::write(
         fixture_dir.join("node.json"),
         br#"{"$type":"circle-list","output_id":"/src/output.output","texture_id":"/src/texture.texture","channel_order":"rgb","mapping":[{"channel":0,"center":[0.03125,0.0625],"radius":0.05},{"channel":1,"center":[0.09375,0.0625],"radius":0.05},{"channel":2,"center":[0.15625,0.0625],"radius":0.05},{"channel":3,"center":[0.21875,0.0625],"radius":0.05},{"channel":4,"center":[0.28125,0.0625],"radius":0.05},{"channel":5,"center":[0.34375,0.0625],"radius":0.05},{"channel":6,"center":[0.40625,0.0625],"radius":0.05},{"channel":7,"center":[0.46875,0.0625],"radius":0.05},{"channel":8,"center":[0.53125,0.0625],"radius":0.05},{"channel":9,"center":[0.59375,0.0625],"radius":0.05},{"channel":10,"center":[0.65625,0.0625],"radius":0.05},{"channel":11,"center":[0.71875,0.0625],"radius":0.05}]}"#,
     )
@@ -329,7 +329,7 @@ fn create_project(project_dir: &Path) -> Result<(), Error> {
     }
 
     // Create project directory if it doesn't exist
-    std_fs::create_dir_all(project_dir).map_err(|e| {
+    std::fs::create_dir_all(project_dir).map_err(|e| {
         Error::Filesystem(format!(
             "Failed to create project directory {:?}: {}",
             project_dir, e
@@ -337,13 +337,13 @@ fn create_project(project_dir: &Path) -> Result<(), Error> {
     })?;
 
     // Create project.json with default config
-    let default_config = lp_engine::project::config::ProjectConfig {
+    let default_config = lp_shared::project::config::ProjectConfig {
         uid: "default".to_string(),
         name: "Default Project".to_string(),
     };
     let json = serde_json::to_string_pretty(&default_config)
         .map_err(|e| Error::Serialization(format!("Failed to serialize project config: {}", e)))?;
-    std_fs::write(&project_json_path, json.as_bytes())
+    std::fs::write(&project_json_path, json.as_bytes())
         .map_err(|e| Error::Filesystem(format!("Failed to write project.json: {}", e)))?;
 
     // Create test project files (texture, shader, output, fixture)
@@ -401,11 +401,11 @@ fn main() -> eframe::Result<()> {
                     Box::new(HostOutputProviderWrapper {
                         inner: Arc::clone(&output_provider),
                     });
-                let platform = Platform::new(fs, platform_output_provider);
+                let engine_env = EngineEnv::new(fs, platform_output_provider);
 
                 // Create ProjectManager and create project
                 let mut project_manager = ProjectManager::new(projects_base_dir.clone());
-                match project_manager.create_project(project_name.clone(), platform) {
+                match project_manager.create_project(project_name.clone(), engine_env) {
                     Ok(()) => {
                         log::info!("Project created successfully!");
                     }
@@ -545,7 +545,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         Box::new(fs)
     };
 
-    let platform = Platform::new(filesystem, platform_output_provider);
+    let engine_env = EngineEnv::new(filesystem, platform_output_provider);
 
     // Create ProjectManager and load project
     let mut project_manager = ProjectManager::new(projects_base_dir.clone());
@@ -557,7 +557,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         projects_base_dir
     );
     let load_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        project_manager.load_project(project_name.clone(), platform)
+        project_manager.load_project(project_name.clone(), engine_env)
     }));
 
     match load_result {
@@ -569,7 +569,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
             eprintln!("Error: Failed to load project: {}", e);
             std::process::exit(1);
         }
-        Err(panic_info) => {
+        Err(_info) => {
             log::warn!(
                 "Project loading panicked (possibly due to unimplemented platform features in cranelift)"
             );
@@ -639,18 +639,18 @@ struct AppState {
 }
 
 impl AppState {
-    /// Get mutable access to the current project's LpApp
-    fn lp_app_mut(&mut self) -> Option<&mut LpApp> {
+    /// Get mutable access to the current project's LpEngine
+    fn lp_engine_mut(&mut self) -> Option<&mut LpEngine> {
         self.project_manager
             .get_project_mut(&self.current_project_name)
-            .map(|p| p.app_mut())
+            .map(|p| p.engine_mut())
     }
 
-    /// Get immutable access to the current project's LpApp
-    fn lp_app(&self) -> Option<&LpApp> {
+    /// Get immutable access to the current project's LpEngine
+    fn lp_engine(&self) -> Option<&LpEngine> {
         self.project_manager
             .get_project(&self.current_project_name)
-            .map(|p| p.app())
+            .map(|p| p.engine())
     }
 }
 
@@ -700,8 +700,8 @@ impl eframe::App for AppState {
         }
 
         // Update runtime with tick() - processes messages and updates runtime
-        let tick_result = if let Some(lp_app) = self.lp_app_mut() {
-            lp_app.tick(delta_ms, &incoming_messages, &file_changes)
+        let tick_result = if let Some(lp_engine) = self.lp_engine_mut() {
+            lp_engine.tick(delta_ms, &incoming_messages, &file_changes)
         } else {
             log::error!("No project loaded");
             return;
@@ -734,8 +734,8 @@ impl eframe::App for AppState {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false; 2])
                     .show(ui, |ui| {
-                        if let Some(lp_app) = self.lp_app() {
-                            if let Some(project) = lp_app.config() {
+                        if let Some(lp_engine) = self.lp_engine() {
+                            if let Some(project) = lp_engine.config() {
                                 // Show project info
                                 ui.group(|ui| {
                                     ui.label(format!("Project: {}", project.name));
@@ -744,17 +744,17 @@ impl eframe::App for AppState {
                                 ui.separator();
 
                                 // Show textures
-                                render_textures_panel(ui, project, lp_app.runtime());
+                                render_textures_panel(ui, project, lp_engine.runtime());
 
                                 ui.separator();
 
                                 // Show shaders
-                                render_shaders_panel(ui, project, lp_app.runtime());
+                                render_shaders_panel(ui, project, lp_engine.runtime());
 
                                 ui.separator();
 
                                 // Show fixtures
-                                render_fixtures_panel(ui, project, lp_app.runtime());
+                                render_fixtures_panel(ui, project, lp_engine.runtime());
                             } else {
                                 ui.label("No project config loaded");
                             }
@@ -783,8 +783,8 @@ impl eframe::App for AppState {
                 ui.label(format!("Current FPS: {:.1}", current_fps));
                 ui.label(format!("Average FPS: {:.1}", avg_fps));
 
-                if let Some(lp_app) = self.lp_app() {
-                    if let Some(runtime) = lp_app.runtime() {
+                if let Some(lp_engine) = self.lp_engine() {
+                    if let Some(runtime) = lp_engine.runtime() {
                         let frame_time = runtime.frame_time();
                         ui.label(format!(
                             "Total Time: {:.2}s",
@@ -801,8 +801,8 @@ impl eframe::App for AppState {
             ui.separator();
 
             // Show project info
-            if let Some(lp_app) = self.lp_app() {
-                if let Some(project) = lp_app.config() {
+            if let Some(lp_engine) = self.lp_engine() {
+                if let Some(project) = lp_engine.config() {
                     ui.label(format!("Project: {} ({})", project.name, project.uid));
                 } else {
                     ui.label("No project config loaded");

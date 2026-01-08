@@ -1,6 +1,6 @@
 //! Filesystem watcher for detecting file changes
 
-use lp_engine::app::{ChangeType, FileChange};
+use lp_engine::app::{ChangeType, FsChange};
 use lp_engine::error::Error;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
@@ -47,8 +47,8 @@ impl FileWatcher {
 
     /// Get all file changes since the last call
     ///
-    /// Returns a vector of FileChange events with paths relative to project root.
-    pub fn get_changes(&self) -> Vec<FileChange> {
+    /// Returns a vector of FsChange events with paths relative to project root.
+    pub fn get_changes(&self) -> Vec<FsChange> {
         let receiver = self.receiver.lock().unwrap();
         let mut changes = Vec::new();
 
@@ -70,10 +70,10 @@ impl FileWatcher {
         changes
     }
 
-    /// Convert a notify Event to FileChange format
+    /// Convert a notify Event to FsChange format
     ///
     /// Returns None if the event should be ignored (e.g., temporary files).
-    fn convert_event(&self, event: &Event) -> Option<Vec<FileChange>> {
+    fn convert_event(&self, event: &Event) -> Option<Vec<FsChange>> {
         let mut changes = Vec::new();
 
         // Determine change type from event kind
@@ -97,7 +97,7 @@ impl FileWatcher {
             if let Some(relative_path) = self.path_to_relative(path) {
                 // Filter out temporary files and other irrelevant files
                 if self.should_include_path(&relative_path) {
-                    changes.push(FileChange {
+                    changes.push(FsChange {
                         path: relative_path,
                         change_type,
                     });

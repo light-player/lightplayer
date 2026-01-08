@@ -2,7 +2,7 @@
 
 use crate::error::Error;
 use crate::nodes::fixture::config::{FixtureNode, Mapping};
-use crate::nodes::id::{OutputId, TextureId};
+use lp_shared::nodes::id::{OutputId, TextureId};
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::FixtureRenderContext;
 use crate::runtime::lifecycle::NodeLifecycle;

@@ -4,8 +4,9 @@ use egui::{Color32, ColorImage, Image, Painter, TextureHandle, Ui};
 use lp_engine::nodes::fixture::{FixtureNode, Mapping};
 use lp_engine::nodes::shader::{ShaderNode, ShaderNodeRuntime};
 use lp_engine::nodes::texture::{TextureNode, formats};
-use lp_engine::project::config::ProjectConfig;
+use lp_engine::nodes::{FixtureId, ShaderId, TextureId};
 use lp_engine::project::runtime::ProjectRuntime;
+use lp_shared::project::config::ProjectConfig;
 
 /// Generate placeholder texture data for visualization
 /// In the future, this will use actual shader-rendered data
@@ -247,7 +248,7 @@ pub fn render_textures_panel(
             ui.label("No textures loaded");
         } else {
             for texture_id in texture_ids {
-                let texture_id_typed = lp_engine::nodes::id::TextureId(texture_id.clone());
+                let texture_id_typed = TextureId(texture_id.clone());
                 if let Some(texture_rt) = rt.get_texture(texture_id_typed) {
                     // Get config and texture data from runtime
                     let config = texture_rt.config();
@@ -365,7 +366,7 @@ pub fn render_fixtures_panel(
             ui.label("No fixtures loaded");
         } else {
             for fixture_id in fixture_ids {
-                let fixture_id_typed = lp_engine::nodes::id::FixtureId(fixture_id.clone());
+                let fixture_id_typed = FixtureId(fixture_id.clone());
                 if let Some(fixture_rt) = rt.get_fixture(fixture_id_typed) {
                     // Get config and runtime
                     let config = fixture_rt.config();
@@ -445,7 +446,7 @@ pub fn render_shaders_panel(
             ui.label("No shaders loaded");
         } else {
             for shader_id in shader_ids {
-                let shader_id_typed = lp_engine::nodes::id::ShaderId(shader_id.clone());
+                let shader_id_typed = ShaderId(shader_id.clone());
                 if let Some(shader_rt) = rt.get_shader(shader_id_typed) {
                     // Get config and runtime
                     let config = shader_rt.config();

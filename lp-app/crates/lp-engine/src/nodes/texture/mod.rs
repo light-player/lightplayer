@@ -1,7 +1,6 @@
 //! Texture node definitions
 
-pub mod config;
 pub mod runtime;
 
-pub use config::{TextureNode, formats};
+pub use lp_shared::nodes::texture::config::{formats, TextureNode};
 pub use runtime::TextureNodeRuntime;

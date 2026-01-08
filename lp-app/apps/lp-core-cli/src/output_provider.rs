@@ -2,8 +2,7 @@
 
 use hashbrown::HashMap;
 use lp_engine::error::Error;
-use lp_engine::nodes::id::OutputId;
-use lp_engine::nodes::output::config::OutputNode;
+use lp_engine::nodes::{OutputId, OutputNode};
 use lp_engine::traits::{LedOutput, OutputProvider};
 use std::sync::{Arc, Mutex};
 

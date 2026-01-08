@@ -7,5 +7,7 @@ extern crate std;
 pub mod error;
 pub mod fs;
 pub mod log;
+pub mod nodes;
+pub mod project;
 
 pub use error::FsError;

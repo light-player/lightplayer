@@ -1,8 +1,8 @@
 //! Shader node runtime
 
 use crate::error::Error;
-use crate::nodes::id::TextureId;
-use crate::nodes::shader::config::ShaderNode;
+use lp_shared::nodes::id::TextureId;
+use lp_shared::nodes::shader::config::ShaderNode;
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::ShaderRenderContext;
 use crate::runtime::lifecycle::NodeLifecycle;

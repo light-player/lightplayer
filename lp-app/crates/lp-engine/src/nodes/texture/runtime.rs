@@ -1,7 +1,7 @@
 //! Texture node runtime
 
 use crate::error::Error;
-use crate::nodes::texture::config::TextureNode;
+use lp_shared::nodes::texture::config::TextureNode;
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::{InitContext, TextureRenderContext};
 use crate::runtime::lifecycle::NodeLifecycle;
@@ -108,7 +108,7 @@ mod tests {
             size: [64, 64],
             format: formats::RGB8.to_string(),
         };
-        let project_config = crate::project::config::ProjectConfig {
+        let project_config = lp_shared::project::config::ProjectConfig {
             uid: "test".to_string(),
             name: "Test".to_string(),
         };
@@ -132,7 +132,7 @@ mod tests {
             size: [64, 64],
             format: "INVALID".to_string(),
         };
-        let project_config = crate::project::config::ProjectConfig {
+        let project_config = lp_shared::project::config::ProjectConfig {
             uid: "test".to_string(),
             name: "Test".to_string(),
         };
@@ -153,7 +153,7 @@ mod tests {
             size: [10, 10],
             format: formats::RGB8.to_string(),
         };
-        let project_config = crate::project::config::ProjectConfig {
+        let project_config = lp_shared::project::config::ProjectConfig {
             uid: "test".to_string(),
             name: "Test".to_string(),
         };

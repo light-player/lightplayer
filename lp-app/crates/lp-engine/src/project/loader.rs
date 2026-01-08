@@ -2,7 +2,7 @@
 
 use crate::error::Error;
 use crate::nodes::{FixtureNode, OutputNode, ShaderNode, TextureNode};
-use crate::project::config::ProjectConfig;
+use lp_shared::project::config::ProjectConfig;
 use alloc::{collections::BTreeMap, format, string::String, string::ToString, vec::Vec};
 use lp_shared::fs::LpFs;
 

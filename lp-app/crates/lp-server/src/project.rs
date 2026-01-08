@@ -4,33 +4,33 @@ extern crate alloc;
 
 use crate::error::ServerError;
 use alloc::{format, string::String};
-use lp_engine::app::{LpApp, Platform};
+use lp_engine::app::{EngineEnv, LpEngine};
 use lp_engine::error::Error as CoreError;
 
-/// A project instance wrapping an LpApp
+/// A project instance wrapping an LpEngine
 pub struct Project {
     /// Project name/identifier
     name: String,
     /// Project filesystem path
     path: String,
-    /// The underlying LpApp instance
-    app: LpApp,
+    /// The underlying LpEngine instance
+    engine: LpEngine,
 }
 
 impl Project {
     /// Create a new project instance
     ///
     /// The project must already exist on the filesystem.
-    pub fn new(name: String, path: String, platform: Platform) -> Result<Self, ServerError> {
-        let mut app = LpApp::new(platform);
+    pub fn new(name: String, path: String, engine_env: EngineEnv) -> Result<Self, ServerError> {
+        let mut engine = LpEngine::new(engine_env);
 
         // Load the project
-        app.load_project(&path).map_err(|e| match e {
+        engine.load_project().map_err(|e| match e {
             CoreError::Filesystem(msg) => ServerError::Filesystem(msg),
             e => ServerError::Core(format!("{}", e)),
         })?;
 
-        Ok(Self { name, path, app })
+        Ok(Self { name, path, engine })
     }
 
     /// Get the project name
@@ -43,19 +43,19 @@ impl Project {
         &self.path
     }
 
-    /// Get mutable access to the underlying LpApp
-    pub fn app_mut(&mut self) -> &mut LpApp {
-        &mut self.app
+    /// Get mutable access to the underlying LpEngine
+    pub fn engine_mut(&mut self) -> &mut LpEngine {
+        &mut self.engine
     }
 
-    /// Get immutable access to the underlying LpApp
-    pub fn app(&self) -> &LpApp {
-        &self.app
+    /// Get immutable access to the underlying LpEngine
+    pub fn engine(&self) -> &LpEngine {
+        &self.engine
     }
 
     /// Reload the project from the filesystem
     pub fn reload(&mut self) -> Result<(), ServerError> {
-        self.app.load_project(&self.path).map_err(|e| match e {
+        self.engine.load_project().map_err(|e| match e {
             CoreError::Filesystem(msg) => ServerError::Filesystem(msg),
             e => ServerError::Core(format!("{}", e)),
         })

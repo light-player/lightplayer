@@ -2129,6 +2129,8 @@ version = "40.0.0"
 dependencies = [
  "hashbrown 0.15.5",
  "log",
+ "serde",
+ "serde_json",
  "tempfile",
 ]
 

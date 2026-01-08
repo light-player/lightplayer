@@ -8,12 +8,12 @@ use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::nodes::id::{FixtureId, OutputId, ShaderId, TextureId};
+use lp_shared::nodes::id::{FixtureId, OutputId, ShaderId, TextureId};
 use crate::nodes::{
     FixtureNode, FixtureNodeRuntime, OutputNode, OutputNodeRuntime, ShaderNode, ShaderNodeRuntime,
     TextureNode, TextureNodeRuntime,
 };
-use crate::project::config::ProjectConfig;
+use lp_shared::project::config::ProjectConfig;
 use crate::runtime::contexts::{
     FixtureRenderContext, InitContext, OutputRenderContext, ShaderRenderContext,
 };

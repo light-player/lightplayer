@@ -1,11 +1,11 @@
 //! Runtime contexts for node access
 
 use crate::nodes::fixture::FixtureNode;
-use crate::nodes::id::{FixtureId, OutputId, ShaderId, TextureId};
+use lp_shared::nodes::id::{FixtureId, OutputId, ShaderId, TextureId};
 use crate::nodes::output::OutputNode;
 use crate::nodes::shader::ShaderNode;
 use crate::nodes::texture::TextureNode;
-use crate::project::config::ProjectConfig;
+use lp_shared::project::config::ProjectConfig;
 use crate::runtime::frame_time::FrameTime;
 use crate::util::Texture;
 use alloc::{collections::BTreeMap, string::String};
@@ -166,7 +166,7 @@ impl TextureRenderContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::config::ProjectConfig;
+    use lp_shared::project::config::ProjectConfig;
     use alloc::{collections::BTreeMap, string::ToString};
 
     #[test]

@@ -11,9 +11,9 @@ use alloc::{
     vec::Vec,
 };
 use hashbrown::HashMap;
-use lp_engine::app::Platform;
-use lp_engine::project::config::ProjectConfig;
+use lp_engine::app::EngineEnv;
 use lp_engine::traits::LpFs;
+use lp_shared::project::config::ProjectConfig;
 
 /// Manages multiple project instances
 pub struct ProjectManager {
@@ -39,7 +39,7 @@ impl ProjectManager {
     ///
     /// Creates the project directory structure using the provided filesystem.
     /// The caller must provide a Platform with the appropriate filesystem (at server root) and OutputProvider.
-    pub fn create_project(&mut self, name: String, platform: Platform) -> Result<(), ServerError> {
+    pub fn create_project(&mut self, name: String, platform: EngineEnv) -> Result<(), ServerError> {
         // Check if project already exists
         if self.projects.contains_key(&name) {
             return Err(ServerError::ProjectExists(name));
@@ -85,7 +85,7 @@ impl ProjectManager {
     /// Creates a Project instance and loads it into memory.
     /// The caller must provide a Platform with a filesystem at the server root and an OutputProvider.
     /// This method will chroot the filesystem to the project directory.
-    pub fn load_project(&mut self, name: String, platform: Platform) -> Result<(), ServerError> {
+    pub fn load_project(&mut self, name: String, platform: EngineEnv) -> Result<(), ServerError> {
         // Check if already loaded
         if self.projects.contains_key(&name) {
             return Ok(()); // Already loaded
@@ -108,7 +108,7 @@ impl ProjectManager {
         })?;
 
         // Create a new Platform with the chrooted filesystem
-        let project_platform = Platform::new(project_fs, platform.output);
+        let project_platform = EngineEnv::new(project_fs, platform.output);
 
         // Create and load project
         // Now paths like "/project.json" will resolve relative to the project directory

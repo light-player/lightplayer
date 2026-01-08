@@ -6,7 +6,7 @@ use crate::error::Error;
 use crate::nodes::{
     FixtureId, FixtureNode, OutputId, OutputNode, ShaderId, ShaderNode, TextureId, TextureNode,
 };
-use crate::project::config::ProjectConfig;
+use lp_shared::project::config::ProjectConfig;
 
 /// Builder for creating ProjectConfig with a fluent API
 ///

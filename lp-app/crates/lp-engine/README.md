@@ -1,3 +1,3 @@
 # lp-engine
 
-The LightPlayer core, handling the configuration, validation and runtime for a single project.
+The LightPlayer engine handling the runtime for a single project.

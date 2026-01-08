@@ -1,7 +1,6 @@
 //! Shader node definitions
 
-pub mod config;
 pub mod runtime;
 
-pub use config::ShaderNode;
+pub use lp_shared::nodes::shader::config::ShaderNode;
 pub use runtime::ShaderNodeRuntime;

@@ -1,26 +1,28 @@
 //! LightPlayer Application - main entry point for firmware
 
-use crate::app::{FileChange, Platform};
+use crate::app::{EngineEnv, FsChange};
 use crate::error::Error;
-use crate::project::{config::ProjectConfig, loader, runtime::ProjectRuntime};
+use crate::project::{loader, runtime::ProjectRuntime};
 use alloc::string::{String, ToString};
+use lp_shared::project::config::ProjectConfig;
 
-/// LightPlayer Application
+/// LightPlayer Engine
 ///
-/// Main entry point for firmware. Manages project lifecycle, handles messages,
-/// and coordinates runtime updates.
-pub struct LpApp {
+/// Main entry point for the engine, handling the running of a single project.
+pub struct LpEngine {
     /// Platform-specific trait implementations
-    pub platform: Platform,
+    pub platform: EngineEnv,
+
     /// Current project config (None if no project loaded)
     config: Option<ProjectConfig>,
+
     /// Current project runtime (None if no project loaded)
     runtime: Option<ProjectRuntime>,
 }
 
-impl LpApp {
+impl LpEngine {
     /// Create a new LpApp with the provided platform
-    pub fn new(platform: Platform) -> Self {
+    pub fn new(platform: EngineEnv) -> Self {
         Self {
             platform,
             config: None,
@@ -37,7 +39,7 @@ impl LpApp {
     /// Returns an error if the project file doesn't exist. Project creation should
     /// be handled by the caller (e.g., `lp-server`).
     ///
-    pub fn load_project(&mut self, _path: &str) -> Result<(), Error> {
+    pub fn load_project(&mut self) -> Result<(), Error> {
         log::info!("Loading project from /project.json");
 
         // Destroy existing runtime if present
@@ -90,7 +92,7 @@ impl LpApp {
         &mut self,
         delta_ms: u32,
         incoming: &[crate::app::MsgIn],
-        file_changes: &[crate::app::FileChange],
+        file_changes: &[crate::app::FsChange],
     ) -> Result<alloc::vec::Vec<crate::app::MsgOut>, Error> {
         let mut outgoing = alloc::vec::Vec::new();
 
@@ -154,11 +156,11 @@ impl LpApp {
     /// For node file changes, reloads all nodes and reinitializes the runtime.
     /// This is simpler and ensures consistency, though not optimal for performance.
     #[cfg(test)]
-    pub fn handle_file_changes(&mut self, changes: &[FileChange]) -> Result<(), Error> {
+    pub fn handle_file_changes(&mut self, changes: &[FsChange]) -> Result<(), Error> {
         self.handle_file_changes_impl(changes)
     }
 
-    fn handle_file_changes_impl(&mut self, changes: &[FileChange]) -> Result<(), Error> {
+    fn handle_file_changes_impl(&mut self, changes: &[FsChange]) -> Result<(), Error> {
         if changes.is_empty() {
             return Ok(());
         }
@@ -169,7 +171,7 @@ impl LpApp {
         let project_json_changed = changes.iter().any(|c| c.path == "/project.json");
         if project_json_changed {
             log::info!("project.json changed, reloading entire project");
-            return self.load_project("/project.json");
+            return self.load_project();
         }
 
         // Check if any node files changed
@@ -251,7 +253,7 @@ fn get_node_path_from_file_path(file_path: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::{ChangeType, FileChange};
+    use crate::app::{ChangeType, FsChange};
     use crate::traits::OutputProvider;
     use alloc::string::ToString;
     use lp_shared::fs::LpFsMemory;
@@ -262,7 +264,7 @@ mod tests {
         fn create_output(
             &self,
             _config: &crate::nodes::OutputNode,
-            _id: Option<crate::nodes::id::OutputId>,
+            _id: Option<lp_shared::nodes::id::OutputId>,
         ) -> Result<alloc::boxed::Box<dyn crate::traits::LedOutput>, crate::error::Error> {
             Err(crate::error::Error::Node(
                 "Mock output provider".to_string(),
@@ -308,14 +310,14 @@ mod tests {
             .unwrap();
         let fs_box = alloc::boxed::Box::new(fs);
         let output = alloc::boxed::Box::new(MockOutputProvider);
-        let platform = Platform::new(fs_box, output);
-        let mut app = LpApp::new(platform);
+        let platform = EngineEnv::new(fs_box, output);
+        let mut app = LpEngine::new(platform);
 
         // Load the project
-        app.load_project("/project.json").unwrap();
+        app.load_project().unwrap();
 
         // Change project.json
-        let changes = vec![FileChange {
+        let changes = vec![FsChange {
             path: "/project.json".to_string(),
             change_type: ChangeType::Modify,
         }];
@@ -345,14 +347,14 @@ mod tests {
 
         let fs_box = alloc::boxed::Box::new(fs);
         let output = alloc::boxed::Box::new(MockOutputProvider);
-        let platform = Platform::new(fs_box, output);
-        let mut app = LpApp::new(platform);
+        let platform = EngineEnv::new(fs_box, output);
+        let mut app = LpEngine::new(platform);
 
         // Load project
-        app.load_project("/project.json").unwrap();
+        app.load_project().unwrap();
 
         // Modify shader GLSL file
-        let changes = alloc::vec::Vec::from([FileChange {
+        let changes = alloc::vec::Vec::from([FsChange {
             path: "/src/shader.shader/main.glsl".to_string(),
             change_type: ChangeType::Modify,
         }]);
