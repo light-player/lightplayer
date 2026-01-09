@@ -179,7 +179,7 @@ impl Default for ProjectBuilder {
 mod tests {
     use super::*;
     use crate::nodes::texture::formats;
-    use alloc::{string::ToString, vec, vec::Vec};
+    use alloc::{string::ToString, vec};
 
     #[test]
     fn test_project_builder_new() {

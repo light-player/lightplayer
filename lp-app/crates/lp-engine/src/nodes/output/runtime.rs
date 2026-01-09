@@ -1,7 +1,7 @@
 //! Output node runtime
 
 use crate::error::Error;
-use lp_shared::nodes::output::config::OutputNode;
+use lp_shared::project::nodes::output::config::OutputNode;
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::OutputRenderContext;
 use crate::runtime::lifecycle::NodeLifecycle;

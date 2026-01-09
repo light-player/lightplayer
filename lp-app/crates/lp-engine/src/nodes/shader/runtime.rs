@@ -1,8 +1,6 @@
 //! Shader node runtime
 
 use crate::error::Error;
-use lp_shared::nodes::id::TextureId;
-use lp_shared::nodes::shader::config::ShaderNode;
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::ShaderRenderContext;
 use crate::runtime::lifecycle::NodeLifecycle;
@@ -12,7 +10,9 @@ use alloc::{
     vec,
 };
 use lp_glsl_compiler::frontend::semantic::types::Type;
-use lp_glsl_compiler::{DecimalFormat, GlslExecutable, GlslOptions, GlslValue, RunMode, glsl_jit};
+use lp_glsl_compiler::{glsl_jit, DecimalFormat, GlslExecutable, GlslOptions, GlslValue, RunMode};
+use lp_shared::project::nodes::id::TextureId;
+use lp_shared::project::nodes::shader::config::ShaderNode;
 
 /// Shader node runtime
 pub struct ShaderNodeRuntime {

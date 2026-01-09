@@ -3,7 +3,7 @@
 use egui::{Color32, ColorImage, Image, Painter, TextureHandle, Ui};
 use lp_engine::nodes::fixture::{FixtureNode, Mapping};
 use lp_engine::nodes::shader::{ShaderNode, ShaderNodeRuntime};
-use lp_engine::nodes::texture::{TextureNode, formats};
+use lp_engine::nodes::texture::{formats, TextureNode};
 use lp_engine::nodes::{FixtureId, ShaderId, TextureId};
 use lp_engine::project::runtime::ProjectRuntime;
 use lp_shared::project::config::ProjectConfig;

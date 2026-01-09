@@ -2,11 +2,11 @@
 
 use crate::error::Error;
 use crate::nodes::fixture::config::{FixtureNode, Mapping};
-use lp_shared::nodes::id::{OutputId, TextureId};
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::FixtureRenderContext;
 use crate::runtime::lifecycle::NodeLifecycle;
 use alloc::{format, string::String, vec::Vec};
+use lp_shared::project::nodes::id::{OutputId, TextureId};
 
 /// Precomputed sample point for texture sampling
 #[derive(Debug, Clone)]
@@ -324,7 +324,7 @@ impl NodeLifecycle for FixtureNodeRuntime {
 mod tests {
     use super::*;
     use crate::nodes::output::OutputNode;
-    use crate::nodes::texture::{TextureNode, formats};
+    use crate::nodes::texture::{formats, TextureNode};
     use alloc::{string::ToString, vec};
     use hashbrown::HashMap;
 

@@ -1,8 +1,8 @@
 //! Low-level texture abstraction for pixel buffer management
 
-use crate::error::Error;
-use crate::nodes::texture::formats;
+use crate::project::nodes::texture::config::formats;
 use alloc::format;
+use lp_engine::error::Error;
 
 /// Texture structure for managing pixel buffers
 #[derive(Debug, Clone)]
@@ -231,7 +231,7 @@ impl Texture {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nodes::texture::formats;
+    use crate::project::nodes::texture::config::formats;
     use alloc::string::ToString;
 
     #[test]

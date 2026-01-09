@@ -1,5 +1,3 @@
 //! Utility functions and helpers
 
-pub mod texture;
-
-pub use texture::Texture;
+pub use lp_shared::util::texture::Texture;

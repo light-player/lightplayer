@@ -1,12 +1,12 @@
 //! Texture node runtime
 
 use crate::error::Error;
-use lp_shared::nodes::texture::config::TextureNode;
 use crate::project::runtime::NodeStatus;
 use crate::runtime::contexts::{InitContext, TextureRenderContext};
 use crate::runtime::lifecycle::NodeLifecycle;
 use crate::util::Texture;
 use alloc::{format, string::ToString};
+use lp_shared::project::nodes::texture::config::TextureNode;
 
 /// Texture node runtime
 #[derive(Debug)]

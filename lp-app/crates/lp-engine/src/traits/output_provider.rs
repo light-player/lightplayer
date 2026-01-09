@@ -1,8 +1,8 @@
 //! Output provider trait for creating LED output handles
 
 use crate::error::Error;
-use lp_shared::nodes::id::OutputId;
-use lp_shared::nodes::output::config::OutputNode;
+use lp_shared::project::nodes::id::OutputId;
+use lp_shared::project::nodes::output::config::OutputNode;
 use crate::traits::LedOutput;
 
 /// Trait for creating LED output handles from configuration

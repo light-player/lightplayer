@@ -2059,6 +2059,14 @@ name = "lp-builtins"
 version = "40.0.0"
 
 [[package]]
+name = "lp-cli"
+version = "40.0.0"
+
+[[package]]
+name = "lp-client"
+version = "40.0.0"
+
+[[package]]
 name = "lp-core-cli"
 version = "0.1.0"
 dependencies = [

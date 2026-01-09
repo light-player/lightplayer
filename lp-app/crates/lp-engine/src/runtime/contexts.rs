@@ -1,7 +1,7 @@
 //! Runtime contexts for node access
 
 use crate::nodes::fixture::FixtureNode;
-use lp_shared::nodes::id::{FixtureId, OutputId, ShaderId, TextureId};
+use lp_shared::project::nodes::id::{FixtureId, OutputId, ShaderId, TextureId};
 use crate::nodes::output::OutputNode;
 use crate::nodes::shader::ShaderNode;
 use crate::nodes::texture::TextureNode;

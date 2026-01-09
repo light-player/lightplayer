@@ -11,6 +11,13 @@ pub enum TextureNode {
     Memory { size: [u32; 2], format: String },
 }
 
+// TODO: Use this instead of the mod formats
+pub enum TextureFormat {
+    RGB8,
+    RGBA8,
+    R8,
+}
+
 /// Supported texture formats (OpenGL-style)
 pub mod formats {
     /// RGB 8-bit per component (24-bit total)
