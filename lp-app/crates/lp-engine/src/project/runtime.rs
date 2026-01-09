@@ -19,13 +19,18 @@ use crate::runtime::frame_time::FrameTime;
 use crate::runtime::lifecycle::NodeLifecycle;
 use crate::traits::OutputProvider;
 use lp_shared::project::config::ProjectConfig;
+use lp_shared::project::frame_id::FrameId;
+use lp_shared::project::nodes::handle::NodeHandle;
 use lp_shared::project::nodes::id::{FixtureId, OutputId, ShaderId, TextureId};
+use lp_shared::project::api::{EngineStats, NodeDetail};
 
 /// Project runtime - manages lifecycle of all node runtimes
 pub struct ProjectRuntime {
     #[allow(dead_code)] // Used for serialization via get_runtime_nodes
     uid: String,
     frame_time: FrameTime,
+    current_frame: FrameId,
+    next_handle: i32,
     textures: HashMap<TextureId, TextureNodeRuntime>,
     shaders: HashMap<ShaderId, ShaderNodeRuntime>,
     fixtures: HashMap<FixtureId, FixtureNodeRuntime>,
@@ -38,6 +43,8 @@ impl ProjectRuntime {
         Self {
             uid,
             frame_time: FrameTime::new(0, 0),
+            current_frame: FrameId(0),
+            next_handle: 0,
             textures: HashMap::new(),
             shaders: HashMap::new(),
             fixtures: HashMap::new(),
@@ -139,11 +146,15 @@ impl ProjectRuntime {
     ///
     /// Updates nodes in order: shaders → fixtures → outputs
     /// Updates frame_time: total_ms += delta_ms, delta_ms = delta_ms
+    /// Increments current_frame each update cycle
     pub fn update(
         &mut self,
         delta_ms: u32,
         _output_provider: &dyn OutputProvider,
     ) -> Result<(), Error> {
+        // Increment frame ID
+        self.current_frame = FrameId(self.current_frame.0 + 1);
+        
         // Update frame time
         self.frame_time.total_ms += delta_ms;
         self.frame_time.delta_ms = delta_ms;
@@ -310,6 +321,53 @@ impl ProjectRuntime {
     /// Get all output IDs
     pub fn get_output_ids(&self) -> alloc::vec::Vec<String> {
         self.outputs.keys().map(|id| id.0.clone()).collect()
+    }
+
+    /// Get the current frame ID
+    pub fn get_current_frame(&self) -> FrameId {
+        self.current_frame
+    }
+
+    /// Assign the next available handle and increment the counter
+    pub fn assign_next_handle(&mut self) -> NodeHandle {
+        let handle = NodeHandle::new(self.next_handle);
+        self.next_handle += 1;
+        handle
+    }
+
+    /// Get all node handles from all node types
+    pub fn get_all_node_handles(&self) -> alloc::vec::Vec<NodeHandle> {
+        // TODO: This will be implemented in Phase 3 when we convert HashMaps to use handles
+        // For now, return empty vec
+        alloc::vec::Vec::new()
+    }
+
+    /// Get nodes that changed since the given frame
+    ///
+    /// Returns handles of nodes where min(last_config_frame, last_state_frame) > since_frame
+    /// OR created_frame > since_frame
+    pub fn get_changed_nodes_since(&self, _since_frame: FrameId) -> alloc::vec::Vec<NodeHandle> {
+        // TODO: This will be implemented in Phase 2-3 when node runtimes have frame tracking
+        // For now, return empty vec
+        alloc::vec::Vec::new()
+    }
+
+    /// Get detailed information about a node by handle
+    pub fn get_node_detail(&self, _handle: NodeHandle) -> Option<NodeDetail> {
+        // TODO: This will be implemented in Phase 3 when HashMaps use handles
+        // For now, return None
+        None
+    }
+
+    /// Get engine statistics
+    pub fn get_engine_stats(&self) -> EngineStats {
+        // TODO: Calculate actual memory usage when tracking is added
+        EngineStats {
+            frame_ms_avg: self.frame_time.delta_ms as f32,
+            frame_ms_std_dev: 0.0, // TODO: Calculate standard deviation
+            memory_max_usage: 0,   // TODO: Track memory usage
+            memory_avg_usage: 0,   // TODO: Track memory usage
+        }
     }
 }
 
