@@ -7,7 +7,7 @@ members = [
     "crates/lp-server",
     "crates/lp-api",
     "crates/lp-client",
-    "apps/lp-cli",
+    "apps/lp-cli", "crates/lp-model",
 ]
 
 [workspace.package]

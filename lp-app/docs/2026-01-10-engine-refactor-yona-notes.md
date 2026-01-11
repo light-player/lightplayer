@@ -13,7 +13,7 @@ Projects are loaded from a filesystem abstraction and are responsive to changes 
 allowing for real-time editing of projects for development.
 
 This crate contains the core runtime logic for the engine. The shared elememts, including node
-config, state, and api are in the `lp-shared` crate.
+config, state, and api are in the `lp-model` crate.
 
 # Project
 
@@ -48,7 +48,7 @@ Changes to the config, for now, are handled by reloading the node from fs. Later
 runtime edits, but currently the node must be reloaded (but retaining its handle) to be changed.
 
 Nodes have two kinds of state, internal and external. Both are stored in the runtime state object,
-but the external state is kept in a separate struct (defined in `lp-shared`) so that it can
+but the external state is kept in a separate struct (defined in `lp-model`) so that it can
 be shared with clients.
 
 Nodes are owned by the project runtime, and are kept in a handle-keyed map of entries that
