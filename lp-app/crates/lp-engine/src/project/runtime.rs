@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::nodes::{
     NodeRuntime, TextureRuntime, ShaderRuntime, OutputRuntime, FixtureRuntime,
 };
-use crate::runtime::contexts::NodeInitContext;
+use crate::runtime::contexts::{NodeInitContext, RenderContext};
 use lp_model::{
     FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
 };
@@ -201,6 +201,45 @@ impl ProjectRuntime {
         
         Ok(())
     }
+    
+    /// Advance to next frame
+    pub fn tick(&mut self) {
+        self.frame_id = self.frame_id.next();
+    }
+    
+    /// Render current frame
+    pub fn render(&mut self) -> Result<(), Error> {
+        // Render all fixtures
+        let fixture_handles: Vec<NodeHandle> = self.nodes
+            .iter()
+            .filter(|(_, entry)| {
+                entry.kind == NodeKind::Fixture && 
+                entry.runtime.is_some() &&
+                matches!(entry.status, NodeStatus::Ok)
+            })
+            .map(|(handle, _)| *handle)
+            .collect();
+        
+        for handle in fixture_handles {
+            if let Some(entry) = self.nodes.get_mut(&handle) {
+                if let Some(runtime) = &mut entry.runtime {
+                    // Create render context (stub for now)
+                    let mut ctx = RenderContextImpl {
+                        // todo!("Add texture/output access to context")
+                    };
+                    
+                    // Render fixture
+                    if let Err(e) = runtime.render(&mut ctx) {
+                        entry.status = NodeStatus::Error(format!("{}", e));
+                    }
+                }
+            }
+        }
+        
+        // todo!("Flush outputs with state_ver == frame_id")
+        
+        Ok(())
+    }
 }
 
 /// Stub init context implementation
@@ -214,4 +253,13 @@ impl<'a> NodeInitContext for InitContext<'a> {
     }
     
     // Other methods use default todo!() implementations
+}
+
+/// Stub render context implementation
+struct RenderContextImpl {
+    // Will add fields later
+}
+
+impl RenderContext for RenderContextImpl {
+    // Methods use default todo!() implementations for now
 }
