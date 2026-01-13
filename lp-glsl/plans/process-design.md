@@ -1,6 +1,7 @@
 ## Plan process (architecture design)
 
-Create a new plan directory at `lightplayer/plans/<YYYY-MM-dd>-<name>.md`.
+Create a new plan directory at `<workspace>/plans/<YYYY-MM-dd>-<name>.md` where `<workspace>` is
+`lp-glsl` or `lp-app` depending on scope of plan.
 
 This will be the directory used to keep the plan.
 
