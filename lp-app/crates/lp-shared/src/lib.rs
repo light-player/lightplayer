@@ -6,9 +6,10 @@ extern crate std;
 pub mod error;
 pub mod fs;
 pub mod log;
-pub mod nodes;
-pub mod project;
-pub mod server;
-pub mod util;
+// TODO: These modules moved to other crates - will be removed/refactored
+// pub mod nodes;
+// pub mod project;
+// pub mod server;
+// pub mod util;
 
 pub use error::FsError;

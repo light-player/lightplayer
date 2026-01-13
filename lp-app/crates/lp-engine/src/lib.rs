@@ -1,3 +1,9 @@
 #![no_std]
 
-// Placeholder - will be implemented in Phase 3
+extern crate alloc;
+
+pub mod error;
+pub mod project;
+
+pub use error::Error;
+pub use project::ProjectRuntime;

@@ -20,4 +20,5 @@ hashbrown = { workspace = true }
 lp-glsl-compiler = { path = "../../../lp-glsl/crates/lp-glsl-compiler", default-features = false, features = ["std"] }
 log = { version = "0.4", default-features = false }
 
+lp-model = { path = "../lp-model", default-features = false }
 lp-shared = { path = "../lp-shared", default-features = false }
