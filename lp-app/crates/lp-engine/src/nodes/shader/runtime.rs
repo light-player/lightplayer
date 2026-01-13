@@ -18,7 +18,7 @@ impl NodeRuntime for ShaderRuntime {
         // todo!("Shader initialization - load GLSL, compile")
         Ok(())
     }
-    
+
     fn render(&mut self, _ctx: &dyn RenderContext) -> Result<(), Error> {
         // todo!("Shader rendering - execute GLSL")
         Ok(())

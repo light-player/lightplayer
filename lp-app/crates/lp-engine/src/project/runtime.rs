@@ -1,9 +1,14 @@
 use crate::error::Error;
+use crate::nodes::{
+    NodeRuntime, TextureRuntime, ShaderRuntime, OutputRuntime, FixtureRuntime,
+};
+use crate::runtime::contexts::NodeInitContext;
 use lp_model::{
     FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
 };
 use lp_shared::fs::LpFs;
 use alloc::collections::BTreeMap;
+use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
@@ -33,8 +38,7 @@ pub struct NodeEntry {
     /// Node status
     pub status: NodeStatus,
     /// Node runtime (None until initialized)
-    /// TODO: Will be Box<dyn NodeRuntime> in Phase 4
-    pub runtime: Option<()>, // Placeholder until NodeRuntime trait exists
+    pub runtime: Option<Box<dyn NodeRuntime>>,
     /// Last frame state updates occurred
     pub state_ver: FrameId,
 }
@@ -146,4 +150,68 @@ impl ProjectRuntime {
         
         Ok(())
     }
+    
+    /// Initialize all nodes in dependency order
+    pub fn initialize_nodes(&mut self) -> Result<(), Error> {
+        // Initialize in order: textures → shaders → fixtures → outputs
+        let init_order = [
+            NodeKind::Texture,
+            NodeKind::Shader,
+            NodeKind::Fixture,
+            NodeKind::Output,
+        ];
+        
+        for kind in init_order.iter() {
+            let handles: Vec<NodeHandle> = self.nodes
+                .iter()
+                .filter(|(_, entry)| entry.kind == *kind && entry.status == NodeStatus::Created)
+                .map(|(handle, _)| *handle)
+                .collect();
+            
+            for handle in handles {
+                if let Some(entry) = self.nodes.get_mut(&handle) {
+                    // Create runtime based on kind
+                    let mut runtime: Box<dyn NodeRuntime> = match entry.kind {
+                        NodeKind::Texture => Box::new(TextureRuntime::new()),
+                        NodeKind::Shader => Box::new(ShaderRuntime::new()),
+                        NodeKind::Output => Box::new(OutputRuntime::new()),
+                        NodeKind::Fixture => Box::new(FixtureRuntime::new()),
+                    };
+                    
+                    // Create init context (stub for now)
+                    let ctx = InitContext {
+                        fs: self.fs.as_ref(),
+                        // todo!("Add node resolution to context")
+                    };
+                    
+                    // Initialize
+                    match runtime.init(&ctx) {
+                        Ok(()) => {
+                            entry.status = NodeStatus::Ok;
+                            entry.runtime = Some(runtime);
+                        }
+                        Err(e) => {
+                            entry.status = NodeStatus::InitError(format!("{}", e));
+                            entry.runtime = None;
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+}
+
+/// Stub init context implementation
+struct InitContext<'a> {
+    fs: &'a dyn LpFs,
+}
+
+impl<'a> NodeInitContext for InitContext<'a> {
+    fn get_node_fs(&self) -> &dyn LpFs {
+        self.fs
+    }
+    
+    // Other methods use default todo!() implementations
 }

@@ -18,7 +18,7 @@ impl NodeRuntime for TextureRuntime {
         // todo!("Texture initialization")
         Ok(())
     }
-    
+
     fn render(&mut self, _ctx: &dyn RenderContext) -> Result<(), Error> {
         // todo!("Texture rendering")
         Ok(())

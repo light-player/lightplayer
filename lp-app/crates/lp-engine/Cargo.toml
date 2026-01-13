@@ -22,3 +22,6 @@ log = { version = "0.4", default-features = false }
 
 lp-model = { path = "../lp-model", default-features = false }
 lp-shared = { path = "../lp-shared", default-features = false }
+
+[dev-dependencies]
+lp-shared = { path = "../lp-shared", default-features = false, features = ["std"] }
