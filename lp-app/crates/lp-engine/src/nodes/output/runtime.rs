@@ -18,16 +18,16 @@ impl NodeRuntime for OutputRuntime {
         // todo!("Output initialization - setup GPIO, etc.")
         Ok(())
     }
-    
+
     fn render(&mut self, _ctx: &dyn RenderContext) -> Result<(), Error> {
         // todo!("Output rendering - flush buffers")
         Ok(())
     }
-    
+
     fn as_any(&self) -> &dyn core::any::Any {
         self
     }
-    
+
     fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
         self
     }

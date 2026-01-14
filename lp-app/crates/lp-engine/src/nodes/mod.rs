@@ -1,15 +1,15 @@
 use crate::error::Error;
 use crate::runtime::contexts::{NodeInitContext, RenderContext};
 
-pub mod texture;
-pub mod shader;
-pub mod output;
 pub mod fixture;
+pub mod output;
+pub mod shader;
+pub mod texture;
 
-pub use texture::TextureRuntime;
-pub use shader::ShaderRuntime;
+pub use fixture::{FixtureRuntime, SamplePoint, SamplingKernel};
 pub use output::OutputRuntime;
-pub use fixture::FixtureRuntime;
+pub use shader::ShaderRuntime;
+pub use texture::TextureRuntime;
 
 use core::any::Any;
 
@@ -17,18 +17,18 @@ use core::any::Any;
 pub trait NodeRuntime: Send + Sync {
     /// Initialize the node
     fn init(&mut self, ctx: &dyn NodeInitContext) -> Result<(), Error>;
-    
+
     /// Render the node
     fn render(&mut self, ctx: &dyn RenderContext) -> Result<(), Error>;
-    
+
     /// Destroy the node (cleanup)
     fn destroy(&mut self) -> Result<(), Error> {
         todo!("Node cleanup not implemented yet")
     }
-    
+
     /// Get reference to Any for downcasting
     fn as_any(&self) -> &dyn Any;
-    
+
     /// Get mutable reference to Any for downcasting
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
