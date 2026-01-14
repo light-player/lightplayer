@@ -33,31 +33,23 @@ fn test_end_to_end_shader_time_based() {
         .unwrap();
     client_view.request_detail(vec![output_handle]);
 
-    // Frame 1: After 16ms, time = 0.016s, mod(0.016, 1.0) = 0.016, red = 0.016 * 255 = 4.08 ≈ 4
     // Shader: vec4(mod(time, 1.0), 0.0, 0.0, 1.0) -> RGBA bytes [R, G, B, A]
-    // Fixture samples texture and writes RGB to output channels
-    runtime.tick(16).unwrap();
-    sync_client_view(&runtime, &mut client_view);
-    assert_first_output_rgb(
-        &client_view.get_output_data(output_handle).unwrap(),
-        (0.016_f32 * 255.0) as u8,
-    );
+    // Advancing time by 4ms gives an increment of (4/1000 * 255) = 1.02 ≈ 1
 
-    // Frame 2: After 32ms, time = 0.032s, mod(0.032, 1.0) = 0.032, red = 0.032 * 255 = 8.16 ≈ 8
-    runtime.tick(16).unwrap();
+    // Frame 1
+    runtime.tick(4).unwrap();
     sync_client_view(&runtime, &mut client_view);
-    assert_first_output_rgb(
-        &client_view.get_output_data(output_handle).unwrap(),
-        (0.032_f32 * 255.0) as u8,
-    );
+    assert_first_output_rgb(&client_view.get_output_data(output_handle).unwrap(), 1);
 
-    // Frame 3: After 48ms, time = 0.048s, mod(0.048, 1.0) = 0.048, red = 0.048 * 255 = 12.24 ≈ 12
-    runtime.tick(16).unwrap();
+    // Frame 2
+    runtime.tick(4).unwrap();
     sync_client_view(&runtime, &mut client_view);
-    assert_first_output_rgb(
-        &client_view.get_output_data(output_handle).unwrap(),
-        (0.048_f32 * 255.0) as u8,
-    );
+    assert_first_output_rgb(&client_view.get_output_data(output_handle).unwrap(), 2);
+
+    // Frame 3
+    runtime.tick(4).unwrap();
+    sync_client_view(&runtime, &mut client_view);
+    assert_first_output_rgb(&client_view.get_output_data(output_handle).unwrap(), 3);
 
     // Verify client view frame_id matches runtime
     assert_eq!(client_view.frame_id, runtime.frame_id);
@@ -68,7 +60,7 @@ fn sync_client_view(runtime: &ProjectRuntime, client_view: &mut ClientProjectVie
     let response = runtime
         .get_changes(
             client_view.frame_id,
-            &lp_model::project::api::ApiNodeSpecifier::All,
+            &client_view.detail_specifier(),
         )
         .unwrap();
     client_view.sync(&response).unwrap();
