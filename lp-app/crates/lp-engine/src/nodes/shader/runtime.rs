@@ -103,11 +103,11 @@ impl NodeRuntime for ShaderRuntime {
 
     fn render(&mut self, ctx: &mut dyn RenderContext) -> Result<(), Error> {
         let texture_handle = self.texture_handle.ok_or_else(|| Error::Other {
-            message: "Texture handle not resolved".to_string(),
+            message: String::from("Texture handle not resolved"),
         })?;
 
         let executable = self.executable.as_mut().ok_or_else(|| Error::Other {
-            message: "Shader not compiled".to_string(),
+            message: String::from("Shader not compiled"),
         })?;
 
         // Get mutable texture access
