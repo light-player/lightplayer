@@ -374,6 +374,24 @@ impl ProjectRuntime {
         Ok(())
     }
 
+    /// Resolve a path to a node handle
+    ///
+    /// Returns the handle for the node at the given path, or an error if not found.
+    pub fn resolve_path_to_handle(&self, path: &str) -> Result<NodeHandle, Error> {
+        let node_path = lp_model::LpPath::from(path);
+        
+        // Look up node by path
+        for (handle, entry) in &self.nodes {
+            if entry.path == node_path {
+                return Ok(*handle);
+            }
+        }
+        
+        Err(Error::NotFound {
+            path: path.to_string(),
+        })
+    }
+
     /// Get changes since a frame (for client sync)
     pub fn get_changes(
         &self,
