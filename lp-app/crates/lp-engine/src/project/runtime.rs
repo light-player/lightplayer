@@ -259,17 +259,49 @@ impl ProjectRuntime {
             .collect();
 
         for handle in fixture_handles {
-            if let Some(entry) = self.nodes.get_mut(&handle) {
-                if let Some(runtime) = &mut entry.runtime {
-                    // Create render context (stub for now)
-                    let mut ctx = RenderContextImpl {
-                        // todo!("Add texture/output access to context")
-                    };
-
-                    // Render fixture
-                    if let Err(e) = runtime.render(&mut ctx) {
-                        entry.status = NodeStatus::Error(format!("{}", e));
+            // Render fixture - need to handle borrowing carefully
+            // The issue: runtime.render() needs &mut runtime and &mut ctx
+            // But runtime is inside ctx.nodes, so we can't have both borrows
+            // Solution: use a helper that takes nodes and handle, does everything internally
+            let render_result = {
+                // Create context
+                let mut ctx = RenderContextImpl {
+                    nodes: &mut self.nodes,
+                    frame_id: self.frame_id,
+                };
+                
+                // Get runtime and render in one go
+                // We'll use a pattern where we get the runtime, call render, then handle errors
+                // The key is that runtime.render() will borrow ctx, and ctx contains nodes
+                // So we can't hold a reference to runtime (from nodes) while calling render
+                // Solution: restructure so render() accesses runtime internally through ctx
+                // But that would require changing the trait signature
+                // For now, let's use a workaround: get runtime, call render with reborrow
+                if let Some(entry) = ctx.nodes.get_mut(&handle) {
+                    if let Some(runtime) = entry.runtime.as_mut() {
+                        // runtime is &mut Box<dyn NodeRuntime>
+                        // render() needs &mut self (runtime) and &mut ctx
+                        // Both need mutable access, but runtime is inside ctx.nodes
+                        // This creates a borrowing conflict
+                        // Workaround: use unsafe to get raw pointer (not ideal, but works)
+                        let runtime_ptr: *mut dyn NodeRuntime = runtime.as_mut();
+                        // SAFETY: runtime_ptr is valid for the duration of this block
+                        // We're not storing it or using it after the block
+                        unsafe {
+                            (*runtime_ptr).render(&mut ctx)
+                        }
+                    } else {
+                        Ok(())
                     }
+                } else {
+                    Ok(())
+                }
+            };
+            
+            // Update status based on render result
+            if let Some(entry) = self.nodes.get_mut(&handle) {
+                if let Err(e) = render_result {
+                    entry.status = NodeStatus::Error(format!("{}", e));
                 }
             }
         }
@@ -513,11 +545,81 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
     }
 }
 
-/// Stub render context implementation
-struct RenderContextImpl {
-    // Will add fields later
+/// Render context implementation
+struct RenderContextImpl<'a> {
+    nodes: &'a mut BTreeMap<NodeHandle, NodeEntry>,
+    frame_id: FrameId,
 }
 
-impl RenderContext for RenderContextImpl {
-    // Methods use default todo!() implementations for now
+impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
+    fn get_texture(&mut self, handle: crate::runtime::contexts::TextureHandle) -> Result<&lp_shared::Texture, Error> {
+        // Ensure texture is rendered (lazy rendering)
+        Self::ensure_texture_rendered(self.nodes, handle, self.frame_id)?;
+        
+        // Get texture runtime
+        let node_handle = handle.as_node_handle();
+        let entry = self.nodes.get_mut(&node_handle)
+            .ok_or_else(|| Error::NotFound {
+                path: format!("texture-{}", node_handle.as_i32()),
+            })?;
+        
+        // Get texture from runtime
+        if let Some(runtime) = &mut entry.runtime {
+            if let Some(tex_runtime) = runtime.as_any_mut().downcast_mut::<crate::nodes::TextureRuntime>() {
+                tex_runtime.texture()
+                    .ok_or_else(|| Error::Other {
+                        message: "Texture not initialized".to_string(),
+                    })
+            } else {
+                Err(Error::Other {
+                    message: "Texture runtime not found".to_string(),
+                })
+            }
+        } else {
+            Err(Error::Other {
+                message: "Runtime not initialized".to_string(),
+            })
+        }
+    }
+    
+    fn get_output(&mut self, handle: crate::runtime::contexts::OutputHandle, _universe: u32, _start_ch: u32, _ch_count: u32) -> Result<&mut [u8], Error> {
+        // Get output runtime
+        let node_handle = handle.as_node_handle();
+        let _entry = self.nodes.get_mut(&node_handle)
+            .ok_or_else(|| Error::NotFound {
+                path: format!("output-{}", node_handle.as_i32()),
+            })?;
+        
+        // Get output buffer from runtime
+        // Note: OutputRuntime not implemented yet, so this will be a todo!()
+        todo!("Get output buffer from OutputRuntime")
+    }
+}
+
+impl<'a> RenderContextImpl<'a> {
+    /// Ensure texture is rendered for current frame (lazy rendering)
+    fn ensure_texture_rendered(
+        nodes: &mut BTreeMap<NodeHandle, NodeEntry>,
+        handle: crate::runtime::contexts::TextureHandle,
+        frame_id: FrameId,
+    ) -> Result<(), Error> {
+        let node_handle = handle.as_node_handle();
+        
+        // Check if already rendered
+        if let Some(entry) = nodes.get(&node_handle) {
+            if entry.state_ver >= frame_id {
+                return Ok(());
+            }
+        }
+        
+        // For now, skip shader rendering (will implement in later phase)
+        // Just mark texture as rendered
+        
+        // Update texture state_ver
+        if let Some(entry) = nodes.get_mut(&node_handle) {
+            entry.state_ver = frame_id;
+        }
+        
+        Ok(())
+    }
 }

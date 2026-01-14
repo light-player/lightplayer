@@ -11,6 +11,8 @@ pub use shader::ShaderRuntime;
 pub use output::OutputRuntime;
 pub use fixture::FixtureRuntime;
 
+use core::any::Any;
+
 /// Node runtime trait - all node runtimes implement this
 pub trait NodeRuntime: Send + Sync {
     /// Initialize the node
@@ -23,6 +25,12 @@ pub trait NodeRuntime: Send + Sync {
     fn destroy(&mut self) -> Result<(), Error> {
         todo!("Node cleanup not implemented yet")
     }
+    
+    /// Get reference to Any for downcasting
+    fn as_any(&self) -> &dyn Any;
+    
+    /// Get mutable reference to Any for downcasting
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 // Re-export NodeConfig from lp-model

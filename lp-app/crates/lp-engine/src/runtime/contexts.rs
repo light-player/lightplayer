@@ -3,6 +3,7 @@ use lp_model::{NodeHandle, NodeSpecifier};
 use lp_shared::fs::LpFs;
 
 /// Handle for resolved texture nodes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TextureHandle(NodeHandle);
 
 impl TextureHandle {
@@ -16,6 +17,7 @@ impl TextureHandle {
 }
 
 /// Handle for resolved output nodes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutputHandle(NodeHandle);
 
 impl OutputHandle {
@@ -43,15 +45,13 @@ pub trait NodeInitContext {
     fn get_node_fs(&self) -> &dyn LpFs;
 }
 
+use lp_shared::Texture;
+
 /// Context for rendering
 pub trait RenderContext {
-    /// Get texture data (triggers lazy rendering if needed)
-    fn get_texture(&mut self, _handle: TextureHandle) -> Result<&[u8], Error> {
-        todo!("Texture rendering not implemented yet")
-    }
+    /// Get texture (triggers lazy rendering if needed)
+    fn get_texture(&mut self, handle: TextureHandle) -> Result<&Texture, Error>;
     
     /// Get output buffer slice
-    fn get_output(&mut self, _handle: OutputHandle, _universe: u32, _start_ch: u32, _ch_count: u32) -> Result<&mut [u8], Error> {
-        todo!("Output access not implemented yet")
-    }
+    fn get_output(&mut self, handle: OutputHandle, universe: u32, start_ch: u32, ch_count: u32) -> Result<&mut [u8], Error>;
 }

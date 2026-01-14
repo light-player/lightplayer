@@ -75,6 +75,14 @@ impl NodeRuntime for TextureRuntime {
         // No-op - textures don't render themselves, shaders render to textures
         Ok(())
     }
+    
+    fn as_any(&self) -> &dyn core::any::Any {
+        self
+    }
+    
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
+        self
+    }
 }
 
 #[cfg(test)]
