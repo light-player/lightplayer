@@ -6,6 +6,8 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use serde_json;
 use lp_model::{
     FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
     project::api::{
@@ -169,27 +171,54 @@ impl ProjectRuntime {
             for handle in handles {
                 // Get node path and kind before mutable borrow
                 let (node_path, node_kind) = {
-                    let entry = self.nodes.get(&handle)
-                        .ok_or_else(|| Error::Other {
-                            message: format!("Node handle {} not found", handle.as_i32()),
-                        })?;
+                    let entry = self.nodes.get(&handle).ok_or_else(|| Error::Other {
+                        message: format!("Node handle {} not found", handle.as_i32()),
+                    })?;
                     (entry.path.clone(), entry.kind)
+                };
+
+                // Extract config before creating runtime (for textures)
+                // Load config from filesystem since we can't extract from Box<dyn NodeConfig>
+                let texture_config = if node_kind == NodeKind::Texture {
+                    let entry = self.nodes.get(&handle).ok_or_else(|| Error::Other {
+                        message: format!("Node handle {} not found", handle.as_i32()),
+                    })?;
+                    // Reload config from filesystem (workaround for trait object limitation)
+                    let node_json_path = format!("{}/node.json", entry.path.as_str());
+                    let data = self.fs.read_file(&node_json_path)
+                        .map_err(|e| Error::Io {
+                            path: node_json_path.clone(),
+                            details: format!("Failed to read: {:?}", e),
+                        })?;
+                    Some(serde_json::from_slice::<lp_model::nodes::texture::TextureConfig>(&data)
+                        .map_err(|e| Error::Parse {
+                            file: node_json_path,
+                            error: format!("Failed to parse texture config: {}", e),
+                        })?)
+                } else {
+                    None
                 };
                 
                 // Create runtime based on kind
                 let mut runtime: Box<dyn NodeRuntime> = match node_kind {
-                    NodeKind::Texture => Box::new(TextureRuntime::new()),
+                    NodeKind::Texture => {
+                        let mut tex_runtime = TextureRuntime::new(handle);
+                        if let Some(config) = texture_config {
+                            tex_runtime.set_config(config);
+                        }
+                        Box::new(tex_runtime)
+                    }
                     NodeKind::Shader => Box::new(ShaderRuntime::new()),
                     NodeKind::Output => Box::new(OutputRuntime::new()),
                     NodeKind::Fixture => Box::new(FixtureRuntime::new()),
                 };
-                
+
                 // Create init context and initialize (needs immutable borrow of self)
                 let init_result = {
                     let ctx = InitContext::new(self, &node_path)?;
                     runtime.init(&ctx)
                 };
-                
+
                 // Now do mutable operations (context is dropped)
                 if let Some(entry) = self.nodes.get_mut(&handle) {
                     match init_result {
@@ -395,7 +424,7 @@ impl<'a> InitContext<'a> {
             path: node_dir.to_string(),
             details: format!("Failed to chroot: {:?}", e),
         })?;
-        
+
         Ok(Self {
             runtime,
             node_path,
@@ -417,26 +446,32 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
                 path: spec_path.to_string(),
             });
         };
-        
+
         // Look up node by path
         for (handle, entry) in &self.runtime.nodes {
             if entry.path == node_path {
                 return Ok(*handle);
             }
         }
-        
+
         Err(Error::NotFound {
             path: spec_path.to_string(),
         })
     }
-    
-    fn resolve_output(&self, spec: &lp_model::NodeSpecifier) -> Result<crate::runtime::contexts::OutputHandle, Error> {
+
+    fn resolve_output(
+        &self,
+        spec: &lp_model::NodeSpecifier,
+    ) -> Result<crate::runtime::contexts::OutputHandle, Error> {
         let handle = self.resolve_node(spec)?;
-        let entry = self.runtime.nodes.get(&handle)
+        let entry = self
+            .runtime
+            .nodes
+            .get(&handle)
             .ok_or_else(|| Error::NotFound {
                 path: spec.as_str().to_string(),
             })?;
-        
+
         if entry.kind != lp_model::NodeKind::Output {
             return Err(Error::WrongNodeKind {
                 specifier: spec.as_str().to_string(),
@@ -444,17 +479,23 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
                 actual: entry.kind,
             });
         }
-        
+
         Ok(crate::runtime::contexts::OutputHandle::new(handle))
     }
-    
-    fn resolve_texture(&self, spec: &lp_model::NodeSpecifier) -> Result<crate::runtime::contexts::TextureHandle, Error> {
+
+    fn resolve_texture(
+        &self,
+        spec: &lp_model::NodeSpecifier,
+    ) -> Result<crate::runtime::contexts::TextureHandle, Error> {
         let handle = self.resolve_node(spec)?;
-        let entry = self.runtime.nodes.get(&handle)
+        let entry = self
+            .runtime
+            .nodes
+            .get(&handle)
             .ok_or_else(|| Error::NotFound {
                 path: spec.as_str().to_string(),
             })?;
-        
+
         if entry.kind != lp_model::NodeKind::Texture {
             return Err(Error::WrongNodeKind {
                 specifier: spec.as_str().to_string(),
@@ -462,10 +503,10 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
                 actual: entry.kind,
             });
         }
-        
+
         Ok(crate::runtime::contexts::TextureHandle::new(handle))
     }
-    
+
     fn get_node_fs(&self) -> &dyn lp_shared::fs::LpFs {
         self.node_fs.as_ref()
     }

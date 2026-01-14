@@ -10,6 +10,7 @@ pub mod log;
 // pub mod nodes;
 // pub mod project;
 // pub mod server;
-// pub mod util;
+pub mod util;  // Temporarily enabled for Texture
 
 pub use error::FsError;
+pub use util::texture::Texture;
