@@ -1,8 +1,7 @@
 //! Low-level texture abstraction for pixel buffer management
 
-use crate::nodes::texture::config::formats;
-use alloc::format;
-use lp_engine::error::Error;
+use crate::error::TextureError;
+use crate::util::formats;
 
 /// Texture structure for managing pixel buffers
 #[derive(Debug, Clone)]
@@ -18,26 +17,18 @@ impl Texture {
     ///
     /// Allocates buffer and initializes to zeros.
     /// Returns an error if the format is invalid.
-    pub fn new(width: u32, height: u32, format: alloc::string::String) -> Result<Self, Error> {
+    pub fn new(width: u32, height: u32, format: alloc::string::String) -> Result<Self, TextureError> {
         if !formats::is_valid(&format) {
-            return Err(Error::Validation(format!(
-                "Invalid texture format: {}",
-                format
-            )));
+            return Err(TextureError::InvalidFormat(format));
         }
 
         let bytes_per_pixel = formats::bytes_per_pixel(&format)
-            .ok_or_else(|| Error::Validation(format!("Invalid texture format: {}", format)))?;
+            .ok_or_else(|| TextureError::InvalidFormat(format.clone()))?;
 
         let buffer_size = (width as usize)
             .checked_mul(height as usize)
             .and_then(|size| size.checked_mul(bytes_per_pixel))
-            .ok_or_else(|| {
-                Error::Validation(format!(
-                    "Texture dimensions too large: {}x{}",
-                    width, height
-                ))
-            })?;
+            .ok_or_else(|| TextureError::DimensionsTooLarge { width, height })?;
 
         let data = alloc::vec::Vec::with_capacity(buffer_size);
         // Initialize to zeros
@@ -231,7 +222,7 @@ impl Texture {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nodes::texture::config::formats;
+    use crate::util::formats;
     use alloc::string::ToString;
 
     #[test]

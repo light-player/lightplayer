@@ -1,9 +1,12 @@
 use crate::error::Error;
 use crate::nodes::NodeRuntime;
 use crate::runtime::contexts::{NodeInitContext, RenderContext};
-use lp_model::{NodeHandle, nodes::texture::{TextureConfig, TextureState}};
+use alloc::{format, string::ToString, vec::Vec};
+use lp_model::{
+    NodeHandle,
+    nodes::texture::{TextureConfig, TextureState},
+};
 use lp_shared::Texture;
-use alloc::{format, vec::Vec, string::ToString};
 
 /// Texture node runtime
 pub struct TextureRuntime {
@@ -20,19 +23,19 @@ impl TextureRuntime {
             node_handle,
         }
     }
-    
+
     pub fn set_config(&mut self, config: TextureConfig) {
         self.config = Some(config);
     }
-    
+
     pub fn texture(&self) -> Option<&Texture> {
         self.texture.as_ref()
     }
-    
+
     pub fn texture_mut(&mut self) -> Option<&mut Texture> {
         self.texture.as_mut()
     }
-    
+
     pub fn get_state(&self) -> TextureState {
         // Extract state for sync API
         if let Some(tex) = &self.texture {
@@ -49,21 +52,21 @@ impl TextureRuntime {
 
 impl NodeRuntime for TextureRuntime {
     fn init(&mut self, ctx: &dyn NodeInitContext) -> Result<(), Error> {
-        let config = self.config.as_ref()
-            .ok_or_else(|| Error::InvalidConfig {
-                node_path: format!("texture-{}", self.node_handle.as_i32()),
-                reason: "Config not set".to_string(),
-            })?;
-        
+        let config = self.config.as_ref().ok_or_else(|| Error::InvalidConfig {
+            node_path: format!("texture-{}", self.node_handle.as_i32()),
+            reason: "Config not set".to_string(),
+        })?;
+
         // Create texture with RGBA8 format (default for now)
         // Format will be added to TextureConfig later
         let format = "RGBA8".to_string();
-        let texture = Texture::new(config.width, config.height, format)
-            .map_err(|e| Error::InvalidConfig {
+        let texture = Texture::new(config.width, config.height, format).map_err(|e| {
+            Error::InvalidConfig {
                 node_path: format!("texture-{}", self.node_handle.as_i32()),
                 reason: format!("Failed to create texture: {}", e),
-            })?;
-        
+            }
+        })?;
+
         self.texture = Some(texture);
         Ok(())
     }

@@ -23,3 +23,25 @@ impl fmt::Display for FsError {
         }
     }
 }
+
+/// Texture error type
+#[derive(Debug, Clone)]
+pub enum TextureError {
+    /// Invalid texture format
+    InvalidFormat(String),
+    /// Texture dimensions too large
+    DimensionsTooLarge { width: u32, height: u32 },
+}
+
+impl fmt::Display for TextureError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TextureError::InvalidFormat(format) => {
+                write!(f, "Invalid texture format: {}", format)
+            }
+            TextureError::DimensionsTooLarge { width, height } => {
+                write!(f, "Texture dimensions too large: {}x{}", width, height)
+            }
+        }
+    }
+}
