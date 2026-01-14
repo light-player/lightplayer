@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn test_texture_runtime_creation() {
         use lp_model::NodeHandle;
-        let handle = NodeHandle::from_i32(0);
+        let handle = NodeHandle::from(0);
         let runtime = TextureRuntime::new(handle);
         // Just verify it compiles and can be created
         let _boxed: alloc::boxed::Box<dyn NodeRuntime> = alloc::boxed::Box::new(runtime);
