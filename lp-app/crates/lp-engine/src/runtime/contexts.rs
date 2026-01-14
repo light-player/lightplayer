@@ -52,6 +52,12 @@ pub trait RenderContext {
     /// Get texture (triggers lazy rendering if needed)
     fn get_texture(&mut self, handle: TextureHandle) -> Result<&Texture, Error>;
 
+    /// Get mutable texture (triggers lazy rendering if needed)
+    fn get_texture_mut(&mut self, handle: TextureHandle) -> Result<&mut Texture, Error>;
+
+    /// Get current frame time in seconds
+    fn get_time(&self) -> f32;
+
     /// Get output buffer slice
     fn get_output(
         &mut self,

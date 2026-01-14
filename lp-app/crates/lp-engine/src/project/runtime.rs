@@ -304,6 +304,7 @@ impl ProjectRuntime {
                 let mut ctx = RenderContextImpl {
                     nodes: &mut self.nodes,
                     frame_id: self.frame_id,
+                    frame_time: self.frame_time,
                 };
                 
                 // Get runtime and render in one go
@@ -600,12 +601,13 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
 struct RenderContextImpl<'a> {
     nodes: &'a mut BTreeMap<NodeHandle, NodeEntry>,
     frame_id: FrameId,
+    frame_time: FrameTime,
 }
 
 impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
     fn get_texture(&mut self, handle: crate::runtime::contexts::TextureHandle) -> Result<&lp_shared::Texture, Error> {
         // Ensure texture is rendered (lazy rendering)
-        Self::ensure_texture_rendered(self.nodes, handle, self.frame_id)?;
+        Self::ensure_texture_rendered(self.nodes, handle, self.frame_id, self.frame_time)?;
         
         // Get texture runtime
         let node_handle = handle.as_node_handle();
@@ -632,6 +634,41 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
             })
         }
     }
+
+    fn get_texture_mut(&mut self, handle: crate::runtime::contexts::TextureHandle) -> Result<&mut lp_shared::Texture, Error> {
+        // Ensure texture is rendered (lazy rendering)
+        Self::ensure_texture_rendered(self.nodes, handle, self.frame_id, self.frame_time)?;
+        
+        // Get texture runtime
+        let node_handle = handle.as_node_handle();
+        let entry = self.nodes.get_mut(&node_handle)
+            .ok_or_else(|| Error::NotFound {
+                path: format!("texture-{}", node_handle.as_i32()),
+            })?;
+        
+        // Get mutable texture from runtime
+        if let Some(runtime) = &mut entry.runtime {
+            if let Some(tex_runtime) = runtime.as_any_mut().downcast_mut::<crate::nodes::TextureRuntime>() {
+                tex_runtime.texture_mut()
+                    .ok_or_else(|| Error::Other {
+                        message: "Texture not initialized".to_string(),
+                    })
+            } else {
+                Err(Error::Other {
+                    message: "Texture runtime not found".to_string(),
+                })
+            }
+        } else {
+            Err(Error::Other {
+                message: "Runtime not initialized".to_string(),
+            })
+        }
+    }
+
+    fn get_time(&self) -> f32 {
+        // Convert total_ms to seconds
+        self.frame_time.total_ms as f32 / 1000.0
+    }
     
     fn get_output(&mut self, handle: crate::runtime::contexts::OutputHandle, _universe: u32, _start_ch: u32, _ch_count: u32) -> Result<&mut [u8], Error> {
         // Get output runtime
@@ -656,6 +693,7 @@ impl<'a> RenderContextImpl<'a> {
         nodes: &mut BTreeMap<NodeHandle, NodeEntry>,
         handle: crate::runtime::contexts::TextureHandle,
         frame_id: FrameId,
+        frame_time: FrameTime,
     ) -> Result<(), Error> {
         let node_handle = handle.as_node_handle();
         
