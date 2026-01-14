@@ -2,18 +2,21 @@ use crate::error::Error;
 use crate::nodes::NodeRuntime;
 use crate::runtime::contexts::{NodeInitContext, RenderContext, TextureHandle};
 use alloc::{boxed::Box, format, string::String};
-use lp_glsl_compiler::{glsl_jit, GlslExecutable, GlslOptions, DecimalFormat, RunMode};
-use lp_model::{NodeHandle, nodes::shader::{ShaderConfig, ShaderState}};
+use lp_glsl_compiler::{DecimalFormat, GlslExecutable, GlslOptions, RunMode, glsl_jit};
+use lp_model::{
+    NodeHandle,
+    nodes::shader::{ShaderConfig, ShaderState},
+};
 
 /// Shader node runtime
 pub struct ShaderRuntime {
     config: Option<ShaderConfig>,
-    glsl_source: Option<String>,           // Stored for state extraction
-    executable: Option<Box<dyn GlslExecutable + Send + Sync>>,  // Compiled shader (must be Send + Sync for NodeRuntime)
-    texture_handle: Option<TextureHandle>,  // Resolved texture handle
-    compilation_error: Option<String>,      // Compilation error if any
+    glsl_source: Option<String>, // Stored for state extraction
+    executable: Option<Box<dyn GlslExecutable + Send + Sync>>, // Compiled shader (must be Send + Sync for NodeRuntime)
+    texture_handle: Option<TextureHandle>,                     // Resolved texture handle
+    compilation_error: Option<String>,                         // Compilation error if any
     node_handle: NodeHandle,
-    render_order: i32,                     // Render order (from config)
+    render_order: i32, // Render order (from config)
 }
 
 impl ShaderRuntime {
@@ -72,12 +75,13 @@ impl NodeRuntime for ShaderRuntime {
             path: glsl_path.clone(),
             details: format!("Failed to read GLSL file: {:?}", e),
         })?;
-        
-        let glsl_source = alloc::string::String::from_utf8(source_bytes).map_err(|e| Error::Parse {
-            file: glsl_path.clone(),
-            error: format!("Invalid UTF-8 in GLSL file: {}", e),
-        })?;
-        
+
+        let glsl_source =
+            alloc::string::String::from_utf8(source_bytes).map_err(|e| Error::Parse {
+                file: glsl_path.clone(),
+                error: format!("Invalid UTF-8 in GLSL file: {}", e),
+            })?;
+
         // Store source for state extraction
         self.glsl_source = Some(glsl_source.clone());
 
@@ -99,9 +103,8 @@ impl NodeRuntime for ShaderRuntime {
             Ok(executable) => {
                 // Cast to add Send + Sync bounds (GlslJitModule is safe to send/sync)
                 // The function pointers are stable and don't change after compilation
-                let executable_with_bounds: Box<dyn GlslExecutable + Send + Sync> = unsafe {
-                    core::mem::transmute(executable)
-                };
+                let executable_with_bounds: Box<dyn GlslExecutable + Send + Sync> =
+                    unsafe { core::mem::transmute(executable) };
                 self.executable = Some(executable_with_bounds);
                 self.compilation_error = None;
                 Ok(())
@@ -146,19 +149,28 @@ impl NodeRuntime for ShaderRuntime {
 
                 // Call shader main function
                 // Signature: vec4 main(vec2 fragCoord, vec2 outputSize, float time)
-                let result = executable.call_vec("main", &[
-                    lp_glsl_compiler::GlslValue::Vec2(frag_coord),
-                    lp_glsl_compiler::GlslValue::Vec2(output_size),
-                    lp_glsl_compiler::GlslValue::F32(time),
-                ], 4).map_err(|e| Error::Other {
-                    message: format!("Shader execution failed: {}", e),
-                })?;
+                let result = executable
+                    .call_vec(
+                        "main",
+                        &[
+                            lp_glsl_compiler::GlslValue::Vec2(frag_coord),
+                            lp_glsl_compiler::GlslValue::Vec2(output_size),
+                            lp_glsl_compiler::GlslValue::F32(time),
+                        ],
+                        4,
+                    )
+                    .map_err(|e| Error::Other {
+                        message: format!("Shader execution failed: {}", e),
+                    })?;
 
                 // Extract RGBA from vec4 result
                 // Result is Vec<f32> with 4 elements [r, g, b, a] in [0, 1] range
                 if result.len() != 4 {
                     return Err(Error::Other {
-                        message: format!("Shader main() must return vec4, got {} components", result.len()),
+                        message: format!(
+                            "Shader main() must return vec4, got {} components",
+                            result.len()
+                        ),
                     });
                 }
 
