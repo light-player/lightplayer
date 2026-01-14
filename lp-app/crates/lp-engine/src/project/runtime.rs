@@ -449,11 +449,23 @@ impl ProjectRuntime {
                         }
                     }
                     NodeKind::Shader => {
-                        // Shader runtime not fully implemented yet
-                        NodeState::Shader(lp_model::nodes::shader::ShaderState {
-                            glsl_code: String::new(),
-                            error: None,
-                        })
+                        // Get actual shader state from runtime
+                        if let Some(runtime) = &entry.runtime {
+                            if let Some(shader_runtime) = runtime.as_any().downcast_ref::<ShaderRuntime>() {
+                                NodeState::Shader(shader_runtime.get_state())
+                            } else {
+                                // Fallback to empty state
+                                NodeState::Shader(lp_model::nodes::shader::ShaderState {
+                                    glsl_code: String::new(),
+                                    error: None,
+                                })
+                            }
+                        } else {
+                            NodeState::Shader(lp_model::nodes::shader::ShaderState {
+                                glsl_code: String::new(),
+                                error: None,
+                            })
+                        }
                     }
                     NodeKind::Output => {
                         // Output runtime not fully implemented yet
