@@ -3,6 +3,7 @@
 ## Scope
 
 Implementing shader runtime execution:
+
 1. Shader Runtime (init + render)
 2. Lazy texture rendering integration
 3. Shader state extraction

@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::nodes::{FixtureRuntime, NodeRuntime, OutputRuntime, ShaderRuntime, TextureRuntime};
+use crate::runtime::frame_time::FrameTime;
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
@@ -20,6 +21,8 @@ use serde_json;
 pub struct ProjectRuntime {
     /// Current frame ID
     pub frame_id: FrameId,
+    /// Frame timing information
+    pub frame_time: FrameTime,
     /// Filesystem (owned for now)
     pub fs: Box<dyn LpFs>,
     /// Node entries
@@ -68,6 +71,7 @@ impl ProjectRuntime {
 
         Ok(Self {
             frame_id: FrameId::default(),
+            frame_time: FrameTime::zero(),
             fs,
             nodes: BTreeMap::new(),
             next_handle: 1,
@@ -266,8 +270,14 @@ impl ProjectRuntime {
     }
 
     /// Advance to next frame
-    pub fn tick(&mut self) {
+    ///
+    /// Updates frame ID and frame time.
+    /// `delta_ms` is the time elapsed since the last frame in milliseconds.
+    pub fn tick(&mut self, delta_ms: u32) {
         self.frame_id = self.frame_id.next();
+        // Update frame time
+        self.frame_time.total_ms += delta_ms;
+        self.frame_time.delta_ms = delta_ms;
     }
 
     /// Render current frame

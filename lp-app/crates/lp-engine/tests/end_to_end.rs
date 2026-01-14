@@ -64,8 +64,9 @@ fn test_end_to_end_basic_flow() {
 
     // Tick to next frame (so nodes created at frame 0 will show as changes)
     let initial_frame = runtime.frame_id;
-    runtime.tick();
+    runtime.tick(16); // 16ms delta for ~60fps
     assert_eq!(runtime.frame_id.as_i64(), initial_frame.as_i64() + 1);
+    assert_eq!(runtime.frame_time.delta_ms, 16);
 
     // Render frame
     runtime.render().unwrap();
