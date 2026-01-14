@@ -716,11 +716,16 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
 
 impl<'a> RenderContextImpl<'a> {
     /// Ensure texture is rendered for current frame (lazy rendering)
+    /// 
+    /// This function:
+    /// 1. Finds all shader nodes that target this texture
+    /// 2. Renders those shaders in render_order (lowest first)
+    /// 3. Marks the texture as rendered
     fn ensure_texture_rendered(
         nodes: &mut BTreeMap<NodeHandle, NodeEntry>,
         handle: crate::runtime::contexts::TextureHandle,
         frame_id: FrameId,
-        _frame_time: FrameTime,  // Will be used for shader execution in Phase 4
+        frame_time: FrameTime,
     ) -> Result<(), Error> {
         let node_handle = handle.as_node_handle();
         
@@ -731,8 +736,58 @@ impl<'a> RenderContextImpl<'a> {
             }
         }
         
-        // For now, skip shader rendering (will implement in later phase)
-        // Just mark texture as rendered
+        // Find all shader nodes that target this texture
+        // Collect (handle, render_order) pairs for shaders targeting this texture
+        let mut shader_handles: Vec<(NodeHandle, i32)> = Vec::new();
+        
+        for (shader_handle, entry) in nodes.iter() {
+            if entry.kind == NodeKind::Shader 
+                && entry.status == NodeStatus::Ok 
+                && entry.runtime.is_some() 
+            {
+                // Check if this shader targets our texture
+                if let Some(runtime) = entry.runtime.as_ref() {
+                    if let Some(shader_runtime) = runtime.as_any().downcast_ref::<crate::nodes::ShaderRuntime>() {
+                        if shader_runtime.targets_texture(handle) {
+                            // Get render_order from config
+                            let render_order = entry.config.as_any()
+                                .downcast_ref::<lp_model::nodes::shader::ShaderConfig>()
+                                .map(|c| c.render_order)
+                                .unwrap_or(0);
+                            shader_handles.push((*shader_handle, render_order));
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Sort by render_order (lowest first)
+        shader_handles.sort_by_key(|(_, order)| *order);
+        
+        // Render each shader that targets this texture
+        for (shader_handle, _) in shader_handles {
+            // Create RenderContext for this shader render
+            let mut ctx = RenderContextImpl {
+                nodes,
+                frame_id,
+                frame_time,
+            };
+            
+            // Get shader runtime and render
+            let shader_entry = ctx.nodes.get_mut(&shader_handle).ok_or_else(|| Error::Other {
+                message: format!("Shader handle {} not found", shader_handle.as_i32()),
+            })?;
+            
+            if let Some(runtime) = &mut shader_entry.runtime {
+                if let Some(shader_runtime) = runtime.as_any_mut().downcast_mut::<crate::nodes::ShaderRuntime>() {
+                    // Render the shader (this will write to the texture)
+                    shader_runtime.render(&mut ctx as &mut dyn RenderContext)?;
+                    
+                    // Update shader state_ver to current frame
+                    shader_entry.state_ver = frame_id;
+                }
+            }
+        }
         
         // Update texture state_ver
         if let Some(entry) = nodes.get_mut(&node_handle) {

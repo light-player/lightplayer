@@ -37,6 +37,11 @@ impl ShaderRuntime {
             error: self.compilation_error.clone(),
         }
     }
+
+    /// Check if this shader targets the given texture handle
+    pub fn targets_texture(&self, texture_handle: TextureHandle) -> bool {
+        self.texture_handle.map_or(false, |h| h == texture_handle)
+    }
 }
 
 impl NodeRuntime for ShaderRuntime {
