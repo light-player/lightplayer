@@ -3,7 +3,7 @@ use crate::nodes::NodeRuntime;
 use crate::runtime::contexts::{NodeInitContext, RenderContext, TextureHandle, OutputHandle};
 use crate::nodes::fixture::sampling_kernel::SamplingKernel;
 use lp_model::nodes::fixture::{FixtureConfig, ColorOrder};
-use alloc::{vec::Vec, string::String};
+use alloc::{vec, vec::Vec, string::String};
 
 // Simplified mapping point (will be replaced with structured type later)
 #[derive(Debug, Clone)]
@@ -66,9 +66,18 @@ impl NodeRuntime for FixtureRuntime {
         self.transform = config.transform;
         
         // Parse mapping (simplified for now - will be structured later)
-        // For now, create empty mapping or parse from string
-        // todo!("Parse mapping from config.mapping string")
-        self.mapping = Vec::new();  // Placeholder
+        // For now, if mapping is "linear" or empty, create a default mapping point
+        // that samples from the center of the texture (channel 0)
+        if config.mapping == "linear" || config.mapping.is_empty() {
+            // Default: single mapping point at center (0, 0) with small radius
+            self.mapping = vec![MappingPoint {
+                channel: 0,
+                center: [0.0, 0.0],  // Center of fixture space
+                radius: 0.1,  // Small sampling radius
+            }];
+        } else {
+            self.mapping = Vec::new();  // Other mappings not parsed yet
+        }
         
         // Create sampling kernel based on first mapping's radius (if any)
         if let Some(first_mapping) = self.mapping.first() {

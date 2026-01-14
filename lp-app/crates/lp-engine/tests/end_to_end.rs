@@ -27,37 +27,35 @@ fn test_end_to_end_shader_time_based() {
     // Create client view
     let mut client_view = ClientProjectView::new();
 
-    // Frame 1: Capture initial state
-    runtime.tick(16).unwrap();
-    sync_client_view(&runtime, &mut client_view);
-
-    let texture_handle = runtime
-        .resolve_path_to_handle(texture_path.as_str())
+    // Get output handle - we'll verify the full pipeline: shader -> texture -> fixture -> output
+    let output_handle = runtime
+        .resolve_path_to_handle(output_path.as_str())
         .unwrap();
-    client_view.request_detail(vec![texture_handle]);
-    sync_client_view(&runtime, &mut client_view);
+    client_view.request_detail(vec![output_handle]);
 
-    // Get texture data from client view
     // Frame 1: After 16ms, time = 0.016s, mod(0.016, 1.0) = 0.016, red = 0.016 * 255 = 4.08 ≈ 4
     // Shader: vec4(mod(time, 1.0), 0.0, 0.0, 1.0) -> RGBA bytes [R, G, B, A]
-    assert_first_red(
-        &client_view.get_texture_data(texture_handle).unwrap(),
+    // Fixture samples texture and writes RGB to output channels
+    runtime.tick(16).unwrap();
+    sync_client_view(&runtime, &mut client_view);
+    assert_first_output_rgb(
+        &client_view.get_output_data(output_handle).unwrap(),
         (0.016_f32 * 255.0) as u8,
     );
 
     // Frame 2: After 32ms, time = 0.032s, mod(0.032, 1.0) = 0.032, red = 0.032 * 255 = 8.16 ≈ 8
     runtime.tick(16).unwrap();
     sync_client_view(&runtime, &mut client_view);
-    assert_first_red(
-        &client_view.get_texture_data(texture_handle).unwrap(),
+    assert_first_output_rgb(
+        &client_view.get_output_data(output_handle).unwrap(),
         (0.032_f32 * 255.0) as u8,
     );
 
     // Frame 3: After 48ms, time = 0.048s, mod(0.048, 1.0) = 0.048, red = 0.048 * 255 = 12.24 ≈ 12
     runtime.tick(16).unwrap();
     sync_client_view(&runtime, &mut client_view);
-    assert_first_red(
-        &client_view.get_texture_data(texture_handle).unwrap(),
+    assert_first_output_rgb(
+        &client_view.get_output_data(output_handle).unwrap(),
         (0.048_f32 * 255.0) as u8,
     );
 
@@ -76,66 +74,38 @@ fn sync_client_view(runtime: &ProjectRuntime, client_view: &mut ClientProjectVie
     client_view.sync(&response).unwrap();
 }
 
-fn assert_first_red(data: &[u8], expected_r: u8) {
-    assert_pixel_rgba(data, 0, expected_r, 0, 0, 255, 0)
-}
-
-/// Assert pixel RGBA values with tolerance
+/// Assert first output channel RGB values
 ///
-/// Checks that the pixel at index `pixel_idx` in RGBA data has expected values.
-/// Allows tolerance of ±1 for each channel to account for floating point precision.
-fn assert_pixel_rgba(
-    data: &[u8],
-    pixel_idx: usize,
-    expected_r: u8,
-    expected_g: u8,
-    expected_b: u8,
-    expected_a: u8,
-    tolerance: u8,
-) {
-    let offset = pixel_idx * 4;
+/// Output channels are RGB (3 bytes per channel). Checks that the first channel
+/// has the expected RGB values with tolerance.
+fn assert_first_output_rgb(data: &[u8], expected_r: u8) {
     assert!(
-        offset + 3 < data.len(),
-        "Pixel index {} out of bounds for data length {}",
-        pixel_idx,
+        data.len() >= 3,
+        "Output data should have at least 3 bytes (RGB) for first channel, got {}",
         data.len()
     );
 
-    let r = data[offset];
-    let g = data[offset + 1];
-    let b = data[offset + 2];
-    let a = data[offset + 3];
+    let r = data[0];
+    let g = data[1];
+    let b = data[2];
 
+    // Shader outputs vec4(mod(time, 1.0), 0.0, 0.0, 1.0), so we expect red channel
+    // to match time-based value, green and blue to be 0
     assert!(
-        r.abs_diff(expected_r) <= tolerance,
-        "Pixel {} R channel: expected {} ± {}, got {}",
-        pixel_idx,
+        r.abs_diff(expected_r) <= 1,
+        "Output channel 0 R: expected {} ± 1, got {}",
         expected_r,
-        tolerance,
         r
     );
     assert!(
-        g.abs_diff(expected_g) <= tolerance,
-        "Pixel {} G channel: expected {} ± {}, got {}",
-        pixel_idx,
-        expected_g,
-        tolerance,
+        g == 0,
+        "Output channel 0 G: expected 0, got {}",
         g
     );
     assert!(
-        b.abs_diff(expected_b) <= tolerance,
-        "Pixel {} B channel: expected {} ± {}, got {}",
-        pixel_idx,
-        expected_b,
-        tolerance,
+        b == 0,
+        "Output channel 0 B: expected 0, got {}",
         b
     );
-    assert!(
-        a.abs_diff(expected_a) <= tolerance,
-        "Pixel {} A channel: expected {} ± {}, got {}",
-        pixel_idx,
-        expected_a,
-        tolerance,
-        a
-    );
 }
+

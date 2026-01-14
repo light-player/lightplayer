@@ -277,4 +277,36 @@ impl ClientProjectView {
             )),
         }
     }
+
+    /// Get output channel data for a node handle
+    ///
+    /// Returns the output channel data bytes, or an error if:
+    /// - The node doesn't exist
+    /// - The node is not an output node
+    /// - The node doesn't have state (not being tracked for detail)
+    pub fn get_output_data(&self, handle: NodeHandle) -> Result<Vec<u8>, String> {
+        let entry = self.nodes.get(&handle).ok_or_else(|| {
+            format!("Node handle {} not found in client view", handle.as_i32())
+        })?;
+
+        if entry.kind != NodeKind::Output {
+            return Err(format!(
+                "Node {} is not an output node (kind: {:?})",
+                entry.path.as_str(),
+                entry.kind
+            ));
+        }
+
+        match &entry.state {
+            Some(NodeState::Output(output_state)) => Ok(output_state.channel_data.clone()),
+            Some(_) => Err(format!(
+                "Node {} has wrong state type (expected Output)",
+                entry.path.as_str()
+            )),
+            None => Err(format!(
+                "Node {} does not have state (not being tracked for detail)",
+                entry.path.as_str()
+            )),
+        }
+    }
 }

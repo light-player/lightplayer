@@ -534,10 +534,22 @@ impl ProjectRuntime {
                         }
                     }
                     NodeKind::Output => {
-                        // Output runtime not fully implemented yet
-                        NodeState::Output(lp_model::nodes::output::OutputState {
-                            channel_data: Vec::new(),
-                        })
+                        // Get actual output state from runtime
+                        if let Some(runtime) = &entry.runtime {
+                            if let Some(output_runtime) = runtime.as_any().downcast_ref::<crate::nodes::OutputRuntime>() {
+                                NodeState::Output(lp_model::nodes::output::OutputState {
+                                    channel_data: output_runtime.get_channel_data().to_vec(),
+                                })
+                            } else {
+                                NodeState::Output(lp_model::nodes::output::OutputState {
+                                    channel_data: Vec::new(),
+                                })
+                            }
+                        } else {
+                            NodeState::Output(lp_model::nodes::output::OutputState {
+                                channel_data: Vec::new(),
+                            })
+                        }
                     }
                     NodeKind::Fixture => {
                         // Fixture runtime state extraction
@@ -792,7 +804,7 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
         self.frame_time.total_ms as f32 / 1000.0
     }
     
-    fn get_output(&mut self, handle: crate::runtime::contexts::OutputHandle, _universe: u32, _start_ch: u32, _ch_count: u32) -> Result<&mut [u8], Error> {
+    fn get_output(&mut self, handle: crate::runtime::contexts::OutputHandle, _universe: u32, start_ch: u32, ch_count: u32) -> Result<&mut [u8], Error> {
         // Get output runtime
         let node_handle = handle.as_node_handle();
         let entry = self.nodes.get_mut(&node_handle)
@@ -804,8 +816,19 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
         entry.state_ver = self.frame_id;
         
         // Get output buffer from runtime
-        // Note: OutputRuntime not implemented yet, so this will be a todo!()
-        todo!("Get output buffer from OutputRuntime")
+        if let Some(runtime) = &mut entry.runtime {
+            if let Some(output_runtime) = runtime.as_any_mut().downcast_mut::<crate::nodes::OutputRuntime>() {
+                Ok(output_runtime.get_buffer_mut(start_ch, ch_count))
+            } else {
+                Err(Error::Other {
+                    message: "Output runtime not found".to_string(),
+                })
+            }
+        } else {
+            Err(Error::Other {
+                message: "Runtime not initialized".to_string(),
+            })
+        }
     }
 }
 
