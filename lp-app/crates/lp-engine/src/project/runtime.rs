@@ -1,11 +1,13 @@
 use crate::error::Error;
 use crate::nodes::{FixtureRuntime, NodeRuntime, OutputRuntime, ShaderRuntime, TextureRuntime};
+use crate::runtime::contexts::RenderContext;
 use crate::runtime::frame_time::FrameTime;
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use core::any::Any;
 use lp_model::{
     FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
     project::api::{
@@ -750,7 +752,7 @@ impl<'a> RenderContextImpl<'a> {
                     if let Some(shader_runtime) = runtime.as_any().downcast_ref::<crate::nodes::ShaderRuntime>() {
                         if shader_runtime.targets_texture(handle) {
                             // Get render_order from config
-                            let render_order = entry.config.as_any()
+                            let render_order = (entry.config.as_ref() as &dyn Any)
                                 .downcast_ref::<lp_model::nodes::shader::ShaderConfig>()
                                 .map(|c| c.render_order)
                                 .unwrap_or(0);
