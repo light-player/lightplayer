@@ -9,9 +9,9 @@ fn test_end_to_end_shader_time_based() {
     let mut fs = LpFsMemory::new();
     let mut builder = ProjectBuilder::new(&mut fs).with_project("test-project", "Test Project");
 
-    let texture_path = builder.texture(100, 100).add(&mut builder);
-    let shader_path = builder.shader(&texture_path).add(&mut builder); // Uses default shader
-    let output_path = builder.output().gpio_pin(18).add(&mut builder);
+    let texture_path = builder.texture().add(&mut builder); // Defaults to 16x16
+    let shader_path = builder.shader(&texture_path).add(&mut builder);
+    let output_path = builder.output().add(&mut builder); // Defaults to GPIO pin 0
     builder
         .fixture(&output_path, &texture_path)
         .add(&mut builder);
@@ -58,8 +58,8 @@ fn test_end_to_end_shader_time_based() {
     };
     assert_eq!(
         frame1_data.len(),
-        100 * 100 * 4,
-        "Texture should be 100x100 RGBA"
+        16 * 16 * 4,
+        "Texture should be 16x16 RGBA"
     );
 
     // Frame 2: Verify time-based change

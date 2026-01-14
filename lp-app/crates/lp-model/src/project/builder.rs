@@ -28,6 +28,20 @@ pub struct TextureBuilder {
     height: u32,
 }
 
+impl TextureBuilder {
+    /// Set texture width
+    pub fn width(mut self, width: u32) -> Self {
+        self.width = width;
+        self
+    }
+
+    /// Set texture height
+    pub fn height(mut self, height: u32) -> Self {
+        self.height = height;
+        self
+    }
+}
+
 /// Builder for shader nodes
 pub struct ShaderBuilder {
     texture_path: LpPath,
@@ -39,6 +53,7 @@ pub struct ShaderBuilder {
 pub struct OutputBuilder {
     pin: u32,
 }
+
 
 /// Builder for fixture nodes
 pub struct FixtureBuilder {
@@ -91,11 +106,11 @@ impl<'a> ProjectBuilder<'a> {
         }
     }
 
-    /// Start building a texture node
-    pub fn texture(&mut self, width: u32, height: u32) -> TextureBuilder {
+    /// Start building a texture node (defaults to 16x16)
+    pub fn texture(&mut self) -> TextureBuilder {
         TextureBuilder {
-            width,
-            height,
+            width: 16,
+            height: 16,
         }
     }
 
@@ -108,10 +123,10 @@ impl<'a> ProjectBuilder<'a> {
         }
     }
 
-    /// Start building an output node
+    /// Start building an output node (defaults to GPIO pin 0)
     pub fn output(&mut self) -> OutputBuilder {
         OutputBuilder {
-            pin: 18,
+            pin: 0,
         }
     }
 
