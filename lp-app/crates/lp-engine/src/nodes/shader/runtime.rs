@@ -13,6 +13,7 @@ pub struct ShaderRuntime {
     texture_handle: Option<TextureHandle>,  // Resolved texture handle
     compilation_error: Option<String>,      // Compilation error if any
     node_handle: NodeHandle,
+    render_order: i32,                     // Render order (from config)
 }
 
 impl ShaderRuntime {
@@ -24,11 +25,17 @@ impl ShaderRuntime {
             texture_handle: None,
             compilation_error: None,
             node_handle,
+            render_order: 0,
         }
     }
 
     pub fn set_config(&mut self, config: ShaderConfig) {
+        self.render_order = config.render_order;
         self.config = Some(config);
+    }
+
+    pub fn render_order(&self) -> i32 {
+        self.render_order
     }
 
     pub fn get_state(&self) -> ShaderState {

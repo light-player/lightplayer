@@ -751,11 +751,8 @@ impl<'a> RenderContextImpl<'a> {
                 if let Some(runtime) = entry.runtime.as_ref() {
                     if let Some(shader_runtime) = runtime.as_any().downcast_ref::<crate::nodes::ShaderRuntime>() {
                         if shader_runtime.targets_texture(handle) {
-                            // Get render_order from config
-                            let render_order = (entry.config.as_ref() as &dyn Any)
-                                .downcast_ref::<lp_model::nodes::shader::ShaderConfig>()
-                                .map(|c| c.render_order)
-                                .unwrap_or(0);
+                            // Get render_order from shader runtime
+                            let render_order = shader_runtime.render_order();
                             shader_handles.push((*shader_handle, render_order));
                         }
                     }
