@@ -101,8 +101,59 @@ impl NodeRuntime for ShaderRuntime {
         }
     }
 
-    fn render(&mut self, _ctx: &mut dyn RenderContext) -> Result<(), Error> {
-        // todo!("Shader rendering - execute GLSL")
+    fn render(&mut self, ctx: &mut dyn RenderContext) -> Result<(), Error> {
+        let texture_handle = self.texture_handle.ok_or_else(|| Error::Other {
+            message: "Texture handle not resolved".to_string(),
+        })?;
+
+        let executable = self.executable.as_mut().ok_or_else(|| Error::Other {
+            message: "Shader not compiled".to_string(),
+        })?;
+
+        // Get mutable texture access
+        let texture = ctx.get_texture_mut(texture_handle)?;
+
+        let width = texture.width();
+        let height = texture.height();
+        let output_size = [width as f32, height as f32];
+        let time = ctx.get_time();
+
+        // Execute shader for each pixel
+        for y in 0..height {
+            for x in 0..width {
+                let frag_coord = [x as f32, y as f32];
+
+                // Call shader main function
+                // Signature: vec4 main(vec2 fragCoord, vec2 outputSize, float time)
+                let result = executable.call_vec("main", &[
+                    lp_glsl_compiler::GlslValue::Vec2(frag_coord),
+                    lp_glsl_compiler::GlslValue::Vec2(output_size),
+                    lp_glsl_compiler::GlslValue::F32(time),
+                ], 4).map_err(|e| Error::Other {
+                    message: format!("Shader execution failed: {}", e),
+                })?;
+
+                // Extract RGBA from vec4 result
+                // Result is Vec<f32> with 4 elements [r, g, b, a] in [0, 1] range
+                if result.len() != 4 {
+                    return Err(Error::Other {
+                        message: format!("Shader main() must return vec4, got {} components", result.len()),
+                    });
+                }
+
+                // Convert from [0, 1] to [0, 255] and clamp
+                let rgba = [
+                    (result[0].clamp(0.0, 1.0) * 255.0) as u8,
+                    (result[1].clamp(0.0, 1.0) * 255.0) as u8,
+                    (result[2].clamp(0.0, 1.0) * 255.0) as u8,
+                    (result[3].clamp(0.0, 1.0) * 255.0) as u8,
+                ];
+
+                // Write to texture
+                texture.set_pixel(x, y, rgba);
+            }
+        }
+
         Ok(())
     }
 
