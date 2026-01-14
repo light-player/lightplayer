@@ -24,7 +24,11 @@ impl Project {
     pub fn new(name: String, path: String, fs: Box<dyn LpFs>) -> Result<Self, ServerError> {
         let runtime = ProjectRuntime::new(fs).map_err(|e| ServerError::Core(format!("{}", e)))?;
 
-        Ok(Self { name, path, runtime })
+        Ok(Self {
+            name,
+            path,
+            runtime,
+        })
     }
 
     /// Get the project name

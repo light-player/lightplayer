@@ -1,4 +1,4 @@
-use crate::nodes::{NodeHandle, NodeKind, NodeConfig};
+use crate::nodes::{NodeConfig, NodeHandle, NodeKind};
 use crate::path::LpPath;
 use crate::project::FrameId;
 use alloc::boxed::Box;
@@ -30,7 +30,7 @@ pub enum ProjectRequest {
 }
 
 /// Project response from server
-/// 
+///
 /// Note: Cannot implement Clone because NodeDetail contains trait object
 #[derive(Debug)]
 pub enum ProjectResponse {
@@ -72,9 +72,7 @@ pub enum NodeChange {
         status: NodeStatus,
     },
     /// Node removed
-    Removed {
-        handle: NodeHandle,
-    },
+    Removed { handle: NodeHandle },
 }
 
 /// Node status
@@ -93,13 +91,13 @@ pub enum NodeStatus {
 }
 
 /// Node detail - full config + state + status
-/// 
+///
 /// Note: Cannot implement Clone/PartialEq/Eq because config is a trait object
 #[derive(Debug)]
 pub struct NodeDetail {
     pub path: LpPath,
     pub config: Box<dyn NodeConfig>, // todo!() - will need serialization later
-    pub state: NodeState, // External state only
+    pub state: NodeState,            // External state only
     pub status: NodeStatus,
 }
 
@@ -121,10 +119,10 @@ mod tests {
     fn test_api_node_specifier() {
         let spec = ApiNodeSpecifier::None;
         assert_eq!(spec, ApiNodeSpecifier::None);
-        
+
         let spec = ApiNodeSpecifier::All;
         assert_eq!(spec, ApiNodeSpecifier::All);
-        
+
         let spec = ApiNodeSpecifier::ByHandles(vec![NodeHandle::new(1), NodeHandle::new(2)]);
         match spec {
             ApiNodeSpecifier::ByHandles(handles) => {
@@ -141,7 +139,10 @@ mod tests {
             detail_specifier: ApiNodeSpecifier::All,
         };
         match request {
-            ProjectRequest::GetChanges { since_frame, detail_specifier } => {
+            ProjectRequest::GetChanges {
+                since_frame,
+                detail_specifier,
+            } => {
                 assert_eq!(since_frame, FrameId::default());
                 assert_eq!(detail_specifier, ApiNodeSpecifier::All);
             }
@@ -152,7 +153,7 @@ mod tests {
     fn test_node_status() {
         let status = NodeStatus::Created;
         assert_eq!(status, NodeStatus::Created);
-        
+
         let status = NodeStatus::InitError("test error".to_string());
         match status {
             NodeStatus::InitError(msg) => assert_eq!(msg, "test error"),
@@ -173,4 +174,3 @@ mod tests {
         }
     }
 }
-

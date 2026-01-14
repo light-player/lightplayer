@@ -45,7 +45,11 @@ impl ProjectManager {
     ///
     /// Creates a Project instance and loads it into memory.
     /// todo!("Refactor to use new ProjectRuntime API")
-    pub fn load_project(&mut self, name: String, fs: alloc::boxed::Box<dyn LpFs>) -> Result<(), ServerError> {
+    pub fn load_project(
+        &mut self,
+        name: String,
+        fs: alloc::boxed::Box<dyn LpFs>,
+    ) -> Result<(), ServerError> {
         // Check if already loaded
         if self.projects.contains_key(&name) {
             return Ok(()); // Already loaded

@@ -13,12 +13,10 @@ fn test_node_initialization() {
     }"#;
     fs.write_file_mut("/project.json", project_json.as_bytes()).unwrap();
     
-    // Create a texture node
+    // Create a texture node (new config format)
     let texture_json = r#"{
-        "Memory": {
-            "width": 100,
-            "height": 100
-        }
+        "width": 100,
+        "height": 100
     }"#;
     fs.write_file_mut("/src/test.texture/node.json", texture_json.as_bytes()).unwrap();
     

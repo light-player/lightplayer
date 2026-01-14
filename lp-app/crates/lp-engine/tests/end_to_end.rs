@@ -15,12 +15,10 @@ fn test_end_to_end_basic_flow() {
     fs.write_file_mut("/project.json", project_json.as_bytes())
         .unwrap();
 
-    // Create a texture node
+    // Create a texture node (new config format)
     let texture_json = r#"{
-        "Memory": {
-            "width": 100,
-            "height": 100
-        }
+        "width": 100,
+        "height": 100
     }"#;
     fs.write_file_mut("/src/test.texture/node.json", texture_json.as_bytes())
         .unwrap();
@@ -34,12 +32,13 @@ fn test_end_to_end_basic_flow() {
     fs.write_file_mut("/src/test.output/node.json", output_json.as_bytes())
         .unwrap();
 
-    // Create a fixture node
+    // Create a fixture node (new config format with color_order)
     let fixture_json = r#"{
         "output_spec": "/src/test.output",
         "texture_spec": "/src/test.texture",
         "mapping": "linear",
         "lamp_type": "rgb",
+        "color_order": "Rgb",
         "transform": [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
     }"#;
     fs.write_file_mut("/src/test.fixture/node.json", fixture_json.as_bytes())

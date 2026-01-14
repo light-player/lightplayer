@@ -13,12 +13,10 @@ fn test_basic_rendering() {
     }"#;
     fs.write_file_mut("/project.json", project_json.as_bytes()).unwrap();
     
-    // Create a texture node
+    // Create a texture node (new config format)
     let texture_json = r#"{
-        "Memory": {
-            "width": 100,
-            "height": 100
-        }
+        "width": 100,
+        "height": 100
     }"#;
     fs.write_file_mut("/src/test.texture/node.json", texture_json.as_bytes()).unwrap();
     
@@ -30,12 +28,13 @@ fn test_basic_rendering() {
     }"#;
     fs.write_file_mut("/src/test.output/node.json", output_json.as_bytes()).unwrap();
     
-    // Create a fixture node
+    // Create a fixture node (new config format with color_order)
     let fixture_json = r#"{
         "output_spec": "/src/test.output",
         "texture_spec": "/src/test.texture",
         "mapping": "linear",
         "lamp_type": "rgb",
+        "color_order": "Rgb",
         "transform": [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
     }"#;
     fs.write_file_mut("/src/test.fixture/node.json", fixture_json.as_bytes()).unwrap();
@@ -62,4 +61,33 @@ fn test_basic_rendering() {
         .find(|e| e.kind == lp_model::NodeKind::Fixture)
         .unwrap();
     assert!(!matches!(fixture_entry.status, lp_engine::project::NodeStatus::Created));
+    
+    // Verify texture was initialized (check via get_changes to get actual state)
+    let texture_entry = runtime.nodes.values()
+        .find(|e| e.kind == lp_model::NodeKind::Texture)
+        .unwrap();
+    
+    // Get texture state via sync API
+    let response = runtime.get_changes(
+        lp_model::FrameId::default(),
+        &lp_model::project::api::ApiNodeSpecifier::All,
+    ).unwrap();
+    
+    match response {
+        lp_model::project::api::ProjectResponse::GetChanges { node_details, .. } => {
+            // Find texture node detail by path
+            let texture_detail = node_details.values()
+                .find(|d| d.path.as_str() == "/src/test.texture")
+                .expect("Texture node should be in details");
+            
+            // Verify texture state has data (should be initialized with zeros)
+            match &texture_detail.state {
+                lp_model::project::api::NodeState::Texture(tex_state) => {
+                    // Texture should be 100x100 RGBA8 = 40,000 bytes
+                    assert_eq!(tex_state.texture_data.len(), 100 * 100 * 4);
+                }
+                _ => panic!("Expected texture state"),
+            }
+        }
+    }
 }
