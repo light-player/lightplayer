@@ -7,7 +7,6 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::any::Any;
 use lp_model::{
     FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
     project::api::{
