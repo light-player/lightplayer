@@ -1,8 +1,8 @@
 extern crate alloc;
 
-use lp_engine_client::ClientProjectView;
-use lp_model::{FrameId, NodeHandle, project::api::ProjectResponse};
 use alloc::collections::BTreeMap;
+use lp_engine_client::ClientProjectView;
+use lp_model::{project::api::ProjectResponse, FrameId, NodeHandle};
 
 #[test]
 fn test_client_view_creation() {
@@ -16,10 +16,10 @@ fn test_client_view_creation() {
 fn test_request_detail() {
     let mut view = ClientProjectView::new();
     let handle = NodeHandle::new(1);
-    
-    view.request_detail(vec![handle]);
+
+    view.watch_details(vec![handle]);
     assert!(view.detail_tracking.contains(&handle));
-    
+
     // Generate specifier
     let spec = view.detail_specifier();
     match spec {
@@ -35,13 +35,13 @@ fn test_request_detail() {
 fn test_stop_detail() {
     let mut view = ClientProjectView::new();
     let handle = NodeHandle::new(1);
-    
-    view.request_detail(vec![handle]);
+
+    view.watch_details(vec![handle]);
     assert!(view.detail_tracking.contains(&handle));
-    
-    view.stop_detail(vec![handle]);
+
+    view.unwatch_details(vec![handle]);
     assert!(!view.detail_tracking.contains(&handle));
-    
+
     // Generate specifier should be None
     let spec = view.detail_specifier();
     match spec {
@@ -53,25 +53,23 @@ fn test_stop_detail() {
 #[test]
 fn test_sync_with_changes() {
     let mut view = ClientProjectView::new();
-    
+
     // Create a mock response with a created node
     let handle = NodeHandle::new(1);
     let response = ProjectResponse::GetChanges {
         current_frame: FrameId::new(1),
         node_handles: vec![handle],
-        node_changes: vec![
-            lp_model::project::api::NodeChange::Created {
-                handle,
-                path: lp_model::LpPath::from("/src/test.texture"),
-                kind: lp_model::NodeKind::Texture,
-            },
-        ],
+        node_changes: vec![lp_model::project::api::NodeChange::Created {
+            handle,
+            path: lp_model::LpPath::from("/src/test.texture"),
+            kind: lp_model::NodeKind::Texture,
+        }],
         node_details: BTreeMap::new(),
     };
-    
+
     // Sync
     view.sync(&response).unwrap();
-    
+
     // Verify view updated
     assert_eq!(view.frame_id, FrameId::new(1));
     assert_eq!(view.nodes.len(), 1);

@@ -39,21 +39,17 @@ impl ClientProjectView {
         }
     }
 
-    /// Request detail tracking for nodes
-    pub fn request_detail(&mut self, handles: Vec<NodeHandle>) {
-        for handle in handles {
-            self.detail_tracking.insert(handle);
-        }
+    /// Start tracking detail for a node
+    pub fn watch_detail(&mut self, handle: NodeHandle) {
+        self.detail_tracking.insert(handle);
     }
 
-    /// Stop detail tracking for nodes
-    pub fn stop_detail(&mut self, handles: Vec<NodeHandle>) {
-        for handle in handles {
-            self.detail_tracking.remove(&handle);
-            // Clear state when stopping detail
-            if let Some(entry) = self.nodes.get_mut(&handle) {
-                entry.state = None;
-            }
+    /// Stop tracking detail for a node
+    pub fn unwatch_detail(&mut self, handle: NodeHandle) {
+        self.detail_tracking.remove(&handle);
+        // Clear state when stopping detail
+        if let Some(entry) = self.nodes.get_mut(&handle) {
+            entry.state = None;
         }
     }
 
@@ -253,9 +249,10 @@ impl ClientProjectView {
     /// - The node is not a texture node
     /// - The node doesn't have state (not being tracked for detail)
     pub fn get_texture_data(&self, handle: NodeHandle) -> Result<Vec<u8>, String> {
-        let entry = self.nodes.get(&handle).ok_or_else(|| {
-            format!("Node handle {} not found in client view", handle.as_i32())
-        })?;
+        let entry = self
+            .nodes
+            .get(&handle)
+            .ok_or_else(|| format!("Node handle {} not found in client view", handle.as_i32()))?;
 
         if entry.kind != NodeKind::Texture {
             return Err(format!(
@@ -285,9 +282,10 @@ impl ClientProjectView {
     /// - The node is not an output node
     /// - The node doesn't have state (not being tracked for detail)
     pub fn get_output_data(&self, handle: NodeHandle) -> Result<Vec<u8>, String> {
-        let entry = self.nodes.get(&handle).ok_or_else(|| {
-            format!("Node handle {} not found in client view", handle.as_i32())
-        })?;
+        let entry = self
+            .nodes
+            .get(&handle)
+            .ok_or_else(|| format!("Node handle {} not found in client view", handle.as_i32()))?;
 
         if entry.kind != NodeKind::Output {
             return Err(format!(

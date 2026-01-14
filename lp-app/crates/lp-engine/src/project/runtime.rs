@@ -1,6 +1,5 @@
 use crate::error::Error;
 use crate::nodes::{FixtureRuntime, NodeRuntime, OutputRuntime, ShaderRuntime, TextureRuntime};
-use crate::runtime::contexts::RenderContext;
 use crate::runtime::frame_time::FrameTime;
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -8,11 +7,11 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use lp_model::{
-    FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
     project::api::{
         ApiNodeSpecifier, NodeChange, NodeDetail, NodeState, NodeStatus as ApiNodeStatus,
         ProjectResponse,
-    },
+    }, FrameId, LpPath, NodeConfig, NodeHandle,
+    NodeKind,
 };
 use lp_shared::fs::LpFs;
 #[cfg(feature = "std")]
@@ -155,7 +154,7 @@ impl ProjectRuntime {
     }
 
     /// Initialize all nodes in dependency order
-    pub fn initialize_nodes(&mut self) -> Result<(), Error> {
+    pub fn init_nodes(&mut self) -> Result<(), Error> {
         // Initialize in order: textures → shaders → fixtures → outputs
         let init_order = [
             NodeKind::Texture,
@@ -357,7 +356,7 @@ impl ProjectRuntime {
         self.frame_id = self.frame_id.next();
         self.frame_time.total_ms += delta_ms;
         self.frame_time.delta_ms = delta_ms;
-        
+
         // Render the frame
         // Render all fixtures
         let fixture_handles: Vec<NodeHandle> = self
@@ -383,7 +382,7 @@ impl ProjectRuntime {
                     frame_id: self.frame_id,
                     frame_time: self.frame_time,
                 };
-                
+
                 // Get runtime and render in one go
                 // We'll use a pattern where we get the runtime, call render, then handle errors
                 // The key is that runtime.render() will borrow ctx, and ctx contains nodes
@@ -401,9 +400,7 @@ impl ProjectRuntime {
                         let runtime_ptr: *mut dyn NodeRuntime = runtime.as_mut();
                         // SAFETY: runtime_ptr is valid for the duration of this block
                         // We're not storing it or using it after the block
-                        unsafe {
-                            (*runtime_ptr).render(&mut ctx)
-                        }
+                        unsafe { (*runtime_ptr).render(&mut ctx) }
                     } else {
                         Ok(())
                     }
@@ -411,7 +408,7 @@ impl ProjectRuntime {
                     Ok(())
                 }
             };
-            
+
             // Update status based on render result
             if let Some(entry) = self.nodes.get_mut(&handle) {
                 if let Err(e) = render_result {
@@ -428,16 +425,16 @@ impl ProjectRuntime {
     /// Resolve a path to a node handle
     ///
     /// Returns the handle for the node at the given path, or an error if not found.
-    pub fn resolve_path_to_handle(&self, path: &str) -> Result<NodeHandle, Error> {
+    pub fn handle_for_path(&self, path: &str) -> Result<NodeHandle, Error> {
         let node_path = lp_model::LpPath::from(path);
-        
+
         // Look up node by path
         for (handle, entry) in &self.nodes {
             if entry.path == node_path {
                 return Ok(*handle);
             }
         }
-        
+
         Err(Error::NotFound {
             path: path.to_string(),
         })
@@ -500,7 +497,9 @@ impl ProjectRuntime {
                         // Get actual texture state from runtime
                         if let Some(runtime) = &entry.runtime {
                             // Use Any trait for downcasting (downcast_ref is from Any trait)
-                            if let Some(tex_runtime) = runtime.as_any().downcast_ref::<TextureRuntime>() {
+                            if let Some(tex_runtime) =
+                                runtime.as_any().downcast_ref::<TextureRuntime>()
+                            {
                                 NodeState::Texture(tex_runtime.get_state())
                             } else {
                                 // Fallback to empty state
@@ -517,7 +516,9 @@ impl ProjectRuntime {
                     NodeKind::Shader => {
                         // Get actual shader state from runtime
                         if let Some(runtime) = &entry.runtime {
-                            if let Some(shader_runtime) = runtime.as_any().downcast_ref::<ShaderRuntime>() {
+                            if let Some(shader_runtime) =
+                                runtime.as_any().downcast_ref::<ShaderRuntime>()
+                            {
                                 NodeState::Shader(shader_runtime.get_state())
                             } else {
                                 // Fallback to empty state
@@ -536,7 +537,10 @@ impl ProjectRuntime {
                     NodeKind::Output => {
                         // Get actual output state from runtime
                         if let Some(runtime) = &entry.runtime {
-                            if let Some(output_runtime) = runtime.as_any().downcast_ref::<crate::nodes::OutputRuntime>() {
+                            if let Some(output_runtime) = runtime
+                                .as_any()
+                                .downcast_ref::<crate::nodes::OutputRuntime>(
+                            ) {
                                 NodeState::Output(lp_model::nodes::output::OutputState {
                                     channel_data: output_runtime.get_channel_data().to_vec(),
                                 })
@@ -581,7 +585,9 @@ impl ProjectRuntime {
                     NodeKind::Shader => {
                         // Extract actual shader config from runtime
                         if let Some(runtime) = &entry.runtime {
-                            if let Some(shader_runtime) = runtime.as_any().downcast_ref::<ShaderRuntime>() {
+                            if let Some(shader_runtime) =
+                                runtime.as_any().downcast_ref::<ShaderRuntime>()
+                            {
                                 if let Some(shader_config) = shader_runtime.get_config() {
                                     Box::new(shader_config.clone())
                                 } else {
@@ -739,24 +745,31 @@ struct RenderContextImpl<'a> {
 }
 
 impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
-    fn get_texture(&mut self, handle: crate::runtime::contexts::TextureHandle) -> Result<&lp_shared::Texture, Error> {
+    fn get_texture(
+        &mut self,
+        handle: crate::runtime::contexts::TextureHandle,
+    ) -> Result<&lp_shared::Texture, Error> {
         // Ensure texture is rendered (lazy rendering)
         Self::ensure_texture_rendered(self.nodes, handle, self.frame_id, self.frame_time)?;
-        
+
         // Get texture runtime
         let node_handle = handle.as_node_handle();
-        let entry = self.nodes.get_mut(&node_handle)
+        let entry = self
+            .nodes
+            .get_mut(&node_handle)
             .ok_or_else(|| Error::NotFound {
                 path: format!("texture-{}", node_handle.as_i32()),
             })?;
-        
+
         // Get texture from runtime
         if let Some(runtime) = &mut entry.runtime {
-            if let Some(tex_runtime) = runtime.as_any_mut().downcast_mut::<crate::nodes::TextureRuntime>() {
-                tex_runtime.texture()
-                    .ok_or_else(|| Error::Other {
-                        message: "Texture not initialized".to_string(),
-                    })
+            if let Some(tex_runtime) = runtime
+                .as_any_mut()
+                .downcast_mut::<crate::nodes::TextureRuntime>()
+            {
+                tex_runtime.texture().ok_or_else(|| Error::Other {
+                    message: "Texture not initialized".to_string(),
+                })
             } else {
                 Err(Error::Other {
                     message: "Texture runtime not found".to_string(),
@@ -769,24 +782,31 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
         }
     }
 
-    fn get_texture_mut(&mut self, handle: crate::runtime::contexts::TextureHandle) -> Result<&mut lp_shared::Texture, Error> {
+    fn get_texture_mut(
+        &mut self,
+        handle: crate::runtime::contexts::TextureHandle,
+    ) -> Result<&mut lp_shared::Texture, Error> {
         // Ensure texture is rendered (lazy rendering)
         Self::ensure_texture_rendered(self.nodes, handle, self.frame_id, self.frame_time)?;
-        
+
         // Get texture runtime
         let node_handle = handle.as_node_handle();
-        let entry = self.nodes.get_mut(&node_handle)
+        let entry = self
+            .nodes
+            .get_mut(&node_handle)
             .ok_or_else(|| Error::NotFound {
                 path: format!("texture-{}", node_handle.as_i32()),
             })?;
-        
+
         // Get mutable texture from runtime
         if let Some(runtime) = &mut entry.runtime {
-            if let Some(tex_runtime) = runtime.as_any_mut().downcast_mut::<crate::nodes::TextureRuntime>() {
-                tex_runtime.texture_mut()
-                    .ok_or_else(|| Error::Other {
-                        message: "Texture not initialized".to_string(),
-                    })
+            if let Some(tex_runtime) = runtime
+                .as_any_mut()
+                .downcast_mut::<crate::nodes::TextureRuntime>()
+            {
+                tex_runtime.texture_mut().ok_or_else(|| Error::Other {
+                    message: "Texture not initialized".to_string(),
+                })
             } else {
                 Err(Error::Other {
                     message: "Texture runtime not found".to_string(),
@@ -803,21 +823,32 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
         // Convert total_ms to seconds
         self.frame_time.total_ms as f32 / 1000.0
     }
-    
-    fn get_output(&mut self, handle: crate::runtime::contexts::OutputHandle, _universe: u32, start_ch: u32, ch_count: u32) -> Result<&mut [u8], Error> {
+
+    fn get_output(
+        &mut self,
+        handle: crate::runtime::contexts::OutputHandle,
+        _universe: u32,
+        start_ch: u32,
+        ch_count: u32,
+    ) -> Result<&mut [u8], Error> {
         // Get output runtime
         let node_handle = handle.as_node_handle();
-        let entry = self.nodes.get_mut(&node_handle)
+        let entry = self
+            .nodes
+            .get_mut(&node_handle)
             .ok_or_else(|| Error::NotFound {
                 path: format!("output-{}", node_handle.as_i32()),
             })?;
-        
+
         // Update output state_ver to current frame (state changed when accessed)
         entry.state_ver = self.frame_id;
-        
+
         // Get output buffer from runtime
         if let Some(runtime) = &mut entry.runtime {
-            if let Some(output_runtime) = runtime.as_any_mut().downcast_mut::<crate::nodes::OutputRuntime>() {
+            if let Some(output_runtime) = runtime
+                .as_any_mut()
+                .downcast_mut::<crate::nodes::OutputRuntime>()
+            {
                 Ok(output_runtime.get_buffer_mut(start_ch, ch_count))
             } else {
                 Err(Error::Other {
@@ -834,7 +865,7 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
 
 impl<'a> RenderContextImpl<'a> {
     /// Ensure texture is rendered for current frame (lazy rendering)
-    /// 
+    ///
     /// This function:
     /// 1. Finds all shader nodes that target this texture
     /// 2. Renders those shaders in render_order (lowest first)
@@ -846,26 +877,29 @@ impl<'a> RenderContextImpl<'a> {
         frame_time: FrameTime,
     ) -> Result<(), Error> {
         let node_handle = handle.as_node_handle();
-        
+
         // Check if already rendered
         if let Some(entry) = nodes.get(&node_handle) {
             if entry.state_ver >= frame_id {
                 return Ok(());
             }
         }
-        
+
         // Find all shader nodes that target this texture
         // Collect (handle, render_order) pairs for shaders targeting this texture
         let mut shader_handles: Vec<(NodeHandle, i32)> = Vec::new();
-        
+
         for (shader_handle, entry) in nodes.iter() {
-            if entry.kind == NodeKind::Shader 
-                && entry.status == NodeStatus::Ok 
-                && entry.runtime.is_some() 
+            if entry.kind == NodeKind::Shader
+                && entry.status == NodeStatus::Ok
+                && entry.runtime.is_some()
             {
                 // Check if this shader targets our texture
                 if let Some(runtime) = entry.runtime.as_ref() {
-                    if let Some(shader_runtime) = runtime.as_any().downcast_ref::<crate::nodes::ShaderRuntime>() {
+                    if let Some(shader_runtime) = runtime
+                        .as_any()
+                        .downcast_ref::<crate::nodes::ShaderRuntime>()
+                    {
                         if shader_runtime.targets_texture(handle) {
                             // Get render_order from shader runtime
                             let render_order = shader_runtime.render_order();
@@ -875,17 +909,17 @@ impl<'a> RenderContextImpl<'a> {
                 }
             }
         }
-        
+
         // Sort by render_order (lowest first)
         shader_handles.sort_by_key(|(_, order)| *order);
-        
+
         // Mark texture as rendering BEFORE calling shader.render() to prevent infinite recursion
         // When shader.render() calls get_texture_mut(), it will see state_ver >= frame_id
         // and skip re-rendering
         if let Some(entry) = nodes.get_mut(&node_handle) {
             entry.state_ver = frame_id;
         }
-        
+
         // Render each shader that targets this texture
         for (shader_handle, _) in shader_handles {
             // Create RenderContext for each shader render
@@ -894,7 +928,7 @@ impl<'a> RenderContextImpl<'a> {
                 frame_id,
                 frame_time,
             };
-            
+
             // Get shader runtime and render
             // Use unsafe to work around borrow checker (same pattern as fixture rendering)
             let render_result = {
@@ -907,9 +941,7 @@ impl<'a> RenderContextImpl<'a> {
                         let runtime_ptr: *mut dyn NodeRuntime = runtime.as_mut();
                         // SAFETY: runtime_ptr is valid for the duration of this block
                         // We're not storing it or using it after the block
-                        unsafe {
-                            (*runtime_ptr).render(&mut ctx)
-                        }
+                        unsafe { (*runtime_ptr).render(&mut ctx) }
                     } else {
                         Ok(())
                     }
@@ -917,15 +949,15 @@ impl<'a> RenderContextImpl<'a> {
                     Ok(())
                 }
             };
-            
+
             render_result?;
-            
+
             // Update shader state_ver after render
             if let Some(entry) = ctx.nodes.get_mut(&shader_handle) {
                 entry.state_ver = frame_id;
             }
         }
-        
+
         Ok(())
     }
 }
