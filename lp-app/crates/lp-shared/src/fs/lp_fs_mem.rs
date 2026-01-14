@@ -185,8 +185,9 @@ impl LpFs for LpFsMemory {
 
         impl LpFs for ChrootedLpFsMemory {
             fn read_file(&self, path: &str) -> Result<alloc::vec::Vec<u8>, FsError> {
-                self.validate_path(path)?;
+                // Normalize path first (handles relative paths by prepending /)
                 let normalized = LpFsMemory::normalize_path(path);
+                self.validate_path(&normalized)?;
                 self.files
                     .get(&normalized)
                     .cloned()
@@ -200,8 +201,9 @@ impl LpFs for LpFsMemory {
             }
 
             fn file_exists(&self, path: &str) -> Result<bool, FsError> {
-                self.validate_path(path)?;
+                // Normalize path first (handles relative paths by prepending /)
                 let normalized = LpFsMemory::normalize_path(path);
+                self.validate_path(&normalized)?;
                 Ok(self.files.contains_key(&normalized))
             }
 
@@ -209,8 +211,9 @@ impl LpFs for LpFsMemory {
                 &self,
                 path: &str,
             ) -> Result<alloc::vec::Vec<alloc::string::String>, FsError> {
-                self.validate_path(path)?;
+                // Normalize path first (handles relative paths by prepending /)
                 let normalized = LpFsMemory::normalize_path(path);
+                self.validate_path(&normalized)?;
                 let mut entries = Vec::new();
                 let prefix = if normalized.ends_with('/') {
                     normalized.clone()
@@ -376,6 +379,81 @@ mod tests {
         assert!(chroot1.file_exists("/c/file.txt").unwrap());
         assert!(chroot2.file_exists("/c/file.txt").unwrap());
         assert!(chroot3.file_exists("/c/file.txt").unwrap());
+    }
+
+    #[test]
+    fn test_chroot_relative_paths() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/src/test.shader/main.glsl", b"shader code")
+            .unwrap();
+        fs.write_file_mut("/src/test.shader/node.json", b"{}")
+            .unwrap();
+
+        // Chroot to node directory
+        let chrooted = fs.chroot("/src/test.shader").unwrap();
+
+        // Relative paths should work in chrooted filesystem
+        assert!(chrooted.file_exists("main.glsl").unwrap());
+        assert!(chrooted.file_exists("/main.glsl").unwrap());
+        assert!(chrooted.file_exists("./main.glsl").unwrap());
+        
+        // Read file with relative path
+        let content = chrooted.read_file("main.glsl").unwrap();
+        assert_eq!(content, b"shader code");
+        
+        // Read file with absolute path (normalized)
+        let content2 = chrooted.read_file("/main.glsl").unwrap();
+        assert_eq!(content2, b"shader code");
+        
+        // Read file with ./ prefix
+        let content3 = chrooted.read_file("./main.glsl").unwrap();
+        assert_eq!(content3, b"shader code");
+    }
+
+    #[test]
+    fn test_chroot_path_normalization_relative() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/a/b/c/file.txt", b"content").unwrap();
+        fs.write_file_mut("/a/b/other.txt", b"other").unwrap();
+
+        let chrooted = fs.chroot("/a/b").unwrap();
+
+        // Test various relative path formats
+        assert!(chrooted.file_exists("c/file.txt").unwrap());
+        assert!(chrooted.file_exists("./c/file.txt").unwrap());
+        assert!(chrooted.file_exists("/c/file.txt").unwrap());
+        
+        assert!(chrooted.file_exists("other.txt").unwrap());
+        assert!(chrooted.file_exists("./other.txt").unwrap());
+        assert!(chrooted.file_exists("/other.txt").unwrap());
+        
+        // Read with relative path
+        let content = chrooted.read_file("c/file.txt").unwrap();
+        assert_eq!(content, b"content");
+        
+        // Read with normalized absolute path
+        let content2 = chrooted.read_file("/c/file.txt").unwrap();
+        assert_eq!(content2, b"content");
+    }
+
+    #[test]
+    fn test_chroot_list_dir_relative_paths() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/src/shader/main.glsl", b"code").unwrap();
+        fs.write_file_mut("/src/shader/node.json", b"{}").unwrap();
+        fs.write_file_mut("/src/shader/util.glsl", b"util").unwrap();
+
+        let chrooted = fs.chroot("/src/shader").unwrap();
+
+        // List root directory
+        let entries = chrooted.list_dir("/").unwrap();
+        assert!(entries.contains(&"/main.glsl".to_string()));
+        assert!(entries.contains(&"/node.json".to_string()));
+        assert!(entries.contains(&"/util.glsl".to_string()));
+
+        // List with relative path (should normalize to /)
+        let entries2 = chrooted.list_dir(".").unwrap();
+        assert!(entries2.contains(&"/main.glsl".to_string()));
     }
 
     #[test]
