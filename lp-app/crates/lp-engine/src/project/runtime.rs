@@ -224,6 +224,27 @@ impl ProjectRuntime {
                     None
                 };
 
+                let shader_config = if node_kind == NodeKind::Shader {
+                    let entry = self.nodes.get(&handle).ok_or_else(|| Error::Other {
+                        message: format!("Node handle {} not found", handle.as_i32()),
+                    })?;
+                    // Reload config from filesystem (workaround for trait object limitation)
+                    let node_json_path = format!("{}/node.json", entry.path.as_str());
+                    let data = self.fs.read_file(&node_json_path).map_err(|e| Error::Io {
+                        path: node_json_path.clone(),
+                        details: format!("Failed to read: {:?}", e),
+                    })?;
+                    Some(
+                        serde_json::from_slice::<lp_model::nodes::shader::ShaderConfig>(&data)
+                            .map_err(|e| Error::Parse {
+                                file: node_json_path,
+                                error: format!("Failed to parse shader config: {}", e),
+                            })?,
+                    )
+                } else {
+                    None
+                };
+
                 // Create runtime based on kind
                 let mut runtime: Box<dyn NodeRuntime> = match node_kind {
                     NodeKind::Texture => {
@@ -233,7 +254,13 @@ impl ProjectRuntime {
                         }
                         Box::new(tex_runtime)
                     }
-                    NodeKind::Shader => Box::new(ShaderRuntime::new()),
+                    NodeKind::Shader => {
+                        let mut shader_runtime = ShaderRuntime::new(handle);
+                        if let Some(config) = shader_config {
+                            shader_runtime.set_config(config);
+                        }
+                        Box::new(shader_runtime)
+                    }
                     NodeKind::Output => Box::new(OutputRuntime::new()),
                     NodeKind::Fixture => {
                         let mut fixture_runtime = FixtureRuntime::new();
@@ -693,7 +720,7 @@ impl<'a> RenderContextImpl<'a> {
         nodes: &mut BTreeMap<NodeHandle, NodeEntry>,
         handle: crate::runtime::contexts::TextureHandle,
         frame_id: FrameId,
-        frame_time: FrameTime,
+        _frame_time: FrameTime,  // Will be used for shader execution in Phase 4
     ) -> Result<(), Error> {
         let node_handle = handle.as_node_handle();
         
