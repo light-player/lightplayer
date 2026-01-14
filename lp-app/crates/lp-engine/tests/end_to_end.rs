@@ -10,7 +10,7 @@ fn test_end_to_end_shader_time_based() {
     let mut builder = ProjectBuilder::new(&mut fs).with_project("test-project", "Test Project");
 
     let texture_path = builder.texture(100, 100).add(&mut builder);
-    builder.shader(&texture_path).add(&mut builder); // Uses default shader
+    let shader_path = builder.shader(&texture_path).add(&mut builder); // Uses default shader
     let output_path = builder.output().gpio_pin(18).add(&mut builder);
     builder
         .fixture(&output_path, &texture_path)
@@ -25,7 +25,7 @@ fn test_end_to_end_shader_time_based() {
 
     // Verify shader initialized successfully
     let shader_handle = runtime
-        .resolve_path_to_handle("/src/shader-1.shader")
+        .resolve_path_to_handle(shader_path.as_str())
         .unwrap();
     let shader_entry = runtime.nodes.get(&shader_handle).unwrap();
     assert!(
@@ -40,8 +40,9 @@ fn test_end_to_end_shader_time_based() {
     runtime.tick(16).unwrap();
     sync_client_view(&runtime, &mut client_view);
 
-    let texture_path = "/src/texture-1.texture";
-    let texture_handle = runtime.resolve_path_to_handle(texture_path).unwrap();
+    let texture_handle = runtime
+        .resolve_path_to_handle(texture_path.as_str())
+        .unwrap();
     client_view.request_detail(vec![texture_handle]);
     sync_client_view(&runtime, &mut client_view);
 
