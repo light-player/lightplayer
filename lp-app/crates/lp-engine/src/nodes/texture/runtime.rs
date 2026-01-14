@@ -51,7 +51,7 @@ impl TextureRuntime {
 }
 
 impl NodeRuntime for TextureRuntime {
-    fn init(&mut self, ctx: &dyn NodeInitContext) -> Result<(), Error> {
+    fn init(&mut self, _ctx: &dyn NodeInitContext) -> Result<(), Error> {
         let config = self.config.as_ref().ok_or_else(|| Error::InvalidConfig {
             node_path: format!("texture-{}", self.node_handle.as_i32()),
             reason: "Config not set".to_string(),
@@ -91,7 +91,9 @@ mod tests {
 
     #[test]
     fn test_texture_runtime_creation() {
-        let runtime = TextureRuntime::new();
+        use lp_model::NodeHandle;
+        let handle = NodeHandle::from_i32(0);
+        let runtime = TextureRuntime::new(handle);
         // Just verify it compiles and can be created
         let _boxed: alloc::boxed::Box<dyn NodeRuntime> = alloc::boxed::Box::new(runtime);
     }
