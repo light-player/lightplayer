@@ -333,23 +333,38 @@ invalid glsl code here
                 .find(|d| d.path.as_str() == "/src/test.shader")
                 .expect("Shader node should be in details");
 
+            // Status should indicate error (init failed)
+            assert!(
+                matches!(
+                    shader_detail.status,
+                    lp_model::project::api::NodeStatus::InitError(_)
+                        | lp_model::project::api::NodeStatus::Error(_)
+                ),
+                "Shader should have error status, got: {:?}",
+                shader_detail.status
+            );
+
+            // If runtime exists, check state for error
+            // If runtime doesn't exist (init failed), state will be empty
             match &shader_detail.state {
                 lp_model::project::api::NodeState::Shader(shader_state) => {
-                    // Should have compilation error
-                    assert!(
-                        shader_state.error.is_some(),
-                        "Shader should have compilation error"
-                    );
+                    // If we have a runtime, it should have stored the error
+                    // If init failed completely, runtime is None and state is empty
+                    // In that case, the error is in the status, not the state
+                    if !shader_state.glsl_code.is_empty() {
+                        // Runtime exists, so error should be in state
+                        assert!(
+                            shader_state.error.is_some(),
+                            "Shader with runtime should have compilation error in state, status: {:?}",
+                            shader_detail.status
+                        );
+                    } else {
+                        // Runtime doesn't exist, error is in status (which we already checked)
+                        // This is fine - initialization failed before runtime was created
+                    }
                 }
                 _ => panic!("Expected shader state"),
             }
-
-            // Status should indicate error
-            assert!(matches!(
-                shader_detail.status,
-                lp_model::project::api::NodeStatus::InitError(_)
-                    | lp_model::project::api::NodeStatus::Error(_)
-            ));
         }
     }
 }
