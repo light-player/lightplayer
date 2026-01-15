@@ -1,11 +1,15 @@
 use crate::error::Error;
 use crate::nodes::{NodeConfig, NodeRuntime};
 use crate::runtime::contexts::{NodeInitContext, RenderContext, TextureHandle};
-use alloc::{boxed::Box, format, string::{String, ToString}};
-use lp_glsl_compiler::{glsl_jit, DecimalFormat, GlslExecutable, GlslOptions, RunMode};
+use alloc::{
+    boxed::Box,
+    format,
+    string::{String, ToString},
+};
+use lp_glsl_compiler::{DecimalFormat, GlslExecutable, GlslOptions, RunMode, glsl_jit};
 use lp_model::{
-    nodes::shader::{ShaderConfig, ShaderState},
     NodeHandle,
+    nodes::shader::{ShaderConfig, ShaderState},
 };
 use lp_shared::fs::fs_event::FsChange;
 
@@ -67,66 +71,18 @@ impl ShaderRuntime {
 
 impl NodeRuntime for ShaderRuntime {
     fn init(&mut self, ctx: &dyn NodeInitContext) -> Result<(), Error> {
-        let config = self.config.as_ref().ok_or_else(|| Error::InvalidConfig {
+        let config = self.config.clone().ok_or_else(|| Error::InvalidConfig {
             node_path: format!("shader-{}", self.node_handle.as_i32()),
             reason: alloc::string::String::from("Config not set"),
         })?;
 
-        // Load GLSL source from filesystem
-        // glsl_path is relative to node directory, and node_fs is chrooted to node directory
-        // so we can use the path directly
-        let fs = ctx.get_node_fs();
-        let glsl_path = &config.glsl_path;
-        let source_bytes = fs.read_file(glsl_path).map_err(|e| Error::Io {
-            path: glsl_path.clone(),
-            details: format!("Failed to read GLSL file: {:?}", e),
-        })?;
-
-        let glsl_source =
-            alloc::string::String::from_utf8(source_bytes).map_err(|e| Error::Parse {
-                file: glsl_path.clone(),
-                error: format!("Invalid UTF-8 in GLSL file: {}", e),
-            })?;
-
-        // Store source for state extraction
-        self.glsl_source = Some(glsl_source.clone());
-
         // Resolve texture handle
-        let texture_handle = ctx.resolve_texture(&config.texture_spec).map_err(|e| {
-            self.compilation_error = Some(format!("Failed to resolve texture: {}", e));
-            e
-        })?;
-        self.texture_handle = Some(texture_handle);
+        self.resolve_texture_handle(&config, ctx)?;
 
-        // Compile GLSL shader
-        // Use Fixed32 format (Float format not yet supported)
-        let options = GlslOptions {
-            run_mode: RunMode::HostJit,
-            decimal_format: DecimalFormat::Fixed32,
-        };
+        // Load and compile shader
+        self.load_and_compile_shader(&config, ctx)?;
 
-        match glsl_jit(&glsl_source, options) {
-            Ok(executable) => {
-                // Cast to add Send + Sync bounds (GlslJitModule is safe to send/sync)
-                // The function pointers are stable and don't change after compilation
-                let executable_with_bounds: Box<dyn GlslExecutable + Send + Sync> =
-                    unsafe { core::mem::transmute(executable) };
-                self.executable = Some(executable_with_bounds);
-                self.compilation_error = None;
-                Ok(())
-            }
-            Err(e) => {
-                // Store compilation error but don't fail initialization
-                // This allows the shader to be in an error state but still report the error
-                self.compilation_error = Some(format!("{}", e));
-                self.executable = None;
-                // Return error so node status is set to InitError
-                Err(Error::InvalidConfig {
-                    node_path: format!("shader-{}", self.node_handle.as_i32()),
-                    reason: format!("GLSL compilation failed: {}", e),
-                })
-            }
-        }
+        Ok(())
     }
 
     fn render(&mut self, ctx: &mut dyn RenderContext) -> Result<(), Error> {
@@ -230,10 +186,12 @@ impl NodeRuntime for ShaderRuntime {
             .unwrap_or(true);
 
         if texture_changed {
-            let texture_handle = ctx.resolve_texture(&shader_config.texture_spec).map_err(|e| {
-                self.compilation_error = Some(format!("Failed to resolve texture: {}", e));
-                e
-            })?;
+            let texture_handle = ctx
+                .resolve_texture(&shader_config.texture_spec)
+                .map_err(|e| {
+                    self.compilation_error = Some(format!("Failed to resolve texture: {}", e));
+                    e
+                })?;
             self.texture_handle = Some(texture_handle);
         }
 
@@ -244,9 +202,7 @@ impl NodeRuntime for ShaderRuntime {
             .unwrap_or(true);
 
         if glsl_path_changed {
-            // Reload and recompile shader (clone config to avoid borrow issues)
-            let config_for_reload = new_config_clone.clone();
-            self.reload_shader(&config_for_reload, ctx)?;
+            self.load_and_compile_shader(&new_config_clone, ctx)?;
         }
 
         Ok(())
@@ -257,22 +213,25 @@ impl NodeRuntime for ShaderRuntime {
         change: &FsChange,
         ctx: &dyn NodeInitContext,
     ) -> Result<(), Error> {
-        let glsl_path = self.config.as_ref().map(|c| c.glsl_path.clone()).ok_or_else(|| Error::InvalidConfig {
-            node_path: format!("shader-{}", self.node_handle.as_i32()),
-            reason: "Config not set".to_string(),
-        })?;
+        let glsl_path = self
+            .config
+            .as_ref()
+            .map(|c| c.glsl_path.clone())
+            .ok_or_else(|| Error::InvalidConfig {
+                node_path: format!("shader-{}", self.node_handle.as_i32()),
+                reason: "Config not set".to_string(),
+            })?;
 
         // Check if this change affects the shader's GLSL file
         if change.path == glsl_path {
             match change.change_type {
                 lp_shared::fs::fs_event::ChangeType::Create
                 | lp_shared::fs::fs_event::ChangeType::Modify => {
-                    // Reload and recompile shader (clone config to avoid borrow issues)
                     let config = self.config.clone().ok_or_else(|| Error::InvalidConfig {
                         node_path: format!("shader-{}", self.node_handle.as_i32()),
                         reason: "Config not set".to_string(),
                     })?;
-                    self.reload_shader(&config, ctx)?;
+                    self.load_and_compile_shader(&config, ctx)?;
                 }
                 lp_shared::fs::fs_event::ChangeType::Delete => {
                     // Clear shader executable
@@ -288,13 +247,22 @@ impl NodeRuntime for ShaderRuntime {
 }
 
 impl ShaderRuntime {
-    /// Reload and recompile shader from filesystem
-    fn reload_shader(
+    /// Resolve texture handle from config
+    fn resolve_texture_handle(
         &mut self,
         config: &ShaderConfig,
         ctx: &dyn NodeInitContext,
     ) -> Result<(), Error> {
-        // Load GLSL source from filesystem
+        let texture_handle = ctx.resolve_texture(&config.texture_spec).map_err(|e| {
+            self.compilation_error = Some(format!("Failed to resolve texture: {}", e));
+            e
+        })?;
+        self.texture_handle = Some(texture_handle);
+        Ok(())
+    }
+
+    /// Load GLSL source from filesystem
+    fn load_glsl_source(&mut self, config: &ShaderConfig, ctx: &dyn NodeInitContext) -> Result<String, Error> {
         let fs = ctx.get_node_fs();
         let glsl_path = &config.glsl_path;
         let source_bytes = fs.read_file(glsl_path).map_err(|e| Error::Io {
@@ -311,14 +279,20 @@ impl ShaderRuntime {
         // Store source for state extraction
         self.glsl_source = Some(glsl_source.clone());
 
-        // Compile GLSL shader
+        Ok(glsl_source)
+    }
+
+    /// Compile GLSL source into executable
+    fn compile_shader(&mut self, glsl_source: &str) -> Result<(), Error> {
         let options = GlslOptions {
             run_mode: RunMode::HostJit,
             decimal_format: DecimalFormat::Fixed32,
         };
 
-        match glsl_jit(&glsl_source, options) {
+        match glsl_jit(glsl_source, options) {
             Ok(executable) => {
+                // Cast to add Send + Sync bounds (GlslJitModule is safe to send/sync)
+                // The function pointers are stable and don't change after compilation
                 let executable_with_bounds: Box<dyn GlslExecutable + Send + Sync> =
                     unsafe { core::mem::transmute(executable) };
                 self.executable = Some(executable_with_bounds);
@@ -334,6 +308,16 @@ impl ShaderRuntime {
                 })
             }
         }
+    }
+
+    /// Load and compile shader from filesystem
+    fn load_and_compile_shader(
+        &mut self,
+        config: &ShaderConfig,
+        ctx: &dyn NodeInitContext,
+    ) -> Result<(), Error> {
+        let glsl_source = self.load_glsl_source(config, ctx)?;
+        self.compile_shader(&glsl_source)
     }
 }
 
