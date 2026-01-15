@@ -51,8 +51,12 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli {
-        Cli::Serve { dir, init, memory } => serve::handle_serve(serve::ServeArgs { dir, init, memory }),
+        Cli::Serve { dir, init, memory } => {
+            serve::handle_serve(serve::ServeArgs { dir, init, memory })
+        }
         Cli::Dev { host, dir, push } => dev::handle_dev(dev::DevArgs { host, dir, push }),
-        Cli::Create { dir, name, uid } => create::handle_create(create::CreateArgs { dir, name, uid }),
+        Cli::Create { dir, name, uid } => {
+            create::handle_create(create::CreateArgs { dir, name, uid })
+        }
     }
 }

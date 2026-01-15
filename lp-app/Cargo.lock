@@ -379,6 +379,7 @@ dependencies = [
  "lp-shared",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]

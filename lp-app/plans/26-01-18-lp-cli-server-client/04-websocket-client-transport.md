@@ -7,12 +7,15 @@ Implement websocket client transport using synchronous `tungstenite` with intern
 ## Tasks
 
 1. Update `lp-app/apps/lp-cli/Cargo.toml`:
+
    - Add `tungstenite = { version = "0.21", features = ["native-tls"] }` (or `rustls-tls`)
 
 2. Create `lp-app/apps/lp-cli/src/transport/websocket/mod.rs`:
+
    - Re-export `client` and `server` modules
 
 3. Create `lp-app/apps/lp-cli/src/transport/websocket/client.rs`:
+
    - Define `WebSocketClientTransport` struct:
      ```rust
      pub struct WebSocketClientTransport {

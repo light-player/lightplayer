@@ -16,5 +16,8 @@ lp-server = { path = "../../crates/lp-server" }
 lp-client = { path = "../../crates/lp-client" }
 lp-shared = { path = "../../crates/lp-shared" }
 
+[dev-dependencies]
+tempfile = "3"
+
 [lints]
 workspace = true

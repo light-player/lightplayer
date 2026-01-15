@@ -575,12 +575,14 @@ To initialize a new server, run:
 ### Testability Design
 
 All server and client code should be written with testability in mind:
+
 - **Generic filesystem**: Use `LpFs` trait, allowing `LpFsMemory` for tests
 - **Dependency injection**: Accept filesystem and transport as parameters
 - **No hardcoded paths**: All paths should be configurable
 - **Transport abstraction**: Use transport traits, allowing in-memory transport for tests
 
 This enables:
+
 - Unit tests with memory filesystem
 - Integration tests with in-memory transport
 - End-to-end tests without real filesystem or network
