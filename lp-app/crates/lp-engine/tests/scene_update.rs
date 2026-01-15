@@ -1,7 +1,10 @@
+extern crate alloc;
+
 use lp_engine::{MemoryOutputProvider, ProjectRuntime};
 use lp_model::project::ProjectBuilder;
 use lp_shared::fs::{LpFsMemory, LpFsMemoryShared};
-use std::sync::Arc;
+use alloc::rc::Rc;
+use core::cell::RefCell;
 
 #[test]
 fn test_node_json_modification() {
@@ -23,7 +26,7 @@ fn test_node_json_modification() {
     drop(fs_mut); // Release the borrow
 
     // Create output provider
-    let output_provider = Arc::new(MemoryOutputProvider::new());
+    let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
 
     // Start runtime with shared filesystem
     let mut runtime = ProjectRuntime::new(Box::new(fs.clone()), output_provider.clone()).unwrap();
@@ -99,7 +102,7 @@ fn test_main_glsl_modification() {
     drop(fs_mut); // Release the borrow
 
     // Create output provider
-    let output_provider = Arc::new(MemoryOutputProvider::new());
+    let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
 
     // Start runtime with shared filesystem
     let mut runtime = ProjectRuntime::new(Box::new(fs.clone()), output_provider.clone()).unwrap();
@@ -110,8 +113,10 @@ fn test_main_glsl_modification() {
     // Render a frame to get baseline output
     runtime.tick(4).unwrap();
     let baseline_data = output_provider
+        .borrow()
         .get_data(
             output_provider
+                .borrow()
                 .get_handle_for_pin(0)
                 .expect("Output channel should be open"),
         )
@@ -141,8 +146,10 @@ fn test_main_glsl_modification() {
 
     // Verify the shader was recompiled and applied
     let new_data = output_provider
+        .borrow()
         .get_data(
             output_provider
+                .borrow()
                 .get_handle_for_pin(0)
                 .expect("Output channel should be open"),
         )
@@ -179,7 +186,7 @@ fn test_node_deletion() {
     drop(fs_mut); // Release the borrow
 
     // Create output provider
-    let output_provider = Arc::new(MemoryOutputProvider::new());
+    let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
 
     // Start runtime with shared filesystem
     let mut runtime = ProjectRuntime::new(Box::new(fs.clone()), output_provider.clone()).unwrap();

@@ -6,9 +6,9 @@
 pub mod client;
 pub mod server;
 
+pub use crate::error::TransportError;
 pub use client::ClientTransport;
 pub use server::ServerTransport;
-pub use crate::error::TransportError;
 
 /// Transport-level message wrapper
 ///

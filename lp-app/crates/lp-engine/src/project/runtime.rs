@@ -5,9 +5,10 @@ use crate::runtime::frame_time::FrameTime;
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
+use alloc::rc::Rc;
 use alloc::string::{String, ToString};
-use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::cell::RefCell;
 use lp_model::{
     FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
     project::api::{
@@ -28,7 +29,7 @@ pub struct ProjectRuntime {
     /// Filesystem (owned for now)
     pub fs: Box<dyn LpFs>,
     /// Output provider (shared across nodes)
-    pub output_provider: Arc<dyn OutputProvider>,
+    pub output_provider: Rc<RefCell<dyn OutputProvider>>,
     /// Node entries
     pub nodes: BTreeMap<NodeHandle, NodeEntry>,
     /// Next handle to assign
@@ -70,7 +71,7 @@ pub enum NodeStatus {
 
 impl ProjectRuntime {
     /// Create new project runtime
-    pub fn new(fs: Box<dyn LpFs>, output_provider: Arc<dyn OutputProvider>) -> Result<Self, Error> {
+    pub fn new(fs: Box<dyn LpFs>, output_provider: Rc<RefCell<dyn OutputProvider>>) -> Result<Self, Error> {
         let _config = crate::project::loader::load_from_filesystem(fs.as_ref())?;
 
         Ok(Self {
@@ -413,7 +414,7 @@ impl ProjectRuntime {
                     nodes: &mut self.nodes,
                     frame_id: self.frame_id,
                     frame_time: self.frame_time,
-                    output_provider: Arc::clone(&self.output_provider),
+                    output_provider: Rc::clone(&self.output_provider),
                 };
 
                 // Get runtime and render in one go
@@ -469,7 +470,7 @@ impl ProjectRuntime {
                     nodes: &mut self.nodes,
                     frame_id: self.frame_id,
                     frame_time: self.frame_time,
-                    output_provider: Arc::clone(&self.output_provider),
+                    output_provider: Rc::clone(&self.output_provider),
                 };
 
                 if let Some(entry) = ctx.nodes.get_mut(&handle) {
@@ -1151,7 +1152,10 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
     }
 
     fn output_provider(&self) -> &dyn OutputProvider {
-        self.runtime.output_provider.as_ref()
+        // We can't return a reference from RefCell borrow, so we need to use unsafe
+        // SAFETY: This is safe because the trait only allows immutable access
+        // and we're not holding the borrow across any potential panics
+        unsafe { &*self.runtime.output_provider.as_ptr() }
     }
 }
 
@@ -1160,7 +1164,7 @@ struct RenderContextImpl<'a> {
     nodes: &'a mut BTreeMap<NodeHandle, NodeEntry>,
     frame_id: FrameId,
     frame_time: FrameTime,
-    output_provider: Arc<dyn OutputProvider>,
+    output_provider: Rc<RefCell<dyn OutputProvider>>,
 }
 
 impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
@@ -1174,7 +1178,7 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
             handle,
             self.frame_id,
             self.frame_time,
-            Arc::clone(&self.output_provider),
+            Rc::clone(&self.output_provider),
         )?;
 
         // Get texture runtime
@@ -1217,7 +1221,7 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
             handle,
             self.frame_id,
             self.frame_time,
-            Arc::clone(&self.output_provider),
+            Rc::clone(&self.output_provider),
         )?;
 
         // Get texture runtime
@@ -1294,7 +1298,10 @@ impl<'a> crate::runtime::contexts::RenderContext for RenderContextImpl<'a> {
     }
 
     fn output_provider(&self) -> &dyn OutputProvider {
-        self.output_provider.as_ref()
+        // We can't return a reference from RefCell borrow, so we need to use unsafe
+        // SAFETY: This is safe because the trait only allows immutable access
+        // and we're not holding the borrow across any potential panics
+        unsafe { &*self.output_provider.as_ptr() }
     }
 }
 
@@ -1310,7 +1317,7 @@ impl<'a> RenderContextImpl<'a> {
         handle: crate::runtime::contexts::TextureHandle,
         frame_id: FrameId,
         frame_time: FrameTime,
-        output_provider: Arc<dyn OutputProvider>,
+        output_provider: Rc<RefCell<dyn OutputProvider>>,
     ) -> Result<(), Error> {
         let node_handle = handle.as_node_handle();
 
@@ -1363,7 +1370,7 @@ impl<'a> RenderContextImpl<'a> {
                 nodes,
                 frame_id,
                 frame_time,
-                output_provider: Arc::clone(&output_provider),
+                output_provider: Rc::clone(&output_provider),
             };
 
             // Get shader runtime and render
