@@ -80,7 +80,6 @@ pub fn create_server(
 ///
 /// * `Ok(())` if the loop completes successfully
 /// * `Err` if there's an unrecoverable error
-#[allow(dead_code)] // Will be used in Phase 5
 pub async fn run_server_loop_async<T: ServerTransport>(
     mut server: LpServer,
     mut transport: T,

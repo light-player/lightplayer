@@ -96,7 +96,6 @@ impl HostSpecifier {
     /// let ws = HostSpecifier::parse_optional(Some("ws://localhost:2812/")).unwrap();
     /// assert!(ws.is_websocket());
     /// ```
-    #[allow(dead_code)] // Will be used in Phase 5
     pub fn parse_optional(s: Option<&str>) -> Result<Self> {
         match s {
             None | Some("") | Some("local") => Ok(HostSpecifier::Local),

@@ -11,7 +11,6 @@ use tokio::sync::mpsc;
 ///
 /// Uses tokio channels to send client messages and receive server messages.
 /// Provides non-blocking receive via `try_recv()`.
-#[allow(dead_code)] // Will be used in Phase 5
 pub struct AsyncLocalClientTransport {
     /// Sender for client messages (client -> server)
     client_tx: mpsc::UnboundedSender<ClientMessage>,
@@ -57,7 +56,6 @@ impl ClientTransport for AsyncLocalClientTransport {
 ///
 /// Uses tokio channels to send server messages and receive client messages.
 /// Provides non-blocking receive via `try_recv()`.
-#[allow(dead_code)] // Will be used in Phase 5
 pub struct AsyncLocalServerTransport {
     /// Sender for server messages (server -> client)
     server_tx: mpsc::UnboundedSender<ServerMessage>,
@@ -104,7 +102,6 @@ impl ServerTransport for AsyncLocalServerTransport {
 /// Returns a client transport and server transport that are connected via
 /// tokio channels. Messages sent via the client transport will be received
 /// by the server transport, and vice versa.
-#[allow(dead_code)] // Will be used in Phase 5
 pub fn create_local_transport_pair() -> (AsyncLocalClientTransport, AsyncLocalServerTransport) {
     let (client_tx, server_rx) = mpsc::unbounded_channel();
     let (server_tx, client_rx) = mpsc::unbounded_channel();
