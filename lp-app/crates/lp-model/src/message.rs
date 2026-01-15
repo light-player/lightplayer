@@ -2,7 +2,9 @@
 //!
 //! Defines the message envelope and request/response types for client-server communication.
 
+use crate::project::{api::ProjectRequest, handle::ProjectHandle};
 use crate::server::{FsRequest, ServerResponse};
+use alloc::string::String;
 use serde::{Deserialize, Serialize};
 
 /// Top-level message envelope
@@ -44,16 +46,28 @@ pub struct ServerMessage {
 }
 
 /// Client request types
-///
-/// Currently only includes filesystem requests.
-/// Project management requests can be added later.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "requestType", rename_all = "camelCase")]
 pub enum ClientRequest {
     /// Filesystem operation request
     Filesystem(FsRequest),
-    // Future: Project management requests can be added here
-    // ProjectManagement(ProjectRequest),
+    /// Load a project
+    LoadProject {
+        path: String,
+    },
+    /// Unload a project
+    UnloadProject {
+        handle: ProjectHandle,
+    },
+    /// Project-specific request
+    ProjectRequest {
+        handle: ProjectHandle,
+        request: ProjectRequest,
+    },
+    /// List available projects
+    ListAvailableProjects,
+    /// List loaded projects
+    ListLoadedProjects,
 }
 
 #[cfg(test)]
@@ -132,6 +146,88 @@ mod tests {
                 assert_eq!(path, "/test.txt");
                 assert_eq!(data, b"hello");
             }
+            _ => panic!("Wrong request type"),
+        }
+    }
+
+    #[test]
+    fn test_load_project_request() {
+        let req = ClientRequest::LoadProject {
+            path: "projects/my-project".to_string(),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let deserialized: ClientRequest = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            ClientRequest::LoadProject { path } => {
+                assert_eq!(path, "projects/my-project");
+            }
+            _ => panic!("Wrong request type"),
+        }
+    }
+
+    #[test]
+    fn test_unload_project_request() {
+        let req = ClientRequest::UnloadProject {
+            handle: ProjectHandle::new(1),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let deserialized: ClientRequest = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            ClientRequest::UnloadProject { handle } => {
+                assert_eq!(handle.id(), 1);
+            }
+            _ => panic!("Wrong request type"),
+        }
+    }
+
+    #[test]
+    fn test_project_request() {
+        use crate::project::api::ApiNodeSpecifier;
+        use crate::project::FrameId;
+        let req = ClientRequest::ProjectRequest {
+            handle: ProjectHandle::new(1),
+            request: ProjectRequest::GetChanges {
+                since_frame: FrameId::default(),
+                detail_specifier: ApiNodeSpecifier::All,
+            },
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let deserialized: ClientRequest = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            ClientRequest::ProjectRequest { handle, request } => {
+                assert_eq!(handle.id(), 1);
+                match request {
+                    ProjectRequest::GetChanges {
+                        since_frame,
+                        detail_specifier,
+                    } => {
+                        assert_eq!(since_frame, FrameId::default());
+                        assert_eq!(detail_specifier, ApiNodeSpecifier::All);
+                    }
+                }
+            }
+            _ => panic!("Wrong request type"),
+        }
+    }
+
+    #[test]
+    fn test_list_available_projects_request() {
+        let req = ClientRequest::ListAvailableProjects;
+        let json = serde_json::to_string(&req).unwrap();
+        let deserialized: ClientRequest = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            ClientRequest::ListAvailableProjects => {}
+            _ => panic!("Wrong request type"),
+        }
+    }
+
+    #[test]
+    fn test_list_loaded_projects_request() {
+        let req = ClientRequest::ListLoadedProjects;
+        let json = serde_json::to_string(&req).unwrap();
+        let deserialized: ClientRequest = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            ClientRequest::ListLoadedProjects => {}
             _ => panic!("Wrong request type"),
         }
     }

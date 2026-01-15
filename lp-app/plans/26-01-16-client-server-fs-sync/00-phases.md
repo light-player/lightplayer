@@ -8,3 +8,4 @@
 6. Implement LpClient with blocking operations
 7. Create in-memory transport for tests
 8. Add end-to-end filesystem sync tests
+9. Add project commands (load, unload, list, send messages)

@@ -26,8 +26,16 @@ pub fn handle_client_message(
         lp_model::ClientRequest::Filesystem(fs_request) => {
             ServerResponse::Filesystem(handle_fs_request(base_fs, fs_request)?)
         }
-        // Future: Handle project management requests here
-        // For now, return an error if non-filesystem requests are received
+        // Project management requests - will be implemented in Phase 4
+        lp_model::ClientRequest::LoadProject { .. }
+        | lp_model::ClientRequest::UnloadProject { .. }
+        | lp_model::ClientRequest::ProjectRequest { .. }
+        | lp_model::ClientRequest::ListAvailableProjects
+        | lp_model::ClientRequest::ListLoadedProjects => {
+            return Err(ServerError::Core(
+                "Project management requests are not yet implemented".to_string(),
+            ));
+        }
     };
 
     Ok(ServerMessage { id, msg: response })
