@@ -13,6 +13,8 @@ pub enum HostSpecifier {
     WebSocket { url: String },
     /// Serial connection
     Serial { port: Option<String> }, // None = auto-detect
+    /// Local in-memory server
+    Local,
 }
 
 impl HostSpecifier {
@@ -41,6 +43,11 @@ impl HostSpecifier {
     pub fn parse(s: &str) -> Result<Self> {
         let s = s.trim();
 
+        // Check for local specifier
+        if s.is_empty() || s == "local" {
+            return Ok(HostSpecifier::Local);
+        }
+
         // Check for websocket URLs
         if s.starts_with("ws://") || s.starts_with("wss://") {
             return Ok(HostSpecifier::WebSocket { url: s.to_string() });
@@ -58,9 +65,43 @@ impl HostSpecifier {
         }
 
         bail!(
-            "Invalid host specifier: '{}'. Supported formats: ws://host:port/, wss://host:port/, serial:auto, serial:/dev/ttyUSB1",
+            "Invalid host specifier: '{}'. Supported formats: ws://host:port/, wss://host:port/, serial:auto, serial:/dev/ttyUSB1, local",
             s
         )
+    }
+
+    /// Parse an optional host specifier string
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - Optional host specifier string
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(HostSpecifier::Local)` if `None`, empty, or "local"
+    /// * `Ok(HostSpecifier)` parsed from string otherwise
+    /// * `Err` if the specifier is invalid
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lp_cli::transport::specifier::HostSpecifier;
+    ///
+    /// let local = HostSpecifier::parse_optional(None).unwrap();
+    /// assert!(local.is_local());
+    ///
+    /// let local2 = HostSpecifier::parse_optional(Some("local")).unwrap();
+    /// assert!(local2.is_local());
+    ///
+    /// let ws = HostSpecifier::parse_optional(Some("ws://localhost:2812/")).unwrap();
+    /// assert!(ws.is_websocket());
+    /// ```
+    #[allow(dead_code)] // Will be used in Phase 5
+    pub fn parse_optional(s: Option<&str>) -> Result<Self> {
+        match s {
+            None | Some("") | Some("local") => Ok(HostSpecifier::Local),
+            Some(s) => Self::parse(s),
+        }
     }
 
     /// Check if this is a websocket specifier
@@ -74,6 +115,12 @@ impl HostSpecifier {
     pub fn is_serial(&self) -> bool {
         matches!(self, HostSpecifier::Serial { .. })
     }
+
+    /// Check if this is a local specifier
+    #[allow(dead_code)] // Useful helper method for future use
+    pub fn is_local(&self) -> bool {
+        matches!(self, HostSpecifier::Local)
+    }
 }
 
 impl fmt::Display for HostSpecifier {
@@ -82,6 +129,7 @@ impl fmt::Display for HostSpecifier {
             HostSpecifier::WebSocket { url } => write!(f, "{}", url),
             HostSpecifier::Serial { port: None } => write!(f, "serial:auto"),
             HostSpecifier::Serial { port: Some(port) } => write!(f, "serial:{}", port),
+            HostSpecifier::Local => write!(f, "local"),
         }
     }
 }
@@ -201,5 +249,50 @@ mod tests {
     fn test_parse_websocket_without_trailing_slash() {
         let spec = HostSpecifier::parse("ws://localhost:2812").unwrap();
         assert!(spec.is_websocket());
+    }
+
+    #[test]
+    fn test_parse_local() {
+        let spec = HostSpecifier::parse("local").unwrap();
+        assert!(spec.is_local());
+        assert!(!spec.is_websocket());
+        assert!(!spec.is_serial());
+    }
+
+    #[test]
+    fn test_parse_empty_string() {
+        let spec = HostSpecifier::parse("").unwrap();
+        assert!(spec.is_local());
+    }
+
+    #[test]
+    fn test_parse_optional_none() {
+        let spec = HostSpecifier::parse_optional(None).unwrap();
+        assert!(spec.is_local());
+    }
+
+    #[test]
+    fn test_parse_optional_empty() {
+        let spec = HostSpecifier::parse_optional(Some("")).unwrap();
+        assert!(spec.is_local());
+    }
+
+    #[test]
+    fn test_parse_optional_local() {
+        let spec = HostSpecifier::parse_optional(Some("local")).unwrap();
+        assert!(spec.is_local());
+    }
+
+    #[test]
+    fn test_parse_optional_websocket() {
+        let spec = HostSpecifier::parse_optional(Some("ws://localhost:2812/")).unwrap();
+        assert!(spec.is_websocket());
+        assert!(!spec.is_local());
+    }
+
+    #[test]
+    fn test_display_local() {
+        let spec = HostSpecifier::Local;
+        assert_eq!(spec.to_string(), "local");
     }
 }

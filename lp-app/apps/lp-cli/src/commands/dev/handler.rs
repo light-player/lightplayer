@@ -38,6 +38,9 @@ pub fn handle_dev(args: DevArgs) -> Result<()> {
         HostSpecifier::Serial { .. } => {
             anyhow::bail!("Serial transport not yet implemented");
         }
+        HostSpecifier::Local => {
+            anyhow::bail!("Local transport not yet implemented");
+        }
     };
 
     // Create client

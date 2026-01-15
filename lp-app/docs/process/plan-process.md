@@ -30,9 +30,41 @@ If my answers include other notes, add them to the file in a `# Notes` section.
 
 Move on to the next question.
 
+## Design iteration
+
+Once questions are answered, you will present me with a suggestion of an
+architecture design with two main elements:
+
+The file sturcture as a bare-bones ascii file tree of the relevant directories and files.
+Do NOT create a file to show the file tree, and types, print it to the user in a code block, like this:
+
+```
+module/
+└── src/
+    ├── file.ts                 # NEW: File with things in it
+    └── updater.ts              # UPDATE: File with the updater function
+```
+
+A summary of the types and functions in a similar format to the file tree:
+
+```
+NewThing - # NEW: Trait for the new thing
+├── method1() - # NEW: Method 1
+└── method2() - # NEW: Method 2
+```
+
+If I want to make changes, I will tell you and you will note the changes in the 00-design-notes.md file
+and show me relevant updates to the file tree and type summary.
+
+## Design completion
+
+Once the design is agreed, you will create a new file called 00-design.md with the design.
+
+The design file should be structured as shown in design-example.md
+
 ## Plan Structure Decision
 
-Once questions are answered, decide whether to use a single plan file or separate phase files:
+Once design is finalized, decide whether to use a single plan file or separate phase files:
 
 - **Single file**: For simpler plans with 3-5 phases that can fit comfortably in one file
 - **Separate files**: For complex plans with many phases or when phases need detailed documentation
