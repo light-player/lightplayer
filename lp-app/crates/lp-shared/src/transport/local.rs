@@ -29,14 +29,14 @@ struct SharedState {
 ///
 /// This transport is explicitly single-threaded and uses Rc<RefCell> for
 /// interior mutability. It does not require std.
-pub struct LocalMemoryTransport {
+pub struct LocalTransport {
     /// Shared state (wrapped in RefCell for interior mutability)
     state: Rc<RefCell<SharedState>>,
     /// Whether this is the client side (true) or server side (false)
     is_client: bool,
 }
 
-impl LocalMemoryTransport {
+impl LocalTransport {
     /// Create a pair of transports (client and server)
     ///
     /// Returns `(client_transport, server_transport)` that can communicate
@@ -47,12 +47,12 @@ impl LocalMemoryTransport {
             server_to_client: VecDeque::new(),
         }));
 
-        let client = LocalMemoryTransport {
+        let client = LocalTransport {
             state: Rc::clone(&state),
             is_client: true,
         };
 
-        let server = LocalMemoryTransport {
+        let server = LocalTransport {
             state,
             is_client: false,
         };
@@ -61,7 +61,7 @@ impl LocalMemoryTransport {
     }
 }
 
-impl ClientTransport for LocalMemoryTransport {
+impl ClientTransport for LocalTransport {
     fn send(&mut self, msg: ClientMessage) -> Result<(), TransportError> {
         if !self.is_client {
             return Err(TransportError::Other(
@@ -102,7 +102,7 @@ impl ClientTransport for LocalMemoryTransport {
     }
 }
 
-impl ServerTransport for LocalMemoryTransport {
+impl ServerTransport for LocalTransport {
     fn send(&mut self, msg: ServerMessage) -> Result<(), TransportError> {
         if self.is_client {
             return Err(TransportError::Other(

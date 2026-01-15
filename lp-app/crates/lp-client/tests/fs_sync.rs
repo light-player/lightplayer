@@ -11,7 +11,7 @@ extern crate alloc;
 
 use alloc::{boxed::Box, rc::Rc};
 use core::cell::RefCell;
-use lp_client::{ClientError, LocalMemoryTransport, LpClient};
+use lp_client::{ClientError, LocalTransport, LpClient};
 use lp_model::Message;
 use lp_server::LpServer;
 use lp_shared::fs::{LpFsMemory, LpFsMemoryShared};
@@ -22,16 +22,9 @@ use lp_shared::transport::{ClientTransport, ServerTransport};
 ///
 /// Returns `(server, client, client_transport, server_transport)` for
 /// synchronous message processing in tests.
-fn setup_server_and_client(
-    fs: LpFsMemory,
-) -> (
-    LpServer,
-    LpClient,
-    LocalMemoryTransport,
-    LocalMemoryTransport,
-) {
+fn setup_server_and_client(fs: LpFsMemory) -> (LpServer, LpClient, LocalTransport, LocalTransport) {
     // Create transport pair
-    let (client_transport, server_transport) = LocalMemoryTransport::new_pair();
+    let (client_transport, server_transport) = LocalTransport::new_pair();
 
     // Create server with shared filesystem (allows mutation through immutable trait)
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
@@ -45,10 +38,7 @@ fn setup_server_and_client(
 }
 
 /// Extract ClientMessage from Message envelope and send via transport
-fn send_client_message(
-    transport: &mut LocalMemoryTransport,
-    msg: Message,
-) -> Result<(), ClientError> {
+fn send_client_message(transport: &mut LocalTransport, msg: Message) -> Result<(), ClientError> {
     let client_msg = match msg {
         Message::Client(msg) => msg,
         Message::Server(_) => {
@@ -67,8 +57,8 @@ fn send_client_message(
 fn process_messages(
     client: &mut LpClient,
     server: &mut LpServer,
-    client_transport: &mut LocalMemoryTransport,
-    server_transport: &mut LocalMemoryTransport,
+    client_transport: &mut LocalTransport,
+    server_transport: &mut LocalTransport,
 ) -> Result<(), ClientError> {
     // Process client -> server messages
     // Client sends through client_transport -> goes to client_to_server queue

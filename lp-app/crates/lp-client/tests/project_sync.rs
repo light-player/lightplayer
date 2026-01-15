@@ -10,14 +10,14 @@ extern crate alloc;
 
 use alloc::{boxed::Box, rc::Rc, string::String};
 use core::cell::RefCell;
-use lp_client::{ClientError, LocalMemoryTransport, LpClient};
+use lp_client::{ClientError, LocalTransport, LpClient};
 use lp_model::{
-    Message,
     project::{
-        FrameId,
         api::{ApiNodeSpecifier, SerializableProjectResponse},
         handle::ProjectHandle,
+        FrameId,
     },
+    Message,
 };
 use lp_server::LpServer;
 use lp_shared::fs::{LpFs, LpFsMemory, LpFsMemoryShared};
@@ -284,16 +284,9 @@ fn test_project_get_changes() {
 ///
 /// Returns `(server, client, client_transport, server_transport)` for
 /// synchronous message processing in tests.
-fn setup_server_and_client(
-    fs: LpFsMemory,
-) -> (
-    LpServer,
-    LpClient,
-    LocalMemoryTransport,
-    LocalMemoryTransport,
-) {
+fn setup_server_and_client(fs: LpFsMemory) -> (LpServer, LpClient, LocalTransport, LocalTransport) {
     // Create transport pair
-    let (client_transport, server_transport) = LocalMemoryTransport::new_pair();
+    let (client_transport, server_transport) = LocalTransport::new_pair();
 
     // Create server with shared filesystem (allows mutation through immutable trait)
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
@@ -307,10 +300,7 @@ fn setup_server_and_client(
 }
 
 /// Extract ClientMessage from Message envelope and send via transport
-fn send_client_message(
-    transport: &mut LocalMemoryTransport,
-    msg: Message,
-) -> Result<(), ClientError> {
+fn send_client_message(transport: &mut LocalTransport, msg: Message) -> Result<(), ClientError> {
     let client_msg = match msg {
         Message::Client(msg) => msg,
         Message::Server(_) => {
@@ -329,8 +319,8 @@ fn send_client_message(
 fn process_messages(
     client: &mut LpClient,
     server: &mut LpServer,
-    client_transport: &mut LocalMemoryTransport,
-    server_transport: &mut LocalMemoryTransport,
+    client_transport: &mut LocalTransport,
+    server_transport: &mut LocalTransport,
 ) -> Result<(), ClientError> {
     // Process client -> server messages
     loop {
@@ -414,8 +404,8 @@ fn create_test_project_on_client(fs: &mut LpFsMemory) -> String {
 /// so we list from "/" and sync them to "/projects/{project_name}/".
 fn sync_project_to_server(
     client: &mut LpClient,
-    client_transport: &mut LocalMemoryTransport,
-    server_transport: &mut LocalMemoryTransport,
+    client_transport: &mut LocalTransport,
+    server_transport: &mut LocalTransport,
     server: &mut LpServer,
     project_name: &str,
     client_fs: &LpFsMemoryShared,
@@ -466,8 +456,8 @@ fn sync_project_to_server(
 /// Sends LoadProject request and processes messages, returning the handle.
 fn load_project_on_server(
     client: &mut LpClient,
-    client_transport: &mut LocalMemoryTransport,
-    server_transport: &mut LocalMemoryTransport,
+    client_transport: &mut LocalTransport,
+    server_transport: &mut LocalTransport,
     server: &mut LpServer,
     project_path: &str,
 ) -> Result<ProjectHandle, ClientError> {
