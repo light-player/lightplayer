@@ -262,7 +262,11 @@ impl ShaderRuntime {
     }
 
     /// Load GLSL source from filesystem
-    fn load_glsl_source(&mut self, config: &ShaderConfig, ctx: &dyn NodeInitContext) -> Result<String, Error> {
+    fn load_glsl_source(
+        &mut self,
+        config: &ShaderConfig,
+        ctx: &dyn NodeInitContext,
+    ) -> Result<String, Error> {
         let fs = ctx.get_node_fs();
         let glsl_path = &config.glsl_path;
         let source_bytes = fs.read_file(glsl_path).map_err(|e| Error::Io {
