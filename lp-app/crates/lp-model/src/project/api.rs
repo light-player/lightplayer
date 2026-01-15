@@ -446,7 +446,7 @@ mod tests {
                 assert_eq!(node_handles.len(), 1);
                 assert_eq!(node_changes.len(), 0);
                 assert_eq!(node_details.len(), 1);
-                assert!(node_details.contains_key(&NodeHandle::new(1)));
+                assert!(node_details.iter().any(|(handle, _)| *handle == NodeHandle::new(1)));
             }
         }
     }
