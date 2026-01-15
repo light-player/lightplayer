@@ -10,15 +10,13 @@ use alloc::{
     vec::Vec,
 };
 use lp_model::{
+    ClientMessage, ClientRequest, Message, ServerMessage,
     project::{
+        FrameId,
         api::{ApiNodeSpecifier, SerializableProjectResponse},
         handle::ProjectHandle,
-        FrameId,
     },
-    server::{
-        AvailableProject, FsRequest, FsResponse, LoadedProject, ServerResponse,
-    },
-    ClientMessage, ClientRequest, Message, ServerMessage,
+    server::{AvailableProject, FsRequest, FsResponse, LoadedProject, ServerResponse},
 };
 
 /// Pending request waiting for a response

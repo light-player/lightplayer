@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 /// This is an opaque identifier used to reference a project that has been loaded
 /// on the server. The server maintains a mapping from handles to project instances.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct ProjectHandle(pub u32);
 
 impl ProjectHandle {

@@ -130,6 +130,11 @@ impl LpServer {
         &*self.base_fs
     }
 
+    /// Get a reference to the project manager
+    pub fn project_manager(&self) -> &ProjectManager {
+        &self.project_manager
+    }
+
     /// Get a mutable reference to the project manager
     pub fn project_manager_mut(&mut self) -> &mut ProjectManager {
         &mut self.project_manager

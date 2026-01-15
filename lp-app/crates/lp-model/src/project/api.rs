@@ -174,6 +174,9 @@ pub enum SerializableNodeDetail {
 ///
 /// This enum allows ProjectResponse (which contains NodeDetail) to be serialized
 /// by using SerializableNodeDetail instead of NodeDetail.
+///
+/// Note: node_details uses Vec instead of BTreeMap because JSON map keys must be strings,
+/// and tuple structs don't deserialize correctly from string keys.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SerializableProjectResponse {
     /// Changes response
@@ -185,7 +188,8 @@ pub enum SerializableProjectResponse {
         /// Changed nodes since since_frame
         node_changes: Vec<NodeChange>,
         /// Full detail for requested nodes (serializable)
-        node_details: BTreeMap<NodeHandle, SerializableNodeDetail>,
+        /// Uses Vec instead of BTreeMap for JSON compatibility
+        node_details: Vec<(NodeHandle, SerializableNodeDetail)>,
     },
 }
 
@@ -264,10 +268,10 @@ impl ProjectResponse {
                 node_changes,
                 node_details,
             } => {
-                let mut serializable_details = BTreeMap::new();
+                let mut serializable_details = Vec::new();
                 for (handle, detail) in node_details {
                     let serializable_detail = detail.to_serializable()?;
-                    serializable_details.insert(*handle, serializable_detail);
+                    serializable_details.push((*handle, serializable_detail));
                 }
                 Ok(SerializableProjectResponse::GetChanges {
                     current_frame: *current_frame,
@@ -482,8 +486,8 @@ mod tests {
     #[test]
     fn test_serializable_project_response_serialization() {
         use crate::nodes::texture::TextureConfig;
-        let mut node_details = BTreeMap::new();
-        node_details.insert(
+        let mut node_details = Vec::new();
+        node_details.push((
             NodeHandle::new(1),
             SerializableNodeDetail::Texture {
                 path: LpPath::from("/src/texture.texture"),
@@ -496,7 +500,7 @@ mod tests {
                 }),
                 status: NodeStatus::Ok,
             },
-        );
+        ));
 
         let response = SerializableProjectResponse::GetChanges {
             current_frame: FrameId::default(),
