@@ -1,1 +1,5 @@
-// Placeholder - project moved to lp-model
+//! Project-related utilities
+
+pub mod builder;
+
+pub use builder::ProjectBuilder;

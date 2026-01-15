@@ -1,23 +1,18 @@
 //! Project builder for creating test projects with a fluent API
 
-use crate::nodes::fixture::ColorOrder;
-use crate::nodes::{
+use crate::fs::LpFs;
+use lp_model::nodes::fixture::ColorOrder;
+use lp_model::nodes::{
     fixture::FixtureConfig, output::OutputConfig, shader::ShaderConfig, texture::TextureConfig,
     NodeSpecifier,
 };
-use crate::path::LpPath;
+use lp_model::path::LpPath;
 use alloc::{format, string::String};
-// TODO: ProjectBuilder needs lp-shared::fs::LpFs, but lp-model can't depend on lp-shared
-// This will be fixed in a follow-up - for now this module won't compile when used
-// use lp_shared::fs::LpFs;
 use serde_json;
 
 /// Builder for creating test projects
-// TODO: Temporarily disabled - needs lp-shared::fs::LpFs which creates circular dependency
-// This will be fixed in a follow-up
-#[cfg(feature = "lp-shared")]
 pub struct ProjectBuilder<'a> {
-    // fs: &'a mut dyn LpFs,
+    fs: &'a mut dyn LpFs,
     uid: String,
     name: String,
     texture_id: u32,
@@ -99,19 +94,19 @@ impl<'a> ProjectBuilder<'a> {
         &mut self,
         path: &str,
         data: &[u8],
-    ) -> Result<(), lp_shared::error::FsError> {
+    ) -> Result<(), crate::error::FsError> {
         // For LpFsMemory, we need to use write_file_mut
         // Since we can't downcast through trait objects safely, we'll use a workaround:
         // Try write_file first, and if it fails with the specific error, we know it's LpFsMemory
         match self.fs.write_file(path, data) {
             Ok(()) => Ok(()),
-            Err(lp_shared::error::FsError::Filesystem(msg)) if msg.contains("write_file_mut") => {
+            Err(crate::error::FsError::Filesystem(msg)) if msg.contains("write_file_mut") => {
                 // This is LpFsMemory - we need mutable access
                 // Use unsafe to get mutable access - this is safe because we know it's LpFsMemory
                 // and write_file_mut is safe to call
                 unsafe {
                     let fs_ptr = self.fs as *mut dyn LpFs;
-                    let fs_any = fs_ptr as *mut lp_shared::fs::LpFsMemory;
+                    let fs_any = fs_ptr as *mut crate::fs::LpFsMemory;
                     (*fs_any).write_file_mut(path, data)
                 }
             }

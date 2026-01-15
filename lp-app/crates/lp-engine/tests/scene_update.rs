@@ -3,7 +3,7 @@ extern crate alloc;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use lp_engine::{MemoryOutputProvider, ProjectRuntime};
-use lp_model::project::ProjectBuilder;
+use lp_shared::ProjectBuilder;
 use lp_shared::fs::{LpFsMemory, LpFsMemoryShared};
 
 #[test]

@@ -334,7 +334,6 @@ name = "lp-model"
 version = "40.0.0"
 dependencies = [
  "hashbrown",
- "log",
  "serde",
  "serde_json",
  "tempfile",

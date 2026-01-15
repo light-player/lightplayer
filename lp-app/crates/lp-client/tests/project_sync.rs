@@ -22,6 +22,7 @@ use lp_model::{
 use lp_server::LpServer;
 use lp_shared::fs::{LpFs, LpFsMemory, LpFsMemoryShared};
 use lp_shared::output::MemoryOutputProvider;
+use lp_shared::project::ProjectBuilder;
 use lp_shared::transport::{ClientTransport, ServerTransport};
 
 #[test]
@@ -413,8 +414,8 @@ fn create_test_project_on_client(fs: &mut LpFsMemory) -> String {
 /// so we list from "/" and sync them to "/projects/{project_name}/".
 fn sync_project_to_server(
     client: &mut LpClient,
-    client_transport: &mut MemoryTransport,
-    server_transport: &mut MemoryTransport,
+    client_transport: &mut LocalMemoryTransport,
+    server_transport: &mut LocalMemoryTransport,
     server: &mut LpServer,
     project_name: &str,
     client_fs: &LpFsMemoryShared,
@@ -465,8 +466,8 @@ fn sync_project_to_server(
 /// Sends LoadProject request and processes messages, returning the handle.
 fn load_project_on_server(
     client: &mut LpClient,
-    client_transport: &mut MemoryTransport,
-    server_transport: &mut MemoryTransport,
+    client_transport: &mut LocalMemoryTransport,
+    server_transport: &mut LocalMemoryTransport,
     server: &mut LpServer,
     project_path: &str,
 ) -> Result<ProjectHandle, ClientError> {

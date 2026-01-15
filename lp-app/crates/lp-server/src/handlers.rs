@@ -8,7 +8,6 @@ use alloc::{format, rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;
 use lp_model::{
     ClientMessage, ServerMessage,
-    project::api::SerializableProjectResponse,
     server::{AvailableProject, FsRequest, FsResponse, ServerResponse},
 };
 use lp_shared::fs::LpFs;

@@ -13,10 +13,12 @@ pub mod log;
 pub mod util; // Temporarily enabled for Texture
 
 pub mod output;
+pub mod project;
 pub mod transport;
 
 pub use error::{FsError, OutputError, TextureError};
 // Re-export TransportError from lp-model for convenience
 pub use lp_model::TransportError;
+pub use project::ProjectBuilder;
 pub use transport::LocalMemoryTransport;
 pub use util::texture::Texture;
