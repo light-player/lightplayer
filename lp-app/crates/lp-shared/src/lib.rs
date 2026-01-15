@@ -12,5 +12,8 @@ pub mod log;
 // pub mod server;
 pub mod util; // Temporarily enabled for Texture
 
-pub use error::{FsError, TextureError};
+pub mod output;
+pub mod transport;
+
+pub use error::{FsError, OutputError, TextureError, TransportError};
 pub use util::texture::Texture;

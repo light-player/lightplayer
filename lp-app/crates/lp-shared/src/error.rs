@@ -45,3 +45,70 @@ impl fmt::Display for TextureError {
         }
     }
 }
+
+/// Transport error type
+#[derive(Debug, Clone)]
+pub enum TransportError {
+    /// Serialization error
+    Serialization(String),
+    /// Deserialization error
+    Deserialization(String),
+    /// Connection lost
+    ConnectionLost,
+    /// Other transport error
+    Other(String),
+}
+
+impl fmt::Display for TransportError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TransportError::Serialization(msg) => write!(f, "Serialization error: {}", msg),
+            TransportError::Deserialization(msg) => {
+                write!(f, "Deserialization error: {}", msg)
+            }
+            TransportError::ConnectionLost => write!(f, "Connection lost"),
+            TransportError::Other(msg) => write!(f, "Transport error: {}", msg),
+        }
+    }
+}
+
+/// Output provider error type
+#[derive(Debug, Clone)]
+pub enum OutputError {
+    /// Pin is already open
+    PinAlreadyOpen { pin: u32 },
+    /// Invalid handle
+    InvalidHandle { handle: i32 },
+    /// Invalid configuration
+    InvalidConfig { reason: String },
+    /// Data length mismatch
+    DataLengthMismatch { expected: u32, actual: usize },
+    /// Other error
+    Other { message: String },
+}
+
+impl fmt::Display for OutputError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            OutputError::PinAlreadyOpen { pin } => {
+                write!(f, "Pin {} is already open", pin)
+            }
+            OutputError::InvalidHandle { handle } => {
+                write!(f, "Invalid handle: {}", handle)
+            }
+            OutputError::InvalidConfig { reason } => {
+                write!(f, "Invalid config: {}", reason)
+            }
+            OutputError::DataLengthMismatch { expected, actual } => {
+                write!(
+                    f,
+                    "Data length {} doesn't match expected byte_count {}",
+                    actual, expected
+                )
+            }
+            OutputError::Other { message } => {
+                write!(f, "Error: {}", message)
+            }
+        }
+    }
+}

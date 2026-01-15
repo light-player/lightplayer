@@ -40,7 +40,25 @@ pub trait LpFs {
     ///
     /// Returns paths relative to project root. The returned paths include the directory
     /// path prefix (e.g., listing `/src` might return `["/src/my-shader.shader", "/src/my-texture.texture"]`).
-    fn list_dir(&self, path: &str) -> Result<alloc::vec::Vec<alloc::string::String>, FsError>;
+    ///
+    /// If `recursive` is `true`, lists all files and directories recursively. If `false`, only lists
+    /// immediate children.
+    fn list_dir(&self, path: &str, recursive: bool) -> Result<alloc::vec::Vec<alloc::string::String>, FsError>;
+
+    /// Delete a file from the filesystem
+    ///
+    /// Path is relative to project root.
+    ///
+    /// Returns an error if the path is "/" (root), would escape the root directory, or the file doesn't exist.
+    fn delete_file(&self, path: &str) -> Result<(), FsError>;
+
+    /// Delete a directory from the filesystem
+    ///
+    /// Path is relative to project root.
+    ///
+    /// Always deletes recursively (removes directory and all contents).
+    /// Returns an error if the path is "/" (root), would escape the root directory, or the directory doesn't exist.
+    fn delete_dir(&self, path: &str) -> Result<(), FsError>;
 
     /// Create a new filesystem view rooted at a subdirectory
     ///

@@ -1,0 +1,138 @@
+//! Message protocol types
+//!
+//! Defines the message envelope and request/response types for client-server communication.
+
+use crate::server::{FsRequest, ServerResponse};
+use serde::{Deserialize, Serialize};
+
+/// Top-level message envelope
+///
+/// Messages are wrapped in this enum to distinguish between client and server messages.
+/// Note: Cannot derive Clone because ServerMessage contains non-cloneable types.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "direction", rename_all = "lowercase")]
+pub enum Message {
+    /// Message from client to server
+    Client(ClientMessage),
+    /// Message from server to client
+    Server(ServerMessage),
+}
+
+/// Client message with request ID
+///
+/// Wraps a client request with an ID for request/response correlation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClientMessage {
+    /// Request ID for correlating requests and responses
+    pub id: u64,
+    /// The request payload
+    pub msg: ClientRequest,
+}
+
+/// Server message with request ID
+///
+/// Wraps a server response with an ID matching the original request.
+///
+/// Note: Cannot derive Clone because ServerResponse contains non-cloneable types
+/// (specifically ProjectResponse which contains NodeDetail with trait objects).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ServerMessage {
+    /// Request ID matching the original client request
+    pub id: u64,
+    /// The response payload
+    pub msg: ServerResponse,
+}
+
+/// Client request types
+///
+/// Currently only includes filesystem requests.
+/// Project management requests can be added later.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "requestType", rename_all = "camelCase")]
+pub enum ClientRequest {
+    /// Filesystem operation request
+    Filesystem(FsRequest),
+    // Future: Project management requests can be added here
+    // ProjectManagement(ProjectRequest),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::FsResponse;
+    use alloc::string::ToString;
+
+    #[test]
+    fn test_message_serialization() {
+        let client_msg = ClientMessage {
+            id: 1,
+            msg: ClientRequest::Filesystem(FsRequest::Read {
+                path: "/project.json".to_string(),
+            }),
+        };
+        let message = Message::Client(client_msg);
+        let json = serde_json::to_string(&message).unwrap();
+        // Verify round-trip serialization
+        let deserialized: Message = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            Message::Client(ClientMessage { id, msg }) => {
+                assert_eq!(id, 1);
+                match msg {
+                    ClientRequest::Filesystem(FsRequest::Read { path }) => {
+                        assert_eq!(path, "/project.json");
+                    }
+                    _ => panic!("Wrong request type"),
+                }
+            }
+            _ => panic!("Wrong message direction"),
+        }
+    }
+
+    #[test]
+    fn test_server_message_serialization() {
+        let server_msg = ServerMessage {
+            id: 1,
+            msg: ServerResponse::Filesystem(FsResponse::Read {
+                path: "/project.json".to_string(),
+                data: Some(b"{}".to_vec()),
+                error: None,
+            }),
+        };
+        let message = Message::Server(server_msg);
+        let json = serde_json::to_string(&message).unwrap();
+        // Verify round-trip serialization
+        let deserialized: Message = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            Message::Server(ServerMessage { id, msg }) => {
+                assert_eq!(id, 1);
+                match msg {
+                    ServerResponse::Filesystem(FsResponse::Read { path, data, error }) => {
+                        assert_eq!(path, "/project.json");
+                        assert_eq!(data, Some(b"{}".to_vec()));
+                        assert_eq!(error, None);
+                    }
+                    _ => panic!("Wrong response type"),
+                }
+            }
+            _ => panic!("Wrong message direction"),
+        }
+    }
+
+    #[test]
+    fn test_nested_filesystem_request() {
+        let req = ClientRequest::Filesystem(FsRequest::Write {
+            path: "/test.txt".to_string(),
+            data: b"hello".to_vec(),
+        });
+        let json = serde_json::to_string(&req).unwrap();
+        // Verify round-trip serialization
+        let deserialized: ClientRequest = serde_json::from_str(&json).unwrap();
+        match deserialized {
+            ClientRequest::Filesystem(FsRequest::Write { path, data }) => {
+                assert_eq!(path, "/test.txt");
+                assert_eq!(data, b"hello");
+            }
+            _ => panic!("Wrong request type"),
+        }
+    }
+}

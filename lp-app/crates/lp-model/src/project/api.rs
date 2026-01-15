@@ -7,7 +7,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 /// Node specifier for API requests
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ApiNodeSpecifier {
     /// No nodes
     None,
@@ -18,7 +18,7 @@ pub enum ApiNodeSpecifier {
 }
 
 /// Project request from client
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ProjectRequest {
     /// Get changes since a frame
     GetChanges {
@@ -31,7 +31,12 @@ pub enum ProjectRequest {
 
 /// Project response from server
 ///
-/// Note: Cannot implement Clone because NodeDetail contains trait object
+/// Note: Cannot implement Clone because NodeDetail contains trait object.
+///
+/// TODO: Serialization is disabled in ServerResponse because ProjectResponse contains
+/// `NodeDetail` which includes `Box<dyn NodeConfig>` (a trait object) that cannot be
+/// serialized directly with serde. See `lp-model/src/server/api.rs::ServerResponse`
+/// for the disabled variant.
 #[derive(Debug)]
 pub enum ProjectResponse {
     /// Changes response
@@ -92,11 +97,22 @@ pub enum NodeStatus {
 
 /// Node detail - full config + state + status
 ///
-/// Note: Cannot implement Clone/PartialEq/Eq because config is a trait object
+/// Note: Cannot implement Clone/PartialEq/Eq because config is a trait object.
+///
+/// TODO: Serialization is blocked because `Box<dyn NodeConfig>` cannot be serialized
+/// directly with serde. This prevents ProjectResponse (which contains NodeDetail) from
+/// being serialized in ServerResponse.
+///
+/// Options for future implementation:
+/// 1. Create a serializable wrapper enum that matches on NodeKind and serializes concrete types
+/// 2. Implement custom Serialize/Deserialize that dispatches based on NodeKind
+/// 3. Refactor to use an enum instead of trait objects (breaking change)
+///
+/// See: `lp-model/src/server/api.rs::ServerResponse` for where this blocks serialization
 #[derive(Debug)]
 pub struct NodeDetail {
     pub path: LpPath,
-    pub config: Box<dyn NodeConfig>, // todo!() - will need serialization later
+    pub config: Box<dyn NodeConfig>, // TODO: Needs serialization support (see struct docs)
     pub state: NodeState,            // External state only
     pub status: NodeStatus,
 }

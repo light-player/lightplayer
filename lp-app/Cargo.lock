@@ -262,14 +262,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
 
 [[package]]
-name = "lp-api"
-version = "40.0.0"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "lp-builtins"
 version = "40.0.0"
 
@@ -280,6 +272,13 @@ version = "40.0.0"
 [[package]]
 name = "lp-client"
 version = "40.0.0"
+dependencies = [
+ "hashbrown",
+ "lp-model",
+ "lp-server",
+ "lp-shared",
+ "serde_json",
+]
 
 [[package]]
 name = "lp-engine"
@@ -348,6 +347,7 @@ version = "40.0.0"
 dependencies = [
  "hashbrown",
  "lp-engine",
+ "lp-model",
  "lp-shared",
  "serde_json",
 ]

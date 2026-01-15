@@ -97,16 +97,69 @@ impl LpFsMemory {
         Ok(())
     }
 
-    /// Delete a file
-    pub fn delete_file(&mut self, path: &str) -> Result<(), FsError> {
+    /// Delete a file (mutable version)
+    pub fn delete_file_mut(&mut self, path: &str) -> Result<(), FsError> {
+        // Validate path is safe to delete (explicitly reject "/")
+        Self::validate_path_for_deletion(path)?;
         self.validate_path(path)?;
         let normalized = Self::normalize_path(path);
+        
+        // Check if it's a directory (by checking if any file starts with normalized + "/")
+        let dir_prefix = format!("{}/", normalized);
+        for file_path in self.files.keys() {
+            if file_path.starts_with(&dir_prefix) {
+                return Err(FsError::Filesystem(format!(
+                    "Path {:?} is a directory, use delete_dir_mut() instead",
+                    path
+                )));
+            }
+        }
+        
         if self.files.remove(&normalized).is_none() {
             return Err(FsError::NotFound(path.to_string()));
         }
         
         // Record change
         self.record_change(normalized, ChangeType::Delete);
+        
+        Ok(())
+    }
+
+    /// Delete a directory (mutable version, always recursive)
+    pub fn delete_dir_mut(&mut self, path: &str) -> Result<(), FsError> {
+        // Validate path is safe to delete (explicitly reject "/")
+        Self::validate_path_for_deletion(path)?;
+        self.validate_path(path)?;
+        let normalized = Self::normalize_path(path);
+        
+        // Check if it's actually a directory (has files with this prefix)
+        let prefix = if normalized.ends_with('/') {
+            normalized.clone()
+        } else {
+            format!("{}/", normalized)
+        };
+        
+        let mut found_any = false;
+        let mut files_to_remove = Vec::new();
+        
+        for file_path in self.files.keys() {
+            if file_path.starts_with(&prefix) || file_path == &normalized {
+                files_to_remove.push(file_path.clone());
+                found_any = true;
+            }
+        }
+        
+        if !found_any {
+            return Err(FsError::NotFound(path.to_string()));
+        }
+        
+        // Remove all files with this prefix (recursive deletion)
+        for file_path in files_to_remove {
+            let normalized_path = Self::normalize_path(&file_path);
+            self.files.remove(&normalized_path);
+            // Record change
+            self.record_change(normalized_path, ChangeType::Delete);
+        }
         
         Ok(())
     }
@@ -119,6 +172,22 @@ impl LpFsMemory {
                 "Path must be relative to project root (start with /): {}",
                 path
             )));
+        }
+        Ok(())
+    }
+
+    /// Validate that a path is safe to delete
+    ///
+    /// Returns an error if:
+    /// - Path is "/" (root)
+    ///
+    /// This is a separate function so we can test it without attempting dangerous operations.
+    pub fn validate_path_for_deletion(path: &str) -> Result<(), FsError> {
+        let normalized = Self::normalize_path(path);
+        if normalized == "/" {
+            return Err(FsError::InvalidPath(
+                "Cannot delete root directory".to_string(),
+            ));
         }
         Ok(())
     }
@@ -154,7 +223,7 @@ impl LpFs for LpFsMemory {
         Ok(self.files.contains_key(&normalized))
     }
 
-    fn list_dir(&self, path: &str) -> Result<Vec<String>, FsError> {
+    fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, FsError> {
         self.validate_path(path)?;
         let normalized = Self::normalize_path(path);
         let mut entries = Vec::new();
@@ -164,25 +233,68 @@ impl LpFs for LpFsMemory {
             alloc::format!("{}/", normalized)
         };
 
-        for file_path in self.files.keys() {
-            if file_path.starts_with(&prefix) {
-                // Extract the entry name (file or subdirectory)
-                let remainder = &file_path[prefix.len()..];
-                if let Some(slash_pos) = remainder.find('/') {
-                    // It's a subdirectory - add the directory path
-                    let dir_name = &remainder[..slash_pos];
-                    let full_dir_path = format!("{}{}", prefix, dir_name);
-                    if !entries.contains(&full_dir_path) {
-                        entries.push(full_dir_path);
-                    }
-                } else {
-                    // It's a file directly in this directory
+        if recursive {
+            // Recursive: return all files/directories with this prefix
+            for file_path in self.files.keys() {
+                if file_path.starts_with(&prefix) {
                     entries.push(file_path.clone());
+                }
+            }
+            // Also include directories (paths that are prefixes of files)
+            let mut dirs = hashbrown::HashSet::new();
+            for file_path in self.files.keys() {
+                if file_path.starts_with(&prefix) {
+                    let remainder = &file_path[prefix.len()..];
+                    if let Some(slash_pos) = remainder.find('/') {
+                        let dir_path = format!("{}{}", prefix, &remainder[..slash_pos]);
+                        dirs.insert(dir_path);
+                    }
+                }
+            }
+            // Add directories that aren't already in entries
+            for dir_path in dirs {
+                if !entries.contains(&dir_path) {
+                    entries.push(dir_path);
+                }
+            }
+        } else {
+            // Non-recursive: only immediate children
+            for file_path in self.files.keys() {
+                if file_path.starts_with(&prefix) {
+                    // Extract the entry name (file or subdirectory)
+                    let remainder = &file_path[prefix.len()..];
+                    if let Some(slash_pos) = remainder.find('/') {
+                        // It's a subdirectory - add the directory path
+                        let dir_name = &remainder[..slash_pos];
+                        let full_dir_path = format!("{}{}", prefix, dir_name);
+                        if !entries.contains(&full_dir_path) {
+                            entries.push(full_dir_path);
+                        }
+                    } else {
+                        // It's a file directly in this directory
+                        entries.push(file_path.clone());
+                    }
                 }
             }
         }
 
         Ok(entries)
+    }
+
+    fn delete_file(&self, _path: &str) -> Result<(), FsError> {
+        // For immutable access, we can't modify, so return error
+        // Use delete_file_mut() for mutable access
+        Err(FsError::Filesystem(
+            "Use delete_file_mut() for mutable filesystem".to_string(),
+        ))
+    }
+
+    fn delete_dir(&self, _path: &str) -> Result<(), FsError> {
+        // For immutable access, we can't modify, so return error
+        // Use delete_dir_mut() for mutable access
+        Err(FsError::Filesystem(
+            "Use delete_dir_mut() for mutable filesystem".to_string(),
+        ))
     }
 
     fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {
@@ -244,6 +356,7 @@ impl LpFs for LpFsMemory {
             fn list_dir(
                 &self,
                 path: &str,
+                recursive: bool,
             ) -> Result<alloc::vec::Vec<alloc::string::String>, FsError> {
                 // Normalize path first (handles relative paths by prepending /)
                 let normalized = LpFsMemory::normalize_path(path);
@@ -255,22 +368,46 @@ impl LpFs for LpFsMemory {
                     format!("{}/", normalized)
                 };
 
-                for file_path in self.files.keys() {
-                    if file_path.starts_with(&prefix) {
-                        let remainder = &file_path[prefix.len()..];
-                        if let Some(slash_pos) = remainder.find('/') {
-                            let dir_name = &remainder[..slash_pos];
-                            let full_dir_path = format!("{}{}", prefix, dir_name);
-                            if !entries.contains(&full_dir_path) {
-                                entries.push(full_dir_path);
-                            }
-                        } else {
+                if recursive {
+                    // Recursive: return all files with this prefix
+                    for file_path in self.files.keys() {
+                        if file_path.starts_with(&prefix) {
                             entries.push(file_path.clone());
+                        }
+                    }
+                } else {
+                    // Non-recursive: only immediate children
+                    for file_path in self.files.keys() {
+                        if file_path.starts_with(&prefix) {
+                            let remainder = &file_path[prefix.len()..];
+                            if let Some(slash_pos) = remainder.find('/') {
+                                let dir_name = &remainder[..slash_pos];
+                                let full_dir_path = format!("{}{}", prefix, dir_name);
+                                if !entries.contains(&full_dir_path) {
+                                    entries.push(full_dir_path);
+                                }
+                            } else {
+                                entries.push(file_path.clone());
+                            }
                         }
                     }
                 }
 
                 Ok(entries)
+            }
+
+            fn delete_file(&self, _path: &str) -> Result<(), FsError> {
+                // Chrooted filesystem is immutable - deletion not supported
+                Err(FsError::Filesystem(
+                    "Use delete_file_mut() on mutable filesystem".to_string(),
+                ))
+            }
+
+            fn delete_dir(&self, _path: &str) -> Result<(), FsError> {
+                // Chrooted filesystem is immutable - deletion not supported
+                Err(FsError::Filesystem(
+                    "Use delete_dir_mut() on mutable filesystem".to_string(),
+                ))
             }
 
             fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {
@@ -348,13 +485,63 @@ mod tests {
             .unwrap();
         fs.write_file_mut("/other.txt", b"content").unwrap();
 
-        let entries = fs.list_dir("/src").unwrap();
+        let entries = fs.list_dir("/src", false).unwrap();
         assert!(entries.contains(&"/src/file1.txt".to_string()));
         assert!(entries.contains(&"/src/file2.txt".to_string()));
         // list_dir("/src") should show "/src/nested" as a directory, not the file inside it
         assert!(entries.contains(&"/src/nested".to_string()));
         assert!(!entries.contains(&"/src/nested/file3.txt".to_string()));
         assert!(!entries.contains(&"/other.txt".to_string()));
+    }
+
+    #[test]
+    fn test_list_dir_recursive() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/src/file1.txt", b"content1").unwrap();
+        fs.write_file_mut("/src/nested/file2.txt", b"content2").unwrap();
+        fs.write_file_mut("/src/nested/deep/file3.txt", b"content3").unwrap();
+
+        let entries = fs.list_dir("/src", true).unwrap();
+        assert!(entries.contains(&"/src/file1.txt".to_string()));
+        assert!(entries.contains(&"/src/nested/file2.txt".to_string()));
+        assert!(entries.contains(&"/src/nested/deep/file3.txt".to_string()));
+    }
+
+    #[test]
+    fn test_delete_file() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/test.txt", b"content").unwrap();
+        assert!(fs.file_exists("/test.txt").unwrap());
+
+        fs.delete_file_mut("/test.txt").unwrap();
+        assert!(!fs.file_exists("/test.txt").unwrap());
+    }
+
+    #[test]
+    fn test_delete_dir() {
+        let mut fs = LpFsMemory::new();
+        fs.write_file_mut("/dir/file1.txt", b"content1").unwrap();
+        fs.write_file_mut("/dir/nested/file2.txt", b"content2").unwrap();
+        assert!(fs.file_exists("/dir/file1.txt").unwrap());
+        assert!(fs.file_exists("/dir/nested/file2.txt").unwrap());
+
+        fs.delete_dir_mut("/dir").unwrap();
+        assert!(!fs.file_exists("/dir/file1.txt").unwrap());
+        assert!(!fs.file_exists("/dir/nested/file2.txt").unwrap());
+    }
+
+    #[test]
+    fn test_delete_root_rejected() {
+        let mut fs = LpFsMemory::new();
+        assert!(fs.delete_file_mut("/").is_err());
+        assert!(fs.delete_dir_mut("/").is_err());
+    }
+
+    #[test]
+    fn test_validate_path_for_deletion() {
+        assert!(LpFsMemory::validate_path_for_deletion("/").is_err());
+        assert!(LpFsMemory::validate_path_for_deletion("/file.txt").is_ok());
+        assert!(LpFsMemory::validate_path_for_deletion("/dir").is_ok());
     }
 
     #[test]
@@ -480,13 +667,13 @@ mod tests {
         let chrooted = fs.chroot("/src/shader").unwrap();
 
         // List root directory
-        let entries = chrooted.list_dir("/").unwrap();
+        let entries = chrooted.list_dir("/", false).unwrap();
         assert!(entries.contains(&"/main.glsl".to_string()));
         assert!(entries.contains(&"/node.json".to_string()));
         assert!(entries.contains(&"/util.glsl".to_string()));
 
         // List with relative path (should normalize to /)
-        let entries2 = chrooted.list_dir(".").unwrap();
+        let entries2 = chrooted.list_dir(".", false).unwrap();
         assert!(entries2.contains(&"/main.glsl".to_string()));
     }
 
@@ -522,7 +709,7 @@ mod tests {
             .unwrap();
 
         let chrooted = fs.chroot("/projects/test").unwrap();
-        let entries = chrooted.list_dir("/src").unwrap();
+        let entries = chrooted.list_dir("/src", false).unwrap();
         assert!(entries.contains(&"/src/file1.txt".to_string()));
         assert!(entries.contains(&"/src/file2.txt".to_string()));
         assert!(!entries.contains(&"/projects/test/src/file1.txt".to_string()));
@@ -585,8 +772,20 @@ impl LpFs for LpFsMemoryShared {
         self.inner.borrow().file_exists(path)
     }
 
-    fn list_dir(&self, path: &str) -> Result<Vec<String>, FsError> {
-        self.inner.borrow().list_dir(path)
+    fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, FsError> {
+        self.inner.borrow().list_dir(path, recursive)
+    }
+
+    fn delete_file(&self, path: &str) -> Result<(), FsError> {
+        // For shared access, we need mutable borrow
+        let mut fs = self.inner.borrow_mut();
+        fs.delete_file_mut(path)
+    }
+
+    fn delete_dir(&self, path: &str) -> Result<(), FsError> {
+        // For shared access, we need mutable borrow
+        let mut fs = self.inner.borrow_mut();
+        fs.delete_dir_mut(path)
     }
 
     fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {

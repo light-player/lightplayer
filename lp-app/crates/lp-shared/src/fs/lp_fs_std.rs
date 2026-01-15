@@ -106,6 +106,23 @@ impl LpFsStd {
         Ok(canonical_path)
     }
 
+    /// Validate that a path is safe to delete
+    ///
+    /// Returns an error if:
+    /// - Path is "/" (root)
+    /// - Path would escape root directory
+    ///
+    /// This is a separate function so we can test it without attempting dangerous operations.
+    pub fn validate_path_for_deletion(path: &str) -> Result<(), FsError> {
+        let normalized = Self::normalize_path(path);
+        if normalized == "/" {
+            return Err(FsError::InvalidPath(
+                "Cannot delete root directory".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
     /// Get the full path for a file (without canonicalization, for non-existent paths)
     ///
     /// This is used when we need to create files that don't exist yet.
@@ -142,6 +159,53 @@ impl LpFsStd {
 
         Ok(full_path)
     }
+
+    /// Helper function for recursive directory listing
+    fn list_dir_recursive_helper(
+        dir_path: &std::path::Path,
+        canonical_root: &std::path::Path,
+        results: &mut Vec<String>,
+    ) -> Result<(), FsError> {
+        let entries = fs::read_dir(dir_path).map_err(|e| {
+            FsError::Filesystem(format!("Failed to read directory {:?}: {}", dir_path, e))
+        })?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| {
+                FsError::Filesystem(format!("Failed to read directory entry: {}", e))
+            })?;
+
+            let entry_path = entry.path();
+
+            // Canonicalize the entry path
+            let canonical_entry = entry_path.canonicalize().map_err(|e| {
+                FsError::Filesystem(format!(
+                    "Failed to canonicalize entry path {:?}: {}",
+                    entry_path, e
+                ))
+            })?;
+
+            // Build the relative path from canonical root
+            let relative_path = canonical_entry.strip_prefix(canonical_root).map_err(|_| {
+                FsError::Filesystem(format!(
+                    "Failed to compute relative path from root: entry={:?}, root={:?}",
+                    canonical_entry, canonical_root
+                ))
+            })?;
+
+            // Convert to string with leading slash
+            let path_str = format!("/{}", relative_path.to_string_lossy().replace('\\', "/"));
+
+            results.push(path_str);
+
+            // If it's a directory, recurse
+            if canonical_entry.is_dir() {
+                Self::list_dir_recursive_helper(&canonical_entry, canonical_root, results)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl LpFs for LpFsStd {
@@ -172,7 +236,7 @@ impl LpFs for LpFsStd {
         Ok(full_path.exists())
     }
 
-    fn list_dir(&self, path: &str) -> Result<Vec<String>, FsError> {
+    fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, FsError> {
         let full_path = self.resolve_and_validate(path)?;
 
         // Check if it's actually a directory
@@ -183,11 +247,6 @@ impl LpFs for LpFsStd {
             )));
         }
 
-        // Read directory contents
-        let entries = fs::read_dir(&full_path).map_err(|e| {
-            FsError::Filesystem(format!("Failed to read directory {:?}: {}", full_path, e))
-        })?;
-
         // Get canonical root for comparison
         let canonical_root = self
             .root_path
@@ -195,36 +254,86 @@ impl LpFs for LpFsStd {
             .map_err(|e| FsError::Filesystem(format!("Failed to canonicalize root path: {}", e)))?;
 
         let mut results = Vec::new();
-        for entry in entries {
-            let entry = entry.map_err(|e| {
-                FsError::Filesystem(format!("Failed to read directory entry: {}", e))
+
+        if recursive {
+            // Recursive listing: walk the directory tree
+            Self::list_dir_recursive_helper(&full_path, &canonical_root, &mut results)?;
+        } else {
+            // Non-recursive: only immediate children
+            let entries = fs::read_dir(&full_path).map_err(|e| {
+                FsError::Filesystem(format!("Failed to read directory {:?}: {}", full_path, e))
             })?;
 
-            let entry_path = entry.path();
+            for entry in entries {
+                let entry = entry.map_err(|e| {
+                    FsError::Filesystem(format!("Failed to read directory entry: {}", e))
+                })?;
 
-            // Canonicalize the entry path
-            let canonical_entry = entry_path.canonicalize().map_err(|e| {
-                FsError::Filesystem(format!(
-                    "Failed to canonicalize entry path {:?}: {}",
-                    entry_path, e
-                ))
-            })?;
+                let entry_path = entry.path();
 
-            // Build the relative path from canonical root
-            let relative_path = canonical_entry.strip_prefix(&canonical_root).map_err(|_| {
-                FsError::Filesystem(format!(
-                    "Failed to compute relative path from root: entry={:?}, root={:?}",
-                    canonical_entry, canonical_root
-                ))
-            })?;
+                // Canonicalize the entry path
+                let canonical_entry = entry_path.canonicalize().map_err(|e| {
+                    FsError::Filesystem(format!(
+                        "Failed to canonicalize entry path {:?}: {}",
+                        entry_path, e
+                    ))
+                })?;
 
-            // Convert to string with leading slash
-            let path_str = format!("/{}", relative_path.to_string_lossy().replace('\\', "/"));
+                // Build the relative path from canonical root
+                let relative_path = canonical_entry.strip_prefix(&canonical_root).map_err(|_| {
+                    FsError::Filesystem(format!(
+                        "Failed to compute relative path from root: entry={:?}, root={:?}",
+                        canonical_entry, canonical_root
+                    ))
+                })?;
 
-            results.push(path_str);
+                // Convert to string with leading slash
+                let path_str = format!("/{}", relative_path.to_string_lossy().replace('\\', "/"));
+
+                results.push(path_str);
+            }
         }
 
         Ok(results)
+    }
+
+    fn delete_file(&self, path: &str) -> Result<(), FsError> {
+        // Validate path is safe to delete (explicitly reject "/")
+        Self::validate_path_for_deletion(path)?;
+
+        let full_path = self.resolve_and_validate(path)?;
+
+        // Check if it's a file (not a directory)
+        if full_path.is_dir() {
+            return Err(FsError::Filesystem(format!(
+                "Path {:?} is a directory, use delete_dir() instead",
+                path
+            )));
+        }
+
+        fs::remove_file(&full_path).map_err(|e| {
+            FsError::Filesystem(format!("Failed to delete file {:?}: {}", full_path, e))
+        })
+    }
+
+    fn delete_dir(&self, path: &str) -> Result<(), FsError> {
+        // Validate path is safe to delete (explicitly reject "/")
+        Self::validate_path_for_deletion(path)?;
+
+        let full_path = self.resolve_and_validate(path)?;
+
+        // Check if it's a directory
+        if !full_path.is_dir() {
+            return Err(FsError::Filesystem(format!(
+                "Path {:?} is not a directory, use delete_file() instead",
+                path
+            )));
+        }
+
+        // Delete recursively
+        fs::remove_dir_all(&full_path).map_err(|e| {
+            FsError::Filesystem(format!("Failed to delete directory {:?}: {}", full_path, e))
+        })
     }
 
     fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {
@@ -305,7 +414,7 @@ mod tests {
         fs::create_dir_all(root.join("src/subdir")).unwrap();
 
         let fs = LpFsStd::new(root.to_path_buf());
-        let entries = fs.list_dir("/src").unwrap();
+        let entries = fs.list_dir("/src", false).unwrap();
 
         // Should contain the files and subdirectory
         assert!(entries.iter().any(|e| e == "/src/file1.txt"));
@@ -319,6 +428,78 @@ mod tests {
         let fs = LpFsStd::new(temp_dir.path().to_path_buf());
 
         // Should not be able to list outside root
-        assert!(fs.list_dir("/../").is_err());
+        assert!(fs.list_dir("/../", false).is_err());
+    }
+
+    #[test]
+    fn test_validate_path_for_deletion() {
+        // Test the validation helper function (without attempting deletion)
+        assert!(LpFsStd::validate_path_for_deletion("/").is_err());
+        assert!(LpFsStd::validate_path_for_deletion("/file.txt").is_ok());
+        assert!(LpFsStd::validate_path_for_deletion("/dir").is_ok());
+    }
+
+    #[test]
+    fn test_delete_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let root = temp_dir.path();
+        let fs = LpFsStd::new(root.to_path_buf());
+
+        // Create a file
+        fs::write(root.join("test.txt"), b"content").unwrap();
+        assert!(fs.file_exists("/test.txt").unwrap());
+
+        // Delete it
+        fs.delete_file("/test.txt").unwrap();
+        assert!(!fs.file_exists("/test.txt").unwrap());
+    }
+
+    #[test]
+    fn test_delete_dir() {
+        let temp_dir = TempDir::new().unwrap();
+        let root = temp_dir.path();
+        let fs = LpFsStd::new(root.to_path_buf());
+
+        // Create directory with files
+        fs::create_dir_all(root.join("dir/nested")).unwrap();
+        fs::write(root.join("dir/file1.txt"), b"content1").unwrap();
+        fs::write(root.join("dir/nested/file2.txt"), b"content2").unwrap();
+
+        // Delete directory (recursive)
+        fs.delete_dir("/dir").unwrap();
+        assert!(!root.join("dir").exists());
+    }
+
+    #[test]
+    fn test_delete_root_rejected() {
+        let temp_dir = TempDir::new().unwrap();
+        let fs = LpFsStd::new(temp_dir.path().to_path_buf());
+
+        // Should reject deleting root
+        assert!(fs.delete_file("/").is_err());
+        assert!(fs.delete_dir("/").is_err());
+    }
+
+    #[test]
+    fn test_list_dir_recursive() {
+        let temp_dir = TempDir::new().unwrap();
+        let root = temp_dir.path();
+        let fs = LpFsStd::new(root.to_path_buf());
+
+        // Create nested structure
+        fs::create_dir_all(root.join("src/nested")).unwrap();
+        fs::write(root.join("src/file1.txt"), b"content1").unwrap();
+        fs::write(root.join("src/nested/file2.txt"), b"content2").unwrap();
+
+        // List non-recursive
+        let entries = fs.list_dir("/src", false).unwrap();
+        assert!(entries.iter().any(|e| e == "/src/file1.txt"));
+        assert!(entries.iter().any(|e| e == "/src/nested"));
+        assert!(!entries.iter().any(|e| e == "/src/nested/file2.txt"));
+
+        // List recursive
+        let entries = fs.list_dir("/src", true).unwrap();
+        assert!(entries.iter().any(|e| e == "/src/file1.txt"));
+        assert!(entries.iter().any(|e| e == "/src/nested/file2.txt"));
     }
 }

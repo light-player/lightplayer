@@ -1,8 +1,7 @@
-use crate::error::Error;
+use crate::error::OutputError;
 use crate::output::provider::{OutputChannelHandle, OutputFormat, OutputProvider};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
-use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cell::RefCell;
@@ -85,20 +84,17 @@ impl OutputProvider for MemoryOutputProvider {
         pin: u32,
         byte_count: u32,
         format: OutputFormat,
-    ) -> Result<OutputChannelHandle, Error> {
+    ) -> Result<OutputChannelHandle, OutputError> {
         let mut state = self.state.borrow_mut();
 
         // Check if pin is already open
         if state.open_pins.contains(&pin) {
-            return Err(Error::Other {
-                message: format!("Pin {} is already open", pin),
-            });
+            return Err(OutputError::PinAlreadyOpen { pin });
         }
 
         // Validate byte_count
         if byte_count == 0 {
-            return Err(Error::InvalidConfig {
-                node_path: String::from("output"),
+            return Err(OutputError::InvalidConfig {
                 reason: format!("byte_count must be > 0, got {}", byte_count),
             });
         }
@@ -122,26 +118,22 @@ impl OutputProvider for MemoryOutputProvider {
         Ok(handle)
     }
 
-    fn write(&self, handle: OutputChannelHandle, data: &[u8]) -> Result<(), Error> {
+    fn write(&self, handle: OutputChannelHandle, data: &[u8]) -> Result<(), OutputError> {
         let mut state = self.state.borrow_mut();
 
         // Check if handle exists and get mutable reference
         let channel_state = state
             .channels
             .get_mut(&handle)
-            .ok_or_else(|| Error::Other {
-                message: format!("Invalid handle: {}", handle.as_i32()),
+            .ok_or_else(|| OutputError::InvalidHandle {
+                handle: handle.as_i32(),
             })?;
 
         // Validate data length
         if data.len() != channel_state.byte_count as usize {
-            return Err(Error::InvalidConfig {
-                node_path: String::from("output"),
-                reason: format!(
-                    "Data length {} doesn't match expected byte_count {}",
-                    data.len(),
-                    channel_state.byte_count
-                ),
+            return Err(OutputError::DataLengthMismatch {
+                expected: channel_state.byte_count,
+                actual: data.len(),
             });
         }
 
@@ -151,15 +143,15 @@ impl OutputProvider for MemoryOutputProvider {
         Ok(())
     }
 
-    fn close(&self, handle: OutputChannelHandle) -> Result<(), Error> {
+    fn close(&self, handle: OutputChannelHandle) -> Result<(), OutputError> {
         let mut state = self.state.borrow_mut();
 
         // Check if handle exists and get pin before removing
         let pin = state
             .channels
             .get(&handle)
-            .ok_or_else(|| Error::Other {
-                message: format!("Invalid handle: {}", handle.as_i32()),
+            .ok_or_else(|| OutputError::InvalidHandle {
+                handle: handle.as_i32(),
             })?
             .pin;
 

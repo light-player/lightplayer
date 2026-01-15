@@ -1,3 +1,4 @@
+use alloc::format;
 use alloc::string::String;
 use lp_model::NodeKind;
 
@@ -84,3 +85,30 @@ extern crate std;
 
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
+
+impl From<lp_shared::OutputError> for Error {
+    fn from(err: lp_shared::OutputError) -> Self {
+        match err {
+            lp_shared::OutputError::PinAlreadyOpen { pin } => Error::Other {
+                message: format!("Pin {} is already open", pin),
+            },
+            lp_shared::OutputError::InvalidHandle { handle } => Error::Other {
+                message: format!("Invalid handle: {}", handle),
+            },
+            lp_shared::OutputError::InvalidConfig { reason } => Error::InvalidConfig {
+                node_path: String::from("output"),
+                reason,
+            },
+            lp_shared::OutputError::DataLengthMismatch { expected, actual } => {
+                Error::InvalidConfig {
+                    node_path: String::from("output"),
+                    reason: format!(
+                        "Data length {} doesn't match expected byte_count {}",
+                        actual, expected
+                    ),
+                }
+            }
+            lp_shared::OutputError::Other { message } => Error::Other { message },
+        }
+    }
+}

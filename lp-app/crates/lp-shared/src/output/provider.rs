@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::OutputError;
 
 /// Handle for an opened output channel
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -38,7 +38,7 @@ pub trait OutputProvider {
     /// * `format` - Output format/protocol
     ///
     /// # Returns
-    /// Returns `OutputChannelHandle` on success, or `Error` if:
+    /// Returns `OutputChannelHandle` on success, or `OutputError` if:
     /// - Pin is already open
     /// - Invalid parameters
     /// - Hardware initialization failed
@@ -47,7 +47,7 @@ pub trait OutputProvider {
         pin: u32,
         byte_count: u32,
         format: OutputFormat,
-    ) -> Result<OutputChannelHandle, Error>;
+    ) -> Result<OutputChannelHandle, OutputError>;
 
     /// Write data to an output channel
     ///
@@ -56,11 +56,11 @@ pub trait OutputProvider {
     /// * `data` - Data to write (must match `byte_count` from `open()`)
     ///
     /// # Returns
-    /// Returns `Ok(())` on success, or `Error` if:
+    /// Returns `Ok(())` on success, or `OutputError` if:
     /// - Handle is invalid
     /// - Data length doesn't match expected byte_count
     /// - Hardware write failed
-    fn write(&self, handle: OutputChannelHandle, data: &[u8]) -> Result<(), Error>;
+    fn write(&self, handle: OutputChannelHandle, data: &[u8]) -> Result<(), OutputError>;
 
     /// Close an output channel
     ///
@@ -68,6 +68,6 @@ pub trait OutputProvider {
     /// * `handle` - Output channel handle from `open()`
     ///
     /// # Returns
-    /// Returns `Ok(())` on success, or `Error` if handle is invalid
-    fn close(&self, handle: OutputChannelHandle) -> Result<(), Error>;
+    /// Returns `Ok(())` on success, or `OutputError` if handle is invalid
+    fn close(&self, handle: OutputChannelHandle) -> Result<(), OutputError>;
 }

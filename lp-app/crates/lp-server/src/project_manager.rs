@@ -7,11 +7,14 @@ use crate::project::Project;
 use alloc::{
     boxed::Box,
     format,
+    rc::Rc,
     string::{String, ToString},
     vec::Vec,
 };
+use core::cell::RefCell;
 use hashbrown::HashMap;
 use lp_shared::fs::LpFs;
+use lp_shared::output::OutputProvider;
 
 /// Manages multiple project instances
 pub struct ProjectManager {
@@ -44,11 +47,12 @@ impl ProjectManager {
     /// Load a project from the filesystem
     ///
     /// Creates a Project instance and loads it into memory.
-    /// todo!("Refactor to use new ProjectRuntime API")
+    /// Takes an OutputProvider as Rc<RefCell> (from LpServer).
     pub fn load_project(
         &mut self,
         name: String,
         fs: alloc::boxed::Box<dyn LpFs>,
+        output_provider: Rc<RefCell<dyn OutputProvider>>,
     ) -> Result<(), ServerError> {
         // Check if already loaded
         if self.projects.contains_key(&name) {
@@ -58,7 +62,7 @@ impl ProjectManager {
         let project_path = format!("{}/{}", self.projects_base_dir, name);
 
         // Create a new project instance
-        let project = Project::new(name.clone(), project_path, fs)?;
+        let project = Project::new(name.clone(), project_path, fs, output_provider)?;
         self.projects.insert(name, project);
 
         Ok(())
@@ -95,7 +99,7 @@ impl ProjectManager {
     /// Requires a filesystem to query.
     pub fn list_available_projects(&self, fs: &dyn LpFs) -> Result<Vec<String>, ServerError> {
         // List entries in the base directory
-        let entries = fs.list_dir(&self.projects_base_dir).map_err(|e| {
+        let entries = fs.list_dir(&self.projects_base_dir, false).map_err(|e| {
             ServerError::Filesystem(format!("Failed to read projects directory: {}", e))
         })?;
 

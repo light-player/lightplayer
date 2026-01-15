@@ -66,7 +66,7 @@ pub fn load_from_filesystem(fs: &dyn LpFs) -> Result<ProjectConfig, Error> {
 /// Discover all node directories in /src/
 pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<LpPath>, Error> {
     let path = "/src";
-    let entries = fs.list_dir(path).map_err(|e| Error::Io {
+    let entries = fs.list_dir(path, false).map_err(|e| Error::Io {
         path: path.to_string(),
         details: format!("Failed to list directory: {:?}", e),
     })?;
