@@ -8,7 +8,6 @@ use std::path::Path;
 use crate::config::ServerConfig;
 
 /// Check if server.json exists in the given directory
-#[allow(dead_code)] // Will be used in phase 7
 pub fn server_config_exists(dir: &Path) -> bool {
     dir.join("server.json").exists()
 }
@@ -23,7 +22,6 @@ pub fn server_config_exists(dir: &Path) -> bool {
 ///
 /// * `Ok(ServerConfig)` if the file exists and is valid
 /// * `Err` if the file doesn't exist or cannot be parsed
-#[allow(dead_code)] // Will be used in phase 7
 pub fn load_server_config(dir: &Path) -> Result<ServerConfig> {
     let config_path = dir.join("server.json");
     let contents = std::fs::read_to_string(&config_path)
@@ -46,7 +44,6 @@ pub fn load_server_config(dir: &Path) -> Result<ServerConfig> {
 ///
 /// * `Ok(())` if the file was written successfully
 /// * `Err` if the file cannot be written
-#[allow(dead_code)] // Will be used in phase 7
 pub fn save_server_config(dir: &Path, config: &ServerConfig) -> Result<()> {
     // Ensure directory exists
     std::fs::create_dir_all(dir)

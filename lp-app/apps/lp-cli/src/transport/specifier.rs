@@ -38,7 +38,6 @@ impl HostSpecifier {
     /// let serial = HostSpecifier::parse("serial:auto").unwrap();
     /// assert!(serial.is_serial());
     /// ```
-    #[allow(dead_code)] // Will be used in phase 8
     pub fn parse(s: &str) -> Result<Self> {
         let s = s.trim();
 
@@ -65,13 +64,13 @@ impl HostSpecifier {
     }
 
     /// Check if this is a websocket specifier
-    #[allow(dead_code)] // Will be used in phase 8
+    #[allow(dead_code)] // Useful helper method for future use
     pub fn is_websocket(&self) -> bool {
         matches!(self, HostSpecifier::WebSocket { .. })
     }
 
     /// Check if this is a serial specifier
-    #[allow(dead_code)] // Will be used in phase 8
+    #[allow(dead_code)] // Useful helper method for future use
     pub fn is_serial(&self) -> bool {
         matches!(self, HostSpecifier::Serial { .. })
     }

@@ -7,7 +7,8 @@ use std::collections::{HashMap, VecDeque};
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 
-use futures_util::{SinkExt, StreamExt};
+use futures_util::SinkExt;
+use futures_util::stream::StreamExt;
 use lp_model::{ClientMessage, ServerMessage, TransportError};
 use lp_shared::transport::ServerTransport;
 use tokio::runtime::Runtime;
@@ -21,6 +22,9 @@ struct Connection {
     /// Channel sender for sending messages to this connection
     sender: mpsc::UnboundedSender<ServerMessage>,
     /// Channel receiver for receiving messages from this connection
+    /// Note: Currently unused as messages are received via the async task,
+    /// but kept for potential future use or debugging
+    #[allow(dead_code)]
     receiver: mpsc::UnboundedReceiver<ClientMessage>,
 }
 
@@ -40,10 +44,14 @@ struct SharedState {
 /// Handles multiple simultaneous connections and routes messages appropriately.
 pub struct WebSocketServerTransport {
     /// TCP listener for accepting new connections
+    /// Note: Kept to maintain ownership of the listener, even though not directly accessed
+    #[allow(dead_code)]
     listener: TcpListener,
     /// Shared state for connection management
     shared_state: Arc<Mutex<SharedState>>,
     /// Tokio runtime for async operations
+    /// Note: Kept to ensure runtime stays alive for async tasks
+    #[allow(dead_code)]
     runtime: Arc<Runtime>,
 }
 
@@ -60,15 +68,13 @@ impl WebSocketServerTransport {
     /// * `Err(TransportError)` if binding failed
     pub fn new(port: u16) -> Result<Self, TransportError> {
         // Create tokio runtime
-        let runtime = Runtime::new().map_err(|e| {
-            TransportError::Other(format!("Failed to create tokio runtime: {}", e))
-        })?;
+        let runtime = Runtime::new()
+            .map_err(|e| TransportError::Other(format!("Failed to create tokio runtime: {}", e)))?;
 
         // Bind TCP listener
         let addr = format!("0.0.0.0:{}", port);
-        let listener = TcpListener::bind(&addr).map_err(|e| {
-            TransportError::Other(format!("Failed to bind to {}: {}", addr, e))
-        })?;
+        let listener = TcpListener::bind(&addr)
+            .map_err(|e| TransportError::Other(format!("Failed to bind to {}: {}", addr, e)))?;
 
         // Set non-blocking mode for the listener
         listener
@@ -88,9 +94,9 @@ impl WebSocketServerTransport {
 
         // Start async task to accept connections
         runtime_clone.spawn(Self::accept_connections_task(
-            listener.try_clone().map_err(|e| {
-                TransportError::Other(format!("Failed to clone listener: {}", e))
-            })?,
+            listener
+                .try_clone()
+                .map_err(|e| TransportError::Other(format!("Failed to clone listener: {}", e)))?,
             shared_state_clone,
         ));
 
@@ -150,21 +156,21 @@ impl WebSocketServerTransport {
     /// Handle a single websocket connection
     ///
     /// This runs for each connected client and handles bidirectional communication.
-    async fn handle_connection(
-        ws_stream: tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
+    async fn handle_connection<S>(
+        ws_stream: tokio_tungstenite::WebSocketStream<S>,
         connection_id: ConnectionId,
         shared_state: Arc<Mutex<SharedState>>,
-    ) {
-        use tokio_tungstenite::{tungstenite::Message, WebSocketStream};
+    ) where
+        S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static,
+    {
+        use tokio_tungstenite::tungstenite::Message;
 
         // Split into sender and receiver
         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
         // Create channels for communication with sync code
         let (client_tx, mut client_rx) = mpsc::unbounded_channel::<ServerMessage>();
-        let (mut server_tx, _server_rx) = mpsc::unbounded_channel::<ClientMessage>();
+        let (_server_tx, server_rx) = mpsc::unbounded_channel::<ClientMessage>();
 
         // Register connection
         {
@@ -172,14 +178,13 @@ impl WebSocketServerTransport {
             state.connections.insert(
                 connection_id,
                 Connection {
-                    sender: client_tx.clone(),
-                    receiver: _server_rx,
+                    sender: client_tx,
+                    receiver: server_rx,
                 },
             );
         }
 
         // Task to send messages from channel to websocket
-        let mut ws_sender_clone = ws_sender.clone();
         tokio::spawn(async move {
             while let Some(msg) = client_rx.recv().await {
                 // Serialize ServerMessage to JSON
@@ -192,7 +197,7 @@ impl WebSocketServerTransport {
                 };
 
                 // Send via websocket
-                if let Err(e) = ws_sender_clone.send(Message::Text(json)).await {
+                if let Err(e) = ws_sender.send(Message::Text(json)).await {
                     eprintln!("Failed to send message: {}", e);
                     break;
                 }
@@ -237,14 +242,11 @@ impl WebSocketServerTransport {
                         state.connections.remove(&connection_id);
                         break;
                     }
-                    Ok(Message::Ping(data)) => {
-                        // Auto-respond to pings
-                        if let Err(e) = ws_sender.send(Message::Pong(data)).await {
-                            eprintln!("Failed to send pong: {}", e);
-                            let mut state = shared_state.lock().unwrap();
-                            state.connections.remove(&connection_id);
-                            break;
-                        }
+                    Ok(Message::Ping(_data)) => {
+                        // Auto-respond to pings via the channel
+                        // The send task will handle sending the pong
+                        // For now, we'll just ignore pings (tungstenite handles them automatically)
+                        // If we need custom ping handling, we'd need to send through the channel
                     }
                     Ok(Message::Pong(_)) => {
                         // Ignore pongs
@@ -266,7 +268,6 @@ impl WebSocketServerTransport {
             state.connections.remove(&connection_id);
         });
     }
-
 }
 
 impl ServerTransport for WebSocketServerTransport {
@@ -274,6 +275,13 @@ impl ServerTransport for WebSocketServerTransport {
         // Send to the first available connection
         // TODO: In phase 7, we'll need to route messages to the correct connection
         // based on the request ID or connection tracking
+        // For now, serialize the message and send to first connection
+        // (we can't clone ServerMessage, so we serialize/deserialize for each connection)
+
+        let json = serde_json::to_string(&msg).map_err(|e| {
+            TransportError::Serialization(format!("Failed to serialize ServerMessage: {}", e))
+        })?;
+
         let state = self.shared_state.lock().unwrap();
 
         if state.connections.is_empty() {
@@ -283,10 +291,21 @@ impl ServerTransport for WebSocketServerTransport {
         }
 
         // Find first available connection and send
-        // In the future, we'll need to track which connection a response belongs to
+        // Deserialize for each connection (inefficient but works)
         let mut connection_id_to_remove = None;
         for (connection_id, connection) in state.connections.iter() {
-            if connection.sender.send(msg).is_err() {
+            // Deserialize the message for this connection
+            let msg_clone: ServerMessage = match serde_json::from_str(&json) {
+                Ok(m) => m,
+                Err(e) => {
+                    return Err(TransportError::Deserialization(format!(
+                        "Failed to deserialize ServerMessage: {}",
+                        e
+                    )));
+                }
+            };
+
+            if connection.sender.send(msg_clone).is_err() {
                 connection_id_to_remove = Some(*connection_id);
             } else {
                 // Successfully sent, done

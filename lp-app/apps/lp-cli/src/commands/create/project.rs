@@ -244,9 +244,12 @@ pub fn print_success_message(dir: &Path, name: &str) {
         "unknown".to_string()
     };
 
+    let next_step_cmd =
+        messages::format_command(&format!("cd {} && lp-cli dev ws://localhost:2812/", name));
+
     messages::print_success(
         &format!("Project created successfully: {} (uid: {})", name, uid),
-        &[&format!("cd {} && lp-cli dev ws://localhost:2812/", name)],
+        &[&next_step_cmd],
     );
 }
 

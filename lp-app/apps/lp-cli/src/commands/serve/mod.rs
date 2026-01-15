@@ -1,13 +1,7 @@
-use anyhow::Result;
+pub mod args;
+pub mod handler;
+pub mod init;
+pub mod server_loop;
 
-#[allow(dead_code)] // Fields will be used in phase 7
-pub struct ServeArgs {
-    pub dir: Option<std::path::PathBuf>,
-    pub init: bool,
-    pub memory: bool,
-}
-
-pub fn handle_serve(_args: ServeArgs) -> Result<()> {
-    // TODO: Implement serve command
-    Ok(())
-}
+pub use args::ServeArgs;
+pub use handler::handle_serve;

@@ -5,5 +5,5 @@
 pub mod client;
 pub mod server;
 
-#[allow(dead_code)] // Will be used in phase 8
 pub use client::WebSocketClientTransport;
+pub use server::WebSocketServerTransport;

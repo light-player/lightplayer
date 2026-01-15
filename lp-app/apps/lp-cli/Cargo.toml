@@ -14,6 +14,7 @@ serde_json = "1"
 tungstenite = { version = "0.21", features = ["native-tls"] }
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.21"
+futures-util = "0.3"
 lp-model = { path = "../../crates/lp-model" }
 lp-server = { path = "../../crates/lp-server" }
 lp-client = { path = "../../crates/lp-client" }
@@ -21,6 +22,11 @@ lp-shared = { path = "../../crates/lp-shared" }
 
 [dev-dependencies]
 tempfile = "3"
+lp-client = { path = "../../crates/lp-client" }
+lp-server = { path = "../../crates/lp-server" }
+lp-shared = { path = "../../crates/lp-shared" }
+lp-model = { path = "../../crates/lp-model" }
+serde_json = "1"
 
 [lints]
 workspace = true

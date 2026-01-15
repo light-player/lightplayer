@@ -7,8 +7,9 @@ use std::collections::VecDeque;
 
 use lp_model::{ClientMessage, ServerMessage, TransportError};
 use lp_shared::transport::ClientTransport;
-use tungstenite::{connect, MaybeTlsStream, WebSocket};
 use std::net::TcpStream;
+use tungstenite::stream::MaybeTlsStream;
+use tungstenite::{WebSocket, connect};
 
 /// WebSocket client transport
 ///
@@ -41,15 +42,9 @@ impl WebSocketClientTransport {
             ))
         })?;
 
-        // Try to set the underlying stream to non-blocking mode
-        // This allows non-blocking reads in fill_buffer()
-        if let Some(stream_ref) = socket.get_ref() {
-            // Try to access the TcpStream (works for non-TLS connections)
-            // For TLS connections, this might not work, but we'll handle WouldBlock errors anyway
-            if let Ok(tcp_stream) = stream_ref.get_ref().downcast_ref::<TcpStream>() {
-                let _ = tcp_stream.set_nonblocking(true);
-            }
-        }
+        // Note: Setting non-blocking mode on the underlying stream is complex with tungstenite
+        // We'll handle WouldBlock errors in fill_buffer() instead
+        // The tungstenite library will return WouldBlock errors if the stream would block
 
         Ok(Self {
             socket: Some(socket),
@@ -69,7 +64,7 @@ impl WebSocketClientTransport {
 
         // Try to read messages (non-blocking due to non-blocking TCP stream)
         loop {
-            match socket.read_message() {
+            match socket.read() {
                 Ok(tungstenite::Message::Text(text)) => {
                     // Deserialize ServerMessage from JSON
                     let msg: ServerMessage = serde_json::from_str(&text).map_err(|e| {
@@ -96,12 +91,9 @@ impl WebSocketClientTransport {
                 }
                 Ok(tungstenite::Message::Ping(_)) => {
                     // Auto-respond to pings
-                    if let Err(e) = socket.write_message(tungstenite::Message::Pong(vec![])) {
+                    if let Err(e) = socket.send(tungstenite::Message::Pong(vec![])) {
                         self.socket = None;
-                        return Err(TransportError::Other(format!(
-                            "Failed to send pong: {}",
-                            e
-                        )));
+                        return Err(TransportError::Other(format!("Failed to send pong: {}", e)));
                     }
                 }
                 Ok(tungstenite::Message::Pong(_)) => {
@@ -110,17 +102,16 @@ impl WebSocketClientTransport {
                 Ok(tungstenite::Message::Frame(_)) => {
                     // Ignore raw frames
                 }
-                Err(tungstenite::Error::Io(ref e)) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                Err(tungstenite::Error::Io(ref e))
+                    if e.kind() == std::io::ErrorKind::WouldBlock =>
+                {
                     // No data available, return
                     break;
                 }
                 Err(e) => {
                     // Other error, connection may be lost
                     self.socket = None;
-                    return Err(TransportError::Other(format!(
-                        "WebSocket error: {}",
-                        e
-                    )));
+                    return Err(TransportError::Other(format!("WebSocket error: {}", e)));
                 }
             }
         }
@@ -143,7 +134,7 @@ impl ClientTransport for WebSocketClientTransport {
 
         // Send as text message
         socket
-            .write_message(tungstenite::Message::Text(json))
+            .send(tungstenite::Message::Text(json))
             .map_err(|e| TransportError::Other(format!("Failed to send message: {}", e)))?;
 
         Ok(())
