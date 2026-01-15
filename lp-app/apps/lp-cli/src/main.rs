@@ -5,6 +5,7 @@ mod commands;
 mod config;
 mod error;
 mod messages;
+mod server;
 mod transport;
 
 use commands::{create, dev, serve};
