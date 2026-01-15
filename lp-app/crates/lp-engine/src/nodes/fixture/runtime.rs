@@ -45,6 +45,11 @@ impl FixtureRuntime {
     pub fn set_config(&mut self, config: FixtureConfig) {
         self.config = Some(config);
     }
+
+    /// Get the fixture config (for state extraction)
+    pub fn get_config(&self) -> Option<&FixtureConfig> {
+        self.config.as_ref()
+    }
 }
 
 impl NodeRuntime for FixtureRuntime {
@@ -177,12 +182,13 @@ impl NodeRuntime for FixtureRuntime {
         })?;
 
         // Write sampled values to output buffer
-        // For now, assume universe 0 and write sequentially
-        // todo!("Get proper universe/channel mapping from config")
+        // For now, use universe 0 and channel_offset 0 (sequential writing)
+        // TODO: Add universe and channel_offset fields to FixtureConfig when needed
+        let universe = 0u32;
         let channel_offset = 0u32;
         for (channel, [r, g, b, _a]) in sampled_values {
             let start_ch = channel_offset + channel * 3; // 3 bytes per RGB
-            let buffer = ctx.get_output(output_handle, 0, start_ch, 3)?;
+            let buffer = ctx.get_output(output_handle, universe, start_ch, 3)?;
             self.color_order.write_rgb(buffer, 0, r, g, b);
         }
 

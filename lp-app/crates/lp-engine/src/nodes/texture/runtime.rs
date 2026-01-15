@@ -48,6 +48,11 @@ impl TextureRuntime {
             }
         }
     }
+
+    /// Get the texture config (for state extraction)
+    pub fn get_config(&self) -> Option<&TextureConfig> {
+        self.config.as_ref()
+    }
 }
 
 impl NodeRuntime for TextureRuntime {

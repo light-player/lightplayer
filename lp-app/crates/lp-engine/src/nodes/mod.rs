@@ -22,8 +22,11 @@ pub trait NodeRuntime: Send + Sync {
     fn render(&mut self, ctx: &mut dyn RenderContext) -> Result<(), Error>;
 
     /// Destroy the node (cleanup)
+    ///
+    /// Called when a node is being removed or the runtime is shutting down.
+    /// Default implementation does nothing - nodes can override if they need cleanup.
     fn destroy(&mut self) -> Result<(), Error> {
-        todo!("Node cleanup not implemented yet")
+        Ok(())
     }
 
     /// Get reference to Any for downcasting

@@ -250,6 +250,27 @@ impl ProjectRuntime {
                     None
                 };
 
+                let output_config = if node_kind == NodeKind::Output {
+                    let entry = self.nodes.get(&handle).ok_or_else(|| Error::Other {
+                        message: format!("Node handle {} not found", handle.as_i32()),
+                    })?;
+                    // Reload config from filesystem (workaround for trait object limitation)
+                    let node_json_path = format!("{}/node.json", entry.path.as_str());
+                    let data = self.fs.read_file(&node_json_path).map_err(|e| Error::Io {
+                        path: node_json_path.clone(),
+                        details: format!("Failed to read: {:?}", e),
+                    })?;
+                    Some(
+                        serde_json::from_slice::<lp_model::nodes::output::OutputConfig>(&data)
+                            .map_err(|e| Error::Parse {
+                                file: node_json_path,
+                                error: format!("Failed to parse output config: {}", e),
+                            })?,
+                    )
+                } else {
+                    None
+                };
+
                 // Create runtime based on kind
                 let mut runtime: Box<dyn NodeRuntime> = match node_kind {
                     NodeKind::Texture => {
@@ -266,7 +287,13 @@ impl ProjectRuntime {
                         }
                         Box::new(shader_runtime)
                     }
-                    NodeKind::Output => Box::new(OutputRuntime::new()),
+                    NodeKind::Output => {
+                        let mut output_runtime = OutputRuntime::new();
+                        if let Some(config) = output_config {
+                            output_runtime.set_config(config);
+                        }
+                        Box::new(output_runtime)
+                    }
                     NodeKind::Fixture => {
                         let mut fixture_runtime = FixtureRuntime::new();
                         if let Some(config) = fixture_config {
@@ -618,17 +645,35 @@ impl ProjectRuntime {
                     NodeStatus::Error(msg) => ApiNodeStatus::Error(msg.clone()),
                 };
 
-                // Clone config based on kind (temporary - will use proper serialization later)
+                // Clone config based on kind - extract from runtime if available
                 let config: Box<dyn NodeConfig> = match entry.kind {
                     NodeKind::Texture => {
-                        // todo!("Proper config cloning - use serialization or Any trait")
-                        Box::new(lp_model::nodes::texture::TextureConfig {
-                            width: 0,
-                            height: 0,
-                        })
+                        if let Some(runtime) = &entry.runtime {
+                            if let Some(tex_runtime) =
+                                runtime.as_any().downcast_ref::<TextureRuntime>()
+                            {
+                                if let Some(tex_config) = tex_runtime.get_config() {
+                                    Box::new(tex_config.clone())
+                                } else {
+                                    Box::new(lp_model::nodes::texture::TextureConfig {
+                                        width: 0,
+                                        height: 0,
+                                    })
+                                }
+                            } else {
+                                Box::new(lp_model::nodes::texture::TextureConfig {
+                                    width: 0,
+                                    height: 0,
+                                })
+                            }
+                        } else {
+                            Box::new(lp_model::nodes::texture::TextureConfig {
+                                width: 0,
+                                height: 0,
+                            })
+                        }
                     }
                     NodeKind::Shader => {
-                        // Extract actual shader config from runtime
                         if let Some(runtime) = &entry.runtime {
                             if let Some(shader_runtime) =
                                 runtime.as_any().downcast_ref::<ShaderRuntime>()
@@ -646,16 +691,64 @@ impl ProjectRuntime {
                         }
                     }
                     NodeKind::Output => {
-                        Box::new(lp_model::nodes::output::OutputConfig::GpioStrip { pin: 0 })
+                        if let Some(runtime) = &entry.runtime {
+                            if let Some(output_runtime) =
+                                runtime.as_any().downcast_ref::<OutputRuntime>()
+                            {
+                                if let Some(output_config) = output_runtime.get_config() {
+                                    Box::new(output_config.clone())
+                                } else {
+                                    Box::new(lp_model::nodes::output::OutputConfig::GpioStrip {
+                                        pin: 0,
+                                    })
+                                }
+                            } else {
+                                Box::new(lp_model::nodes::output::OutputConfig::GpioStrip {
+                                    pin: 0,
+                                })
+                            }
+                        } else {
+                            Box::new(lp_model::nodes::output::OutputConfig::GpioStrip { pin: 0 })
+                        }
                     }
-                    NodeKind::Fixture => Box::new(lp_model::nodes::fixture::FixtureConfig {
-                        output_spec: lp_model::NodeSpecifier::from(""),
-                        texture_spec: lp_model::NodeSpecifier::from(""),
-                        mapping: String::new(),
-                        lamp_type: String::new(),
-                        color_order: lp_model::nodes::fixture::ColorOrder::Rgb,
-                        transform: [[0.0; 4]; 4],
-                    }),
+                    NodeKind::Fixture => {
+                        if let Some(runtime) = &entry.runtime {
+                            if let Some(fixture_runtime) =
+                                runtime.as_any().downcast_ref::<FixtureRuntime>()
+                            {
+                                if let Some(fixture_config) = fixture_runtime.get_config() {
+                                    Box::new(fixture_config.clone())
+                                } else {
+                                    Box::new(lp_model::nodes::fixture::FixtureConfig {
+                                        output_spec: lp_model::NodeSpecifier::from(""),
+                                        texture_spec: lp_model::NodeSpecifier::from(""),
+                                        mapping: String::new(),
+                                        lamp_type: String::new(),
+                                        color_order: lp_model::nodes::fixture::ColorOrder::Rgb,
+                                        transform: [[0.0; 4]; 4],
+                                    })
+                                }
+                            } else {
+                                Box::new(lp_model::nodes::fixture::FixtureConfig {
+                                    output_spec: lp_model::NodeSpecifier::from(""),
+                                    texture_spec: lp_model::NodeSpecifier::from(""),
+                                    mapping: String::new(),
+                                    lamp_type: String::new(),
+                                    color_order: lp_model::nodes::fixture::ColorOrder::Rgb,
+                                    transform: [[0.0; 4]; 4],
+                                })
+                            }
+                        } else {
+                            Box::new(lp_model::nodes::fixture::FixtureConfig {
+                                output_spec: lp_model::NodeSpecifier::from(""),
+                                texture_spec: lp_model::NodeSpecifier::from(""),
+                                mapping: String::new(),
+                                lamp_type: String::new(),
+                                color_order: lp_model::nodes::fixture::ColorOrder::Rgb,
+                                transform: [[0.0; 4]; 4],
+                            })
+                        }
+                    }
                 };
 
                 node_details.insert(
@@ -710,11 +803,50 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
             // Absolute path
             lp_model::LpPath::from(spec_path)
         } else {
-            // Relative path - resolve from node directory
-            // For now, assume relative paths are not supported (todo!)
-            return Err(Error::NotFound {
-                path: spec_path.to_string(),
-            });
+            // Relative path - resolve from current node's directory
+            // Current node path is self.node_path (e.g., "/src/texture.texture")
+            // Relative spec is relative to the parent directory (e.g., "../output.output")
+            let current_dir = self.node_path.as_str();
+            // Find the parent directory by removing the last component
+            let parent_dir = if let Some(last_slash) = current_dir.rfind('/') {
+                &current_dir[..last_slash]
+            } else {
+                // No parent, use root
+                "/"
+            };
+
+            // Resolve relative path
+            let mut components: Vec<&str> =
+                parent_dir.split('/').filter(|s| !s.is_empty()).collect();
+            let relative_components: Vec<&str> = spec_path.split('/').collect();
+
+            for component in relative_components {
+                match component {
+                    "." => {
+                        // Current directory - no change
+                    }
+                    ".." => {
+                        // Parent directory - remove last component
+                        components.pop();
+                    }
+                    "" => {
+                        // Empty component (e.g., leading/trailing slash) - ignore
+                    }
+                    name => {
+                        // Regular component - add it
+                        components.push(name);
+                    }
+                }
+            }
+
+            // Reconstruct path
+            let resolved_path = if components.is_empty() {
+                "/".to_string()
+            } else {
+                format!("/{}", components.join("/"))
+            };
+
+            lp_model::LpPath::from(resolved_path)
         };
 
         // Look up node by path

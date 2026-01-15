@@ -2,7 +2,9 @@ use crate::error::Error;
 use crate::nodes::NodeRuntime;
 use crate::output::{OutputChannelHandle, OutputFormat};
 use crate::runtime::contexts::{NodeInitContext, RenderContext};
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use lp_model::nodes::output::OutputConfig;
 
 /// Output node runtime
 pub struct OutputRuntime {
@@ -12,6 +14,8 @@ pub struct OutputRuntime {
     channel_handle: Option<OutputChannelHandle>,
     /// GPIO pin number
     pin: u32,
+    /// Output config (None until set)
+    config: Option<OutputConfig>,
 }
 
 impl OutputRuntime {
@@ -20,7 +24,13 @@ impl OutputRuntime {
             channel_data: Vec::new(),
             channel_handle: None,
             pin: 0,
+            config: None,
         }
+    }
+
+    /// Set the output config
+    pub fn set_config(&mut self, config: OutputConfig) {
+        self.config = Some(config);
     }
 
     /// Get mutable slice to channel data, extending if needed
@@ -36,23 +46,32 @@ impl OutputRuntime {
     pub fn get_channel_data(&self) -> &[u8] {
         &self.channel_data
     }
+
+    /// Get the output config (for state extraction)
+    pub fn get_config(&self) -> Option<&OutputConfig> {
+        self.config.as_ref()
+    }
 }
 
 impl NodeRuntime for OutputRuntime {
     fn init(&mut self, ctx: &dyn NodeInitContext) -> Result<(), Error> {
-        // Get output config - need to reload from filesystem since we can't extract from trait object
-        // For now, we'll need to get the config from the node path
-        // Actually, we can't easily get the node path from the context
-        // Let's use a simpler approach: calculate byte_count from fixtures, use default pin
+        // Get config
+        let config = self.config.as_ref().ok_or_else(|| Error::InvalidConfig {
+            node_path: String::from("output"),
+            reason: "Config not set".to_string(),
+        })?;
 
-        // For now, use a default byte_count (will be calculated properly later)
+        // Extract pin from config
+        match config {
+            OutputConfig::GpioStrip { pin } => {
+                self.pin = *pin;
+            }
+        }
+
+        // For now, use a default byte_count (will be calculated properly later from fixtures)
         // Default: 3 bytes for single RGB pixel
         let byte_count = 3u32;
         let format = OutputFormat::Ws2811;
-
-        // Get pin from config - we'll need to reload config from filesystem
-        // For now, use default pin 0 (will be fixed when we have proper config access)
-        self.pin = 0;
 
         // Open output channel with provider
         let handle = ctx.output_provider().open(self.pin, byte_count, format)?;
