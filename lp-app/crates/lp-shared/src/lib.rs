@@ -18,4 +18,5 @@ pub mod transport;
 pub use error::{FsError, OutputError, TextureError};
 // Re-export TransportError from lp-model for convenience
 pub use lp_model::TransportError;
+pub use transport::LocalMemoryTransport;
 pub use util::texture::Texture;

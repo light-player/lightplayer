@@ -8,8 +8,8 @@
 
 extern crate alloc;
 
+use crate::transport::{ClientTransport, ServerTransport};
 use lp_model::{ClientMessage, ServerMessage, TransportError};
-use lp_shared::transport::{ClientTransport, ServerTransport};
 use alloc::{collections::VecDeque, format, rc::Rc, string::ToString, vec::Vec};
 use core::cell::RefCell;
 use serde_json;

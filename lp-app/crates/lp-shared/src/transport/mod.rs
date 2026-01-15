@@ -7,9 +7,11 @@
 //! with `ClientMessage` and `ServerMessage` types from `lp-model`.
 
 pub mod client;
+pub mod memory;
 pub mod server;
 
 pub use client::ClientTransport;
+pub use memory::LocalMemoryTransport;
 pub use server::ServerTransport;
 // Re-export TransportError from lp-model for convenience
 pub use lp_model::TransportError;

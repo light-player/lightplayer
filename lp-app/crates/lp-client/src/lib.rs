@@ -4,8 +4,8 @@ extern crate alloc;
 
 pub mod client;
 pub mod error;
-pub mod transport;
 
 pub use client::LpClient;
 pub use error::ClientError;
-pub use transport::LocalMemoryTransport;
+// Re-export LocalMemoryTransport from lp-shared for convenience
+pub use lp_shared::LocalMemoryTransport;
