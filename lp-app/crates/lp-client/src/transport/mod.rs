@@ -2,4 +2,4 @@
 
 pub mod memory;
 
-pub use memory::MemoryTransport;
+pub use memory::LocalMemoryTransport;

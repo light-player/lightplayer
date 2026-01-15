@@ -8,4 +8,4 @@ pub mod transport;
 
 pub use client::LpClient;
 pub use error::ClientError;
-pub use transport::MemoryTransport;
+pub use transport::LocalMemoryTransport;
