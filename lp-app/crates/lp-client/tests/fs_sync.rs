@@ -9,12 +9,12 @@
 
 extern crate alloc;
 
-use lp_client::{ClientError, LpClient, MemoryTransport};
+use lp_client::{ClientError, LpClient, LocalMemoryTransport};
 use lp_model::Message;
 use lp_server::LpServer;
 use lp_shared::fs::{LpFsMemory, LpFsMemoryShared};
 use lp_shared::output::MemoryOutputProvider;
-use lp_shared::transport::{ClientTransport, ServerTransport, Message as TransportMessage};
+use lp_shared::transport::{ClientTransport, ServerTransport};
 use alloc::{boxed::Box, rc::Rc};
 use core::cell::RefCell;
 
@@ -27,11 +27,11 @@ fn setup_server_and_client(
 ) -> (
     LpServer,
     LpClient,
-    MemoryTransport,
-    MemoryTransport,
+    LocalMemoryTransport,
+    LocalMemoryTransport,
 ) {
     // Create transport pair
-    let (client_transport, server_transport) = MemoryTransport::new_pair();
+    let (client_transport, server_transport) = LocalMemoryTransport::new_pair();
 
     // Create server with shared filesystem (allows mutation through immutable trait)
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
@@ -48,6 +48,22 @@ fn setup_server_and_client(
     (server, client, client_transport, server_transport)
 }
 
+/// Extract ClientMessage from Message envelope and send via transport
+fn send_client_message(
+    transport: &mut LocalMemoryTransport,
+    msg: Message,
+) -> Result<(), ClientError> {
+    let client_msg = match msg {
+        Message::Client(msg) => msg,
+        Message::Server(_) => {
+            return Err(ClientError::Protocol {
+                message: "Expected Client message".to_string(),
+            });
+        }
+    };
+    ClientTransport::send(transport, client_msg).map_err(ClientError::from)
+}
+
 /// Process messages synchronously between client and server
 ///
 /// This bridges messages through the transport, processing them on both
@@ -55,20 +71,18 @@ fn setup_server_and_client(
 fn process_messages(
     client: &mut LpClient,
     server: &mut LpServer,
-    client_transport: &mut MemoryTransport,
-    server_transport: &mut MemoryTransport,
+    client_transport: &mut LocalMemoryTransport,
+    server_transport: &mut LocalMemoryTransport,
 ) -> Result<(), ClientError> {
     // Process client -> server messages
     // Client sends through client_transport -> goes to client_to_server queue
     // Server receives from server_transport -> reads from client_to_server queue
     loop {
         match ServerTransport::receive(&mut *server_transport) {
-            Ok(Some(msg)) => {
-                // Deserialize message
-                let message: Message = serde_json::from_slice(&msg.payload)
-                    .map_err(|e| ClientError::Protocol {
-                        message: format!("Failed to deserialize: {}", e),
-                    })?;
+            Ok(Some(client_msg)) => {
+                // Transport handles deserialization, we get ClientMessage directly
+                // Wrap in Message envelope for server.tick()
+                let message = Message::Client(client_msg);
 
                 // Process on server
                 let responses = server.tick(0, vec![message]).map_err(|e| ClientError::Other {
@@ -77,13 +91,18 @@ fn process_messages(
 
                 // Send responses back through server transport
                 for response in responses {
-                    let payload = serde_json::to_vec(&response).map_err(|e| {
-                        ClientError::Protocol {
-                            message: format!("Failed to serialize: {}", e),
+                    // Extract ServerMessage from Message envelope
+                    match response {
+                        Message::Server(server_msg) => {
+                            ServerTransport::send(&mut *server_transport, server_msg)
+                                .map_err(ClientError::from)?;
                         }
-                    })?;
-                    ServerTransport::send(&mut *server_transport, TransportMessage { payload })
-                        .map_err(ClientError::from)?;
+                        Message::Client(_) => {
+                            return Err(ClientError::Protocol {
+                                message: "Server received client message".to_string(),
+                            });
+                        }
+                    }
                 }
             }
             Ok(None) => break,
@@ -98,12 +117,10 @@ fn process_messages(
     // Client receives from client_transport -> reads from server_to_client queue
     loop {
         match ClientTransport::receive(&mut *client_transport) {
-            Ok(Some(msg)) => {
-                // Deserialize message
-                let message: Message = serde_json::from_slice(&msg.payload)
-                    .map_err(|e| ClientError::Protocol {
-                        message: format!("Failed to deserialize: {}", e),
-                    })?;
+            Ok(Some(server_msg)) => {
+                // Transport handles deserialization, we get ServerMessage directly
+                // Wrap in Message envelope for client.tick()
+                let message = Message::Server(server_msg);
 
                 // Process on client
                 let _outgoing = client.tick(vec![message]).map_err(|e| ClientError::Other {
@@ -139,8 +156,7 @@ fn test_filesystem_sync() {
 
     // Test read
     let (request_msg, request_id) = client.fs_read("/projects/test/file1.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let content = client.extract_read_response(request_id, response).unwrap();
@@ -148,16 +164,14 @@ fn test_filesystem_sync() {
 
     // Test write
     let (request_msg, request_id) = client.fs_write("/projects/test/new.txt".to_string(), b"new content".to_vec());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     client.extract_write_response(request_id, response).unwrap();
 
     // Verify write by reading
     let (request_msg, request_id) = client.fs_read("/projects/test/new.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let content = client.extract_read_response(request_id, response).unwrap();
@@ -165,8 +179,7 @@ fn test_filesystem_sync() {
 
     // Test list (non-recursive)
     let (request_msg, request_id) = client.fs_list_dir("/projects/test".to_string(), false);
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let entries = client.extract_list_dir_response(request_id, response).unwrap();
@@ -176,8 +189,7 @@ fn test_filesystem_sync() {
 
     // Test list (recursive)
     let (request_msg, request_id) = client.fs_list_dir("/projects/test".to_string(), true);
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let entries = client.extract_list_dir_response(request_id, response).unwrap();
@@ -185,24 +197,21 @@ fn test_filesystem_sync() {
 
     // Test delete file
     let (request_msg, request_id) = client.fs_delete_file("/projects/test/new.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     client.extract_delete_file_response(request_id, response).unwrap();
 
     // Test delete directory (recursive)
     let (request_msg, request_id) = client.fs_delete_dir("/projects/test/nested".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     client.extract_delete_dir_response(request_id, response).unwrap();
 
     // Verify deletions
     let (request_msg, request_id) = client.fs_list_dir("/projects/test".to_string(), true);
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let entries = client.extract_list_dir_response(request_id, response).unwrap();
@@ -217,8 +226,7 @@ fn test_fs_read() {
 
     let (mut server, mut client, mut client_transport, mut server_transport) = setup_server_and_client(fs);
     let (request_msg, request_id) = client.fs_read("/test.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let content = client.extract_read_response(request_id, response).unwrap();
@@ -231,15 +239,13 @@ fn test_fs_write() {
     let (mut server, mut client, mut client_transport, mut server_transport) = setup_server_and_client(fs);
 
     let (request_msg, request_id) = client.fs_write("/test.txt".to_string(), b"written content".to_vec());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     client.extract_write_response(request_id, response).unwrap();
 
     let (request_msg, request_id) = client.fs_read("/test.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let content = client.extract_read_response(request_id, response).unwrap();
@@ -255,24 +261,21 @@ fn test_fs_delete_file() {
 
     // Verify file exists
     let (request_msg, request_id) = client.fs_read("/test.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let _content = client.extract_read_response(request_id, response).unwrap();
 
     // Delete file
     let (request_msg, request_id) = client.fs_delete_file("/test.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     client.extract_delete_file_response(request_id, response).unwrap();
 
     // Verify file doesn't exist
     let (request_msg, request_id) = client.fs_read("/test.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let result = client.extract_read_response(request_id, response);
@@ -289,39 +292,34 @@ fn test_fs_delete_dir() {
 
     // Verify files exist
     let (request_msg, request_id) = client.fs_read("/dir/file1.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let _content = client.extract_read_response(request_id, response).unwrap();
 
     let (request_msg, request_id) = client.fs_read("/dir/nested/file2.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let _content = client.extract_read_response(request_id, response).unwrap();
 
     // Delete directory (recursive)
     let (request_msg, request_id) = client.fs_delete_dir("/dir".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     client.extract_delete_dir_response(request_id, response).unwrap();
 
     // Verify files are gone
     let (request_msg, request_id) = client.fs_read("/dir/file1.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let result1 = client.extract_read_response(request_id, response);
     assert!(result1.is_err(), "File should not exist");
 
     let (request_msg, request_id) = client.fs_read("/dir/nested/file2.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let result2 = client.extract_read_response(request_id, response);
@@ -338,8 +336,7 @@ fn test_fs_list_dir_non_recursive() {
     let (mut server, mut client, mut client_transport, mut server_transport) = setup_server_and_client(fs);
 
     let (request_msg, request_id) = client.fs_list_dir("/dir".to_string(), false);
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let entries = client.extract_list_dir_response(request_id, response).unwrap();
@@ -362,8 +359,7 @@ fn test_fs_list_dir_recursive() {
     let (mut server, mut client, mut client_transport, mut server_transport) = setup_server_and_client(fs);
 
     let (request_msg, request_id) = client.fs_list_dir("/dir".to_string(), true);
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let entries = client.extract_list_dir_response(request_id, response).unwrap();
@@ -380,8 +376,7 @@ fn test_fs_read_not_found() {
     let (mut server, mut client, mut client_transport, mut server_transport) = setup_server_and_client(fs);
 
     let (request_msg, request_id) = client.fs_read("/nonexistent.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let result = client.extract_read_response(request_id, response);
@@ -401,8 +396,7 @@ fn test_fs_delete_not_found() {
     let (mut server, mut client, mut client_transport, mut server_transport) = setup_server_and_client(fs);
 
     let (request_msg, request_id) = client.fs_delete_file("/nonexistent.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let result = client.extract_delete_file_response(request_id, response);
@@ -417,8 +411,7 @@ fn test_fs_delete_root() {
 
     // Attempting to delete root should fail
     let (request_msg, request_id) = client.fs_delete_dir("/".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
     let response = client.get_response(request_id).unwrap();
     let result = client.extract_delete_dir_response(request_id, response);
@@ -447,16 +440,13 @@ fn test_multiple_requests() {
 
     // Send multiple read requests
     let (request_msg, request_id1) = client.fs_read("/file1.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
 
     let (request_msg, request_id2) = client.fs_read("/file2.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
 
     let (request_msg, request_id3) = client.fs_read("/file3.txt".to_string());
-    let payload = serde_json::to_vec(&request_msg).unwrap();
-    ClientTransport::send(&mut client_transport, TransportMessage { payload }).unwrap();
+    send_client_message(&mut client_transport, request_msg).unwrap();
 
     // Process all requests
     process_messages(&mut client, &mut server, &mut client_transport, &mut server_transport).unwrap();
