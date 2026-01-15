@@ -17,7 +17,7 @@ fn test_request_detail() {
     let mut view = ClientProjectView::new();
     let handle = NodeHandle::new(1);
 
-    view.watch_details(vec![handle]);
+    view.watch_detail(handle);
     assert!(view.detail_tracking.contains(&handle));
 
     // Generate specifier
@@ -36,10 +36,10 @@ fn test_stop_detail() {
     let mut view = ClientProjectView::new();
     let handle = NodeHandle::new(1);
 
-    view.watch_details(vec![handle]);
+    view.watch_detail(handle);
     assert!(view.detail_tracking.contains(&handle));
 
-    view.unwatch_details(vec![handle]);
+    view.unwatch_detail(handle);
     assert!(!view.detail_tracking.contains(&handle));
 
     // Generate specifier should be None
