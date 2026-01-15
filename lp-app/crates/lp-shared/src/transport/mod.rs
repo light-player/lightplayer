@@ -10,16 +10,17 @@ pub use client::ClientTransport;
 pub use server::ServerTransport;
 pub use crate::error::TransportError;
 
-/// Message type placeholder
+/// Transport-level message wrapper
 ///
-/// This is a placeholder type that will be replaced with `lp_model::Message`
-/// when the message protocol is defined in Phase 4.
+/// This is a transport-layer abstraction that wraps serialized protocol messages.
+/// Protocol messages (`lp_model::Message`) are serialized (typically to JSON) and
+/// wrapped in this type for transport.
 ///
-/// For now, this is a simple type that can be used for testing.
-/// Implementations should serialize/deserialize messages as needed.
+/// Different transport implementations may use different serialization formats
+/// (JSON, binary, etc.), but they all use this wrapper type.
 #[derive(Debug, Clone)]
 pub struct Message {
-    /// Message payload (will be replaced with proper message types)
+    /// Serialized message payload (typically JSON bytes of `lp_model::Message`)
     pub payload: alloc::vec::Vec<u8>,
 }
 
