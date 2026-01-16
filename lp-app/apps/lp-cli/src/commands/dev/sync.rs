@@ -1,20 +1,66 @@
 //! File sync utilities
 //!
-//! TODO: Will be recreated in phase 6
-//! This is a temporary stub to allow compilation.
+//! Provides functions for syncing individual file changes to the server.
 
-use anyhow::Result;
-use lp_shared::fs::{LpFs, fs_event::FsChange};
+use anyhow::{Context, Result};
+use lp_shared::fs::{fs_event::ChangeType, fs_event::FsChange, LpFs};
+use std::path::Path;
+use std::sync::Arc;
+
+use crate::client::AsyncLpClient;
 
 /// Sync a file change to the server
 ///
-/// TODO: Will be properly implemented in phase 6
-#[allow(dead_code)]
+/// Reads the file from local filesystem (if needed) and writes/deletes it on the server.
+///
+/// # Arguments
+///
+/// * `client` - Async client for communicating with server
+/// * `change` - File change event to sync
+/// * `project_uid` - Project UID for server-side path
+/// * `project_dir` - Local project directory path (for context)
+/// * `local_fs` - Local filesystem for reading files
+///
+/// # Returns
+///
+/// * `Ok(())` if the change was synced successfully
+/// * `Err` if syncing failed
 pub async fn sync_file_change(
-    _client: &mut crate::commands::dev::async_client::AsyncLpClient,
-    _change: FsChange,
-    _project_uid: &str,
-    _local_fs: &dyn LpFs,
+    client: &Arc<AsyncLpClient>,
+    change: &FsChange,
+    project_uid: &str,
+    _project_dir: &Path,
+    local_fs: &dyn LpFs,
 ) -> Result<()> {
-    todo!("Will be implemented in phase 6")
+    // Build server path: projects/{project_uid}/{file_path}
+    // Remove leading '/' from change.path for server path
+    let server_path = if change.path.starts_with('/') {
+        format!("projects/{}/{}", project_uid, &change.path[1..])
+    } else {
+        format!("projects/{}/{}", project_uid, change.path)
+    };
+
+    match change.change_type {
+        ChangeType::Create | ChangeType::Modify => {
+            // Read file from local filesystem
+            let data = local_fs.read_file(&change.path).map_err(|e| {
+                anyhow::anyhow!("Failed to read file {}: {}", change.path, e)
+            })?;
+
+            // Write file to server
+            client
+                .fs_write(&server_path, data)
+                .await
+                .with_context(|| format!("Failed to write file to server: {}", server_path))?;
+        }
+        ChangeType::Delete => {
+            // Delete file from server
+            client
+                .fs_delete_file(&server_path)
+                .await
+                .with_context(|| format!("Failed to delete file on server: {}", server_path))?;
+        }
+    }
+
+    Ok(())
 }

@@ -28,16 +28,16 @@ pub async fn push_project_async(
     project_uid: &str,
 ) -> Result<()> {
     // List all files recursively in the project directory
-    let files = local_fs
-        .list_dir("/", true)
-        .context("Failed to list project files")?;
+    let files = local_fs.list_dir("/", true).map_err(|e| {
+        anyhow::anyhow!("Failed to list project files: {}", e)
+    })?;
 
     // Push each file to the server
     for file_path in files {
         // Read file from local filesystem
-        let data = local_fs
-            .read_file(&file_path)
-            .with_context(|| format!("Failed to read file: {}", file_path))?;
+        let data = local_fs.read_file(&file_path).map_err(|e| {
+            anyhow::anyhow!("Failed to read file {}: {}", file_path, e)
+        })?;
 
         // Build server path: projects/{project_uid}/{file_path}
         // Remove leading '/' from file_path for server path
