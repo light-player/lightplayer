@@ -12,7 +12,9 @@ use lp_model::{
     server::ServerResponse,
 };
 use lp_shared::transport::ClientTransport;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use tokio::time::timeout;
 
 /// Default timeout for request/response operations (5 seconds)
@@ -26,8 +28,8 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
 pub struct AsyncLpClient {
     /// The synchronous LpClient instance
     client: LpClient,
-    /// The transport for sending/receiving messages
-    transport: Box<dyn ClientTransport + Send>,
+    /// The transport for sending/receiving messages (shared via Arc<Mutex<>>)
+    transport: Arc<Mutex<Box<dyn ClientTransport + Send>>>,
 }
 
 impl AsyncLpClient {
@@ -35,8 +37,8 @@ impl AsyncLpClient {
     ///
     /// # Arguments
     ///
-    /// * `transport` - The client transport (must be Send for cross-thread use)
-    pub fn new(transport: Box<dyn ClientTransport + Send>) -> Self {
+    /// * `transport` - The client transport (shared via Arc<Mutex<>>, must be Send for cross-thread use)
+    pub fn new(transport: Arc<Mutex<Box<dyn ClientTransport + Send>>>) -> Self {
         Self {
             client: LpClient::new(),
             transport,
@@ -63,7 +65,8 @@ impl AsyncLpClient {
                 // Process all available messages
                 let mut incoming_messages = Vec::new();
                 loop {
-                    match self.transport.receive() {
+                    let mut transport = self.transport.lock().await;
+                    match transport.receive() {
                         Ok(Some(server_msg)) => {
                             incoming_messages.push(Message::Server(server_msg));
                         }
@@ -122,6 +125,8 @@ impl AsyncLpClient {
         };
 
         self.transport
+            .lock()
+            .await
             .send(client_msg)
             .map_err(|e| anyhow::anyhow!("Failed to send read request for {}: {}", path, e))?;
 
@@ -161,6 +166,8 @@ impl AsyncLpClient {
         };
 
         self.transport
+            .lock()
+            .await
             .send(client_msg)
             .map_err(|e| anyhow::anyhow!("Failed to send write request for {}: {}", path, e))?;
 
@@ -198,7 +205,7 @@ impl AsyncLpClient {
             }
         };
 
-        self.transport.send(client_msg).map_err(|e| {
+        self.transport.lock().await.send(client_msg).map_err(|e| {
             anyhow::anyhow!("Failed to send load project request for {}: {}", path, e)
         })?;
 
@@ -251,6 +258,8 @@ impl AsyncLpClient {
         };
 
         self.transport
+            .lock()
+            .await
             .send(client_msg)
             .map_err(|e| anyhow::anyhow!("Failed to send get changes request: {}", e))?;
 

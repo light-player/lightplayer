@@ -20,9 +20,10 @@ use lp_engine_client::project::ClientProjectView;
 use lp_model::TransportError;
 use lp_shared::fs::LpFsStd;
 use lp_shared::transport::ClientTransport;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::runtime::Runtime;
+use tokio::sync::Mutex;
 
 /// Handle the dev command
 ///
@@ -90,10 +91,14 @@ fn handle_dev_local(
     // Create tokio runtime for client
     let runtime = Runtime::new()?;
 
+    // Wrap transport in Arc<Mutex<>> for sharing between loader and UI
+    let shared_transport: Arc<Mutex<Box<dyn ClientTransport + Send>>> =
+        Arc::new(Mutex::new(Box::new(client_transport)));
+
     // Run async client code to load project
     let (handle, async_client_for_ui) = runtime.block_on(async {
-        // Create async client with client transport
-        let mut async_client = AsyncLpClient::new(Box::new(client_transport));
+        // Create async client with shared transport
+        let mut async_client = AsyncLpClient::new(Arc::clone(&shared_transport));
 
         // Push project if requested
         if should_push {
@@ -135,10 +140,7 @@ fn handle_dev_local(
             ],
         );
 
-        // Return handle and client for UI (if needed)
-        // Note: We can't easily share the transport, so for now we'll need to
-        // restructure the UI to work differently, or create a new transport pair
-        // TODO: Refactor to share transport properly
+        // Return handle and client for UI (transport is shared via Arc)
         Ok::<(lp_model::project::handle::ProjectHandle, AsyncLpClient), anyhow::Error>((
             handle,
             async_client,
@@ -153,10 +155,7 @@ fn handle_dev_local(
         // Get runtime handle for UI
         let runtime_handle = runtime.handle().clone();
 
-        // Create UI state
-        // Note: We're reusing async_client, but it's already been used
-        // This is a limitation - we'll need to restructure to share transport properly
-        // For now, this will work but sync won't function properly
+        // Create UI state (transport is shared via Arc, so this works correctly)
         let ui_state = DebugUiState::new(project_view, handle, async_client_for_ui, runtime_handle);
 
         // Run UI (blocks until window closes)
