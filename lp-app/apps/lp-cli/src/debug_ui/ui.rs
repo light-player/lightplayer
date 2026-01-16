@@ -1,6 +1,6 @@
 //! Main UI state and egui App implementation
 
-use crate::client::{serializable_response_to_project_response, AsyncLpClient};
+use crate::client::{AsyncLpClient, serializable_response_to_project_response};
 use crate::debug_ui::panels;
 use eframe::egui;
 use lp_engine_client::project::ClientProjectView;
@@ -161,7 +161,7 @@ impl DebugUiState {
                 let result = {
                     let mut client_guard = client.lock().await;
                     client_guard
-                        .project_sync_internal(handle, since_frame, detail_specifier)
+                        .project_sync_internal(handle, Some(since_frame), detail_specifier)
                         .await
                 };
 
