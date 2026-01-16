@@ -34,6 +34,9 @@ enum Cli {
         /// If --push is specified without a host, uses in-memory server.
         #[arg(long, value_name = "HOST")]
         push: Option<Option<String>>,
+        /// Run without UI (headless mode)
+        #[arg(long)]
+        headless: bool,
     },
     /// Create a new project
     Create {
@@ -55,9 +58,14 @@ fn main() -> Result<()> {
         Cli::Serve { dir, init, memory } => {
             serve::handle_serve(serve::ServeArgs { dir, init, memory })
         }
-        Cli::Dev { dir, push } => dev::handle_dev(dev::DevArgs {
+        Cli::Dev {
+            dir,
+            push,
+            headless,
+        } => dev::handle_dev(dev::DevArgs {
             dir,
             push_host: push,
+            headless,
         }),
         Cli::Create { dir, name, uid } => {
             create::handle_create(create::CreateArgs { dir, name, uid })

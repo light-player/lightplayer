@@ -6,4 +6,6 @@ pub struct DevArgs {
     /// If Some(None), push to local in-memory server
     /// If None, don't push
     pub push_host: Option<Option<String>>,
+    /// If true, run without UI (headless mode)
+    pub headless: bool,
 }

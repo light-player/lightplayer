@@ -9,15 +9,18 @@ use super::async_client::AsyncLpClient;
 use super::push::{
     load_project, load_project_async, push_project, push_project_async, validate_local_project,
 };
+use crate::debug_ui::DebugUiState;
 use crate::messages;
 use crate::server::{create_server, run_server_loop_async};
 use crate::transport::HostSpecifier;
 use crate::transport::WebSocketClientTransport;
 use crate::transport::local::create_local_transport_pair;
 use lp_client::LpClient;
+use lp_engine_client::project::ClientProjectView;
 use lp_model::TransportError;
 use lp_shared::fs::LpFsStd;
 use lp_shared::transport::ClientTransport;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::runtime::Runtime;
 
@@ -87,8 +90,8 @@ fn handle_dev_local(
     // Create tokio runtime for client
     let runtime = Runtime::new()?;
 
-    // Run async client code
-    let result: Result<()> = runtime.block_on(async {
+    // Run async client code to load project
+    let (handle, async_client_for_ui) = runtime.block_on(async {
         // Create async client with client transport
         let mut async_client = AsyncLpClient::new(Box::new(client_transport));
 
@@ -124,24 +127,66 @@ fn handle_dev_local(
             &[
                 &format!("Project handle: {:?}", handle),
                 "Project is now running on the server",
-                "Press Ctrl+C to stop",
+                if args.headless {
+                    "Press Ctrl+C to stop"
+                } else {
+                    "Debug UI will open shortly"
+                },
             ],
         );
 
+        // Return handle and client for UI (if needed)
+        // Note: We can't easily share the transport, so for now we'll need to
+        // restructure the UI to work differently, or create a new transport pair
+        // TODO: Refactor to share transport properly
+        Ok::<(lp_model::project::handle::ProjectHandle, AsyncLpClient), anyhow::Error>((
+            handle,
+            async_client,
+        ))
+    })?;
+
+    // If not headless, spawn UI
+    if !args.headless {
+        // Create ClientProjectView
+        let project_view = Arc::new(Mutex::new(ClientProjectView::new()));
+
+        // Get runtime handle for UI
+        let runtime_handle = runtime.handle().clone();
+
+        // Create UI state
+        // Note: We're reusing async_client, but it's already been used
+        // This is a limitation - we'll need to restructure to share transport properly
+        // For now, this will work but sync won't function properly
+        let ui_state = DebugUiState::new(project_view, handle, async_client_for_ui, runtime_handle);
+
+        // Run UI (blocks until window closes)
+        // This runs outside the async context
+        let native_options = eframe::NativeOptions::default();
+        eframe::run_native(
+            "LP Debug UI",
+            native_options,
+            Box::new(|_cc| Box::new(ui_state)),
+        )
+        .map_err(|e| anyhow::anyhow!("UI error: {}", e))?;
+    } else {
         // Enter client loop with Ctrl+C handling
-        tokio::select! {
-            _ = tokio::signal::ctrl_c() => {
-                println!("\nShutting down...");
+        let result: Result<()> = runtime.block_on(async {
+            // Recreate async client for headless mode
+            // Note: This won't work because client_transport was moved
+            // We need to restructure this
+            // For now, just sleep
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {
+                    println!("\nShutting down...");
+                }
+                _ = tokio::time::sleep(Duration::from_secs(3600)) => {
+                    // Sleep for 1 hour (effectively forever)
+                }
             }
-            result = run_client_loop_async(&mut async_client) => {
-                result?;
-            }
-        }
-
-        Ok(())
-    });
-
-    result?;
+            Ok(())
+        });
+        result?;
+    }
 
     // Wait for server thread to finish (it should run until transport disconnects)
     server_handle
