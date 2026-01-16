@@ -70,39 +70,6 @@ impl HostSpecifier {
         )
     }
 
-    /// Parse an optional host specifier string
-    ///
-    /// # Arguments
-    ///
-    /// * `s` - Optional host specifier string
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(HostSpecifier::Local)` if `None`, empty, or "local"
-    /// * `Ok(HostSpecifier)` parsed from string otherwise
-    /// * `Err` if the specifier is invalid
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use lp_cli::transport::specifier::HostSpecifier;
-    ///
-    /// let local = HostSpecifier::parse_optional(None).unwrap();
-    /// assert!(local.is_local());
-    ///
-    /// let local2 = HostSpecifier::parse_optional(Some("local")).unwrap();
-    /// assert!(local2.is_local());
-    ///
-    /// let ws = HostSpecifier::parse_optional(Some("ws://localhost:2812/")).unwrap();
-    /// assert!(ws.is_websocket());
-    /// ```
-    pub fn parse_optional(s: Option<&str>) -> Result<Self> {
-        match s {
-            None | Some("") | Some("local") => Ok(HostSpecifier::Local),
-            Some(s) => Self::parse(s),
-        }
-    }
-
     /// Check if this is a websocket specifier
     #[allow(dead_code)] // Useful helper method for future use
     pub fn is_websocket(&self) -> bool {
@@ -262,31 +229,6 @@ mod tests {
     fn test_parse_empty_string() {
         let spec = HostSpecifier::parse("").unwrap();
         assert!(spec.is_local());
-    }
-
-    #[test]
-    fn test_parse_optional_none() {
-        let spec = HostSpecifier::parse_optional(None).unwrap();
-        assert!(spec.is_local());
-    }
-
-    #[test]
-    fn test_parse_optional_empty() {
-        let spec = HostSpecifier::parse_optional(Some("")).unwrap();
-        assert!(spec.is_local());
-    }
-
-    #[test]
-    fn test_parse_optional_local() {
-        let spec = HostSpecifier::parse_optional(Some("local")).unwrap();
-        assert!(spec.is_local());
-    }
-
-    #[test]
-    fn test_parse_optional_websocket() {
-        let spec = HostSpecifier::parse_optional(Some("ws://localhost:2812/")).unwrap();
-        assert!(spec.is_websocket());
-        assert!(!spec.is_local());
     }
 
     #[test]

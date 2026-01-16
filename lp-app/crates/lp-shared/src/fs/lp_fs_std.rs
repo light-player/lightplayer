@@ -4,9 +4,11 @@ use crate::error::FsError;
 use crate::fs::LpFs;
 use alloc::{
     format,
+    rc::Rc,
     string::{String, ToString},
     vec::Vec,
 };
+use core::cell::RefCell;
 use std::fs;
 use std::path::PathBuf;
 
@@ -236,6 +238,14 @@ impl LpFs for LpFsStd {
         Ok(full_path.exists())
     }
 
+    fn is_dir(&self, path: &str) -> Result<bool, FsError> {
+        let full_path = self.get_path(path)?;
+        if !full_path.exists() {
+            return Err(FsError::NotFound(path.to_string()));
+        }
+        Ok(full_path.is_dir())
+    }
+
     fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, FsError> {
         let full_path = self.resolve_and_validate(path)?;
 
@@ -337,7 +347,7 @@ impl LpFs for LpFsStd {
         })
     }
 
-    fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError> {
+    fn chroot(&self, subdir: &str) -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, FsError> {
         // Normalize the subdirectory path
         let normalized = Self::normalize_path(subdir);
         // Remove leading slash for joining with root_path
@@ -370,7 +380,7 @@ impl LpFs for LpFsStd {
             )));
         }
 
-        Ok(alloc::boxed::Box::new(LpFsStd::new(new_root)))
+        Ok(Rc::new(RefCell::new(LpFsStd::new(new_root))))
     }
 }
 

@@ -20,7 +20,7 @@ use lp_model::{
     Message,
 };
 use lp_server::LpServer;
-use lp_shared::fs::{LpFs, LpFsMemory, LpFsMemoryShared};
+use lp_shared::fs::{LpFs, LpFsMemory};
 use lp_shared::output::MemoryOutputProvider;
 use lp_shared::project::ProjectBuilder;
 use lp_shared::transport::{ClientTransport, ServerTransport};
@@ -30,7 +30,6 @@ fn test_project_load_unload() {
     let mut client_fs = LpFsMemory::new();
     create_test_project_on_client(&mut client_fs);
 
-    let client_fs_shared = LpFsMemoryShared::new(client_fs);
     let server_fs = LpFsMemory::new();
     let (mut server, mut client, mut client_transport, mut server_transport) =
         setup_server_and_client(server_fs);
@@ -42,7 +41,7 @@ fn test_project_load_unload() {
         &mut server_transport,
         &mut server,
         "test",
-        &client_fs_shared,
+        &client_fs,
     )
     .unwrap();
 
@@ -90,7 +89,6 @@ fn test_project_list_operations() {
     let mut client_fs = LpFsMemory::new();
     create_test_project_on_client(&mut client_fs);
 
-    let client_fs_shared = LpFsMemoryShared::new(client_fs);
     let server_fs = LpFsMemory::new();
     let (mut server, mut client, mut client_transport, mut server_transport) =
         setup_server_and_client(server_fs);
@@ -102,7 +100,7 @@ fn test_project_list_operations() {
         &mut server_transport,
         &mut server,
         "test",
-        &client_fs_shared,
+        &client_fs,
     )
     .unwrap();
 
@@ -163,7 +161,6 @@ fn test_project_lifecycle() {
     let mut client_fs = LpFsMemory::new();
     create_test_project_on_client(&mut client_fs);
 
-    let client_fs_shared = LpFsMemoryShared::new(client_fs);
     let server_fs = LpFsMemory::new();
     let (mut server, mut client, mut client_transport, mut server_transport) =
         setup_server_and_client(server_fs);
@@ -175,7 +172,7 @@ fn test_project_lifecycle() {
         &mut server_transport,
         &mut server,
         "test",
-        &client_fs_shared,
+        &client_fs,
     )
     .unwrap();
 
@@ -214,7 +211,6 @@ fn test_project_get_changes() {
     let mut client_fs = LpFsMemory::new();
     create_test_project_on_client(&mut client_fs);
 
-    let client_fs_shared = LpFsMemoryShared::new(client_fs);
     let server_fs = LpFsMemory::new();
     let (mut server, mut client, mut client_transport, mut server_transport) =
         setup_server_and_client(server_fs);
@@ -226,7 +222,7 @@ fn test_project_get_changes() {
         &mut server_transport,
         &mut server,
         "test",
-        &client_fs_shared,
+        &client_fs,
     )
     .unwrap();
 
@@ -290,8 +286,7 @@ fn setup_server_and_client(fs: LpFsMemory) -> (LpServer, LpClient, LocalTranspor
 
     // Create server with shared filesystem (allows mutation through immutable trait)
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
-    let shared_fs = LpFsMemoryShared::new(fs);
-    let server = LpServer::new(output_provider, Box::new(shared_fs), "projects".to_string());
+    let server = LpServer::new(output_provider, Box::new(fs), "projects".to_string());
 
     // Create client
     let client = LpClient::new();
@@ -388,12 +383,18 @@ fn process_messages(
 /// Uses ProjectBuilder to create a simple project with texture, shader, output, and fixture.
 /// Returns the project name.
 fn create_test_project_on_client(fs: &mut LpFsMemory) -> String {
-    let mut builder = ProjectBuilder::new(fs);
+    use alloc::rc::Rc;
+    use core::cell::RefCell;
+    // Wrap in Rc<RefCell<>> for ProjectBuilder, then extract back
+    let fs_rc = Rc::new(RefCell::new(std::mem::take(fs)));
+    let mut builder = ProjectBuilder::new(fs_rc.clone());
     let texture_path = builder.texture_basic();
     builder.shader_basic(&texture_path);
     let output_path = builder.output_basic();
     builder.fixture_basic(&output_path, &texture_path);
     builder.build();
+    // Extract back (we know there's only one reference since we just created it)
+    *fs = Rc::try_unwrap(fs_rc).ok().map(|rc| rc.into_inner()).unwrap_or_else(|| LpFsMemory::new());
     String::from("test")
 }
 
@@ -408,11 +409,10 @@ fn sync_project_to_server(
     server_transport: &mut LocalTransport,
     server: &mut LpServer,
     project_name: &str,
-    client_fs: &LpFsMemoryShared,
+    client_fs: &LpFsMemory,
 ) -> Result<(), ClientError> {
     // List all files in the project recursively (from client FS root)
     let entries = client_fs
-        .get_mut()
         .list_dir("/", true)
         .map_err(|e| ClientError::Other {
             message: format!("Failed to list client files: {}", e),
@@ -424,7 +424,6 @@ fn sync_project_to_server(
             // Read file from client filesystem directly
             let content =
                 client_fs
-                    .get_mut()
                     .read_file(&entry)
                     .map_err(|e| ClientError::Other {
                         message: format!("Failed to read client file {}: {}", entry, e),

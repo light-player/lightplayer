@@ -1,4 +1,5 @@
 pub mod args;
+pub mod async_client;
 pub mod handler;
 pub mod push;
 pub mod sync;

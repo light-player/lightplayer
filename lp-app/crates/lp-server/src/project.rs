@@ -3,7 +3,7 @@
 extern crate alloc;
 
 use crate::error::ServerError;
-use alloc::{boxed::Box, format, rc::Rc, string::String};
+use alloc::{format, rc::Rc, string::String};
 use core::cell::RefCell;
 use lp_engine::ProjectRuntime;
 use lp_shared::fs::LpFs;
@@ -27,7 +27,7 @@ impl Project {
     pub fn new(
         name: String,
         path: String,
-        fs: Box<dyn LpFs>,
+        fs: Rc<RefCell<dyn LpFs>>,
         output_provider: Rc<RefCell<dyn OutputProvider>>,
     ) -> Result<Self, ServerError> {
         let runtime = ProjectRuntime::new(fs, output_provider)

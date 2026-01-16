@@ -14,7 +14,7 @@ use core::cell::RefCell;
 use lp_client::{ClientError, LocalTransport, LpClient};
 use lp_model::Message;
 use lp_server::LpServer;
-use lp_shared::fs::{LpFsMemory, LpFsMemoryShared};
+use lp_shared::fs::LpFsMemory;
 use lp_shared::output::MemoryOutputProvider;
 use lp_shared::transport::{ClientTransport, ServerTransport};
 
@@ -28,8 +28,7 @@ fn setup_server_and_client(fs: LpFsMemory) -> (LpServer, LpClient, LocalTranspor
 
     // Create server with shared filesystem (allows mutation through immutable trait)
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
-    let shared_fs = LpFsMemoryShared::new(fs);
-    let server = LpServer::new(output_provider, Box::new(shared_fs), "projects".to_string());
+    let server = LpServer::new(output_provider, Box::new(fs), "projects".to_string());
 
     // Create client
     let client = LpClient::new();

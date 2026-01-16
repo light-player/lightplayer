@@ -3,50 +3,55 @@
 //! Orchestrates the dev command execution.
 
 use anyhow::Result;
-use std::path::PathBuf;
 
 use super::args::DevArgs;
-use super::push::{load_project, push_project, validate_local_project};
+use super::async_client::AsyncLpClient;
+use super::push::{load_project, push_project, validate_local_project, push_project_async, load_project_async};
 use crate::messages;
 use crate::server::{create_server, run_server_loop_async};
 use crate::transport::HostSpecifier;
 use crate::transport::WebSocketClientTransport;
 use crate::transport::local::create_local_transport_pair;
 use lp_client::LpClient;
-use lp_model::Message;
 use lp_shared::fs::LpFsStd;
 use lp_shared::transport::ClientTransport;
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use tokio::task::LocalSet;
 
 /// Handle the dev command
 ///
-/// Validates local project, connects to server, and pushes project files.
-/// Supports both in-memory server (when host is None) and WebSocket server.
+/// Validates local project, connects to server, and optionally pushes project files.
+/// When no --push is specified, uses local in-memory server and automatically pushes.
+/// Supports both in-memory server and remote servers (via --push HOST).
 pub fn handle_dev(args: DevArgs) -> Result<()> {
-    // Determine project directory (default to current directory)
-    let project_dir = args
-        .dir
-        .as_ref()
-        .map(|d| d.clone())
-        .unwrap_or_else(|| PathBuf::from("."));
-
     // Validate local project
-    let (project_uid, project_name) = validate_local_project(&project_dir)?;
+    let (project_uid, project_name) = validate_local_project(&args.dir)?;
 
-    // Parse host specifier
-    let host_spec = HostSpecifier::parse_optional(args.host.as_deref())
-        .map_err(|e| anyhow::anyhow!("Invalid host specifier: {}", e))?;
-
-    // Handle based on host specifier
-    match host_spec {
-        HostSpecifier::Local => handle_dev_local(args, project_dir, project_uid, project_name),
-        HostSpecifier::WebSocket { url } => {
-            handle_dev_websocket(args, project_dir, project_uid, project_name, &url)
+    // Determine if we should push and to which host
+    match &args.push_host {
+        Some(Some(host_str)) => {
+            // Push to specified remote host
+            let host_spec = HostSpecifier::parse(host_str)
+                .map_err(|e| anyhow::anyhow!("Invalid host specifier '{}': {}", host_str, e))?;
+            match host_spec {
+                HostSpecifier::Local => {
+                    handle_dev_local(args, project_uid, project_name, true)
+                }
+                HostSpecifier::WebSocket { url } => {
+                    handle_dev_websocket(args, project_uid, project_name, &url, true)
+                }
+                HostSpecifier::Serial { .. } => {
+                    anyhow::bail!("Serial transport not yet implemented");
+                }
+            }
         }
-        HostSpecifier::Serial { .. } => {
-            anyhow::bail!("Serial transport not yet implemented");
+        Some(None) => {
+            // Push to local in-memory server
+            handle_dev_local(args, project_uid, project_name, true)
+        }
+        None => {
+            // No --push specified: use local in-memory server and automatically push
+            handle_dev_local(args, project_uid, project_name, true)
         }
     }
 }
@@ -54,90 +59,114 @@ pub fn handle_dev(args: DevArgs) -> Result<()> {
 /// Handle dev command with local in-memory server
 fn handle_dev_local(
     args: DevArgs,
-    project_dir: PathBuf,
     project_uid: String,
     project_name: String,
+    should_push: bool,
 ) -> Result<()> {
-    // Create tokio runtime
+    // Create local transport pair
+    let (client_transport, server_transport) = create_local_transport_pair();
+
+    // Spawn server on separate thread with its own tokio runtime
+    // Create server inside the thread since LpServer is not Send
+    let server_handle = std::thread::spawn(move || {
+        let runtime = Runtime::new().expect("Failed to create tokio runtime for server");
+        runtime.block_on(async {
+            // Create in-memory server (inside thread since LpServer is not Send)
+            let (server, _base_fs) = create_server(None, true, None)
+                .expect("Failed to create server");
+
+            // Create LocalSet for spawn_local (needed because LpServer is not Send)
+            let local_set = tokio::task::LocalSet::new();
+            let _ = local_set
+                .run_until(run_server_loop_async(server, server_transport))
+                .await;
+        });
+    });
+
+    // Create tokio runtime for client
     let runtime = Runtime::new()?;
 
-    // Run async code
-    runtime.block_on(async {
-        // Create LocalSet for spawn_local (needed because LpServer is not Send)
-        let local_set = LocalSet::new();
+    // Run async client code
+    let result: Result<()> = runtime.block_on(async {
+        // Create async client with client transport
+        let mut async_client = AsyncLpClient::new(Box::new(client_transport));
 
-        local_set
-            .run_until(async {
-                // Create in-memory server
-                let (server, _base_fs) = create_server(None, true, None)
-                    .map_err(|e| anyhow::anyhow!("Failed to create server: {}", e))?;
+        // Push project if requested
+        if should_push {
+            // Create local filesystem view of project directory
+            let local_fs = LpFsStd::new(args.dir.clone());
 
-                // Create local transport pair
-                let (mut client_transport, server_transport) = create_local_transport_pair();
+            println!(
+                "Pushing project '{}' (uid: {}) to server...",
+                project_name, project_uid
+            );
 
-                // Spawn server task (using spawn_local because LpServer is not Send)
-                tokio::task::spawn_local(run_server_loop_async(server, server_transport));
+            // Push project files using async client
+            push_project_async(&mut async_client, &local_fs, &project_uid)
+                .await
+                .map_err(|e| {
+                    anyhow::anyhow!("Failed to push project '{}': {}", project_name, e)
+                })?;
 
-                // Give server a moment to start
-                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            println!("Project files pushed successfully");
+        }
 
-                // Create client
-                let mut client = LpClient::new();
-
-                // Create local filesystem view of project directory
-                let local_fs = LpFsStd::new(project_dir.clone());
-
-                // Push project if requested
-                if args.push {
-                    println!(
-                        "Pushing project '{}' (uid: {}) to server...",
-                        project_name, project_uid
-                    );
-
-                    push_project(&mut client, &mut client_transport, &local_fs, &project_uid)
-                        .map_err(|e| {
-                            anyhow::anyhow!("Failed to push project '{}': {}", project_name, e)
-                        })?;
-
-                    println!("Project files pushed successfully");
-                }
-
-                // Load project on server
-                println!("Loading project on server...");
-                let handle = load_project(&mut client, &mut client_transport, &project_uid)
-                    .map_err(|e| {
-                        anyhow::anyhow!("Failed to load project '{}': {}", project_name, e)
-                    })?;
-
-                messages::print_success(
-                    &format!(
-                        "Project '{}' (uid: {}) loaded successfully",
-                        project_name, project_uid
-                    ),
-                    &[
-                        &format!("Project handle: {:?}", handle),
-                        "Project is now running on the server",
-                        "Press Ctrl+C to stop",
-                    ],
-                );
-
-                // Enter client loop with Ctrl+C handling
-                tokio::select! {
-                    _ = tokio::signal::ctrl_c() => {
-                        println!("\nShutting down...");
-                    }
-                    result = run_client_loop(&mut client, &mut client_transport) => {
-                        result?;
-                    }
-                }
-
-                Ok(())
-            })
+        // Load project on server
+        println!("Loading project on server...");
+        let handle = load_project_async(&mut async_client, &project_uid)
             .await
-    })
+            .map_err(|e| {
+                anyhow::anyhow!("Failed to load project '{}': {}", project_name, e)
+            })?;
+
+        messages::print_success(
+            &format!(
+                "Project '{}' (uid: {}) loaded successfully",
+                project_name, project_uid
+            ),
+            &[
+                &format!("Project handle: {:?}", handle),
+                "Project is now running on the server",
+                "Press Ctrl+C to stop",
+            ],
+        );
+
+        // Enter client loop with Ctrl+C handling
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {
+                println!("\nShutting down...");
+            }
+            result = run_client_loop_async(&mut async_client) => {
+                result?;
+            }
+        }
+
+        Ok(())
+    });
+    
+    result?;
+
+    // Wait for server thread to finish (it should run until transport disconnects)
+    server_handle.join().map_err(|_| anyhow::anyhow!("Server thread panicked"))?;
+
+    Ok(())
 }
 
-/// Run the client loop
+/// Run the client loop (async version)
+///
+/// Continuously polls the transport for incoming messages and processes them
+/// via the async client. Runs until an error occurs or the transport is closed.
+async fn run_client_loop_async(_client: &mut AsyncLpClient) -> Result<()> {
+    // For now, just sleep indefinitely since the async client handles message processing
+    // internally when making requests. In the future, we might want to add a background
+    // task to process incoming messages, but for now the client only processes messages
+    // when making requests.
+    loop {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+}
+
+/// Run the client loop (sync version for websocket)
 ///
 /// Continuously polls the transport for incoming messages and processes them
 /// via the client. Runs until an error occurs or the transport is closed.
@@ -151,7 +180,7 @@ async fn run_client_loop(client: &mut LpClient, transport: &mut dyn ClientTransp
             match transport.receive() {
                 Ok(Some(server_msg)) => {
                     // Wrap in Message envelope for client.tick()
-                    incoming_messages.push(Message::Server(server_msg));
+                    incoming_messages.push(lp_model::Message::Server(server_msg));
                 }
                 Ok(None) => {
                     // No more messages available
@@ -181,10 +210,10 @@ async fn run_client_loop(client: &mut LpClient, transport: &mut dyn ClientTransp
 /// Handle dev command with WebSocket server
 fn handle_dev_websocket(
     args: DevArgs,
-    project_dir: PathBuf,
     project_uid: String,
     project_name: String,
     url: &str,
+    should_push: bool,
 ) -> Result<()> {
     // Create WebSocket transport
     let mut transport: Box<dyn ClientTransport> = Box::new(
@@ -195,11 +224,11 @@ fn handle_dev_websocket(
     // Create client
     let mut client = LpClient::new();
 
-    // Create local filesystem view of project directory
-    let local_fs = LpFsStd::new(project_dir.clone());
-
     // Push project if requested
-    if args.push {
+    if should_push {
+        // Create local filesystem view of project directory
+        let local_fs = LpFsStd::new(args.dir.clone());
+
         println!(
             "Pushing project '{}' (uid: {}) to server...",
             project_name, project_uid

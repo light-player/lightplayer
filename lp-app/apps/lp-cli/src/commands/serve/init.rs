@@ -43,6 +43,7 @@ pub fn initialize_server(dir: &Path, init: bool) -> Result<ServerConfig> {
 /// This function accepts parameters for testability.
 pub fn create_filesystem(dir: Option<&Path>, memory: bool) -> Result<Box<dyn LpFs>> {
     if memory {
+        // LpFsMemory now uses interior mutability, so it can implement write_file() directly
         Ok(Box::new(LpFsMemory::new()))
     } else {
         let server_dir = dir.unwrap_or_else(|| Path::new("."));

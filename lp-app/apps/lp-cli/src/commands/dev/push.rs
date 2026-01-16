@@ -5,6 +5,7 @@
 use anyhow::{Context, Result};
 use std::path::Path;
 
+use crate::commands::dev::async_client::AsyncLpClient;
 use crate::messages::{format_command, print_error_and_return};
 use lp_client::LpClient;
 use lp_model::Message;
@@ -106,19 +107,30 @@ fn send_and_process(
 /// * `transport` - The client transport
 /// * `local_fs` - Local filesystem (project root)
 /// * `project_uid` - Project UID (used for server path)
-pub fn push_project(
+/// Send all project files to server (first phase of push)
+///
+/// Sends write requests for all files but doesn't wait for responses.
+/// Returns a list of (request_id, server_path) tuples for verification.
+pub fn send_push_requests(
     client: &mut LpClient,
     transport: &mut dyn ClientTransport,
     local_fs: &dyn LpFs,
     project_uid: &str,
-) -> Result<()> {
+) -> Result<Vec<(u64, String)>> {
     // List all files recursively from project root
     let entries = local_fs
         .list_dir("/", true)
         .map_err(|e| anyhow::anyhow!("Failed to list local project files: {}", e))?;
 
-    // Write each file to server (path: /projects/{uid}/...)
+    let mut write_requests = Vec::new();
+
+    // Send all write requests
     for entry in entries {
+        // Skip directories (directories are created implicitly when files are written)
+        if let Ok(true) = local_fs.is_dir(&entry) {
+            continue;
+        }
+
         // Read file from local filesystem
         let content = local_fs
             .read_file(&entry)
@@ -131,20 +143,62 @@ pub fn push_project(
             format!("/projects/{}/{}", project_uid, entry)
         };
 
-        // Write file to server
+        // Create write request and send
         let (write_msg, write_id) = client.fs_write(server_path.clone(), content);
-        send_and_process(client, transport, write_msg)
-            .with_context(|| format!("Failed to send write request for {}", server_path))?;
 
-        // Get and check response
-        let response = client.get_response(write_id).ok_or_else(|| {
-            anyhow::anyhow!("No response received for write request {}", write_id)
+        // Extract ClientMessage and send
+        let client_msg = match write_msg {
+            Message::Client(msg) => msg,
+            Message::Server(_) => {
+                return Err(anyhow::anyhow!("Expected Client message"));
+            }
+        };
+        transport.send(client_msg.clone()).map_err(|e| {
+            anyhow::anyhow!("Failed to send write request for {}: {}", server_path, e)
+        })?;
+
+        write_requests.push((write_id, server_path));
+    }
+
+    Ok(write_requests)
+}
+
+/// Verify all write responses are available and valid (second phase of push)
+pub fn verify_push_responses(
+    client: &mut LpClient,
+    write_requests: &[(u64, String)],
+) -> Result<()> {
+    for (write_id, server_path) in write_requests {
+        let response = client.get_response(*write_id).ok_or_else(|| {
+            anyhow::anyhow!(
+                "No response received for write request {} (file: {})",
+                write_id,
+                server_path
+            )
         })?;
 
         client
-            .extract_write_response(write_id, response)
+            .extract_write_response(*write_id, response)
             .map_err(|e| anyhow::anyhow!("Server error writing {}: {}", server_path, e))?;
     }
+
+    Ok(())
+}
+
+pub fn push_project(
+    client: &mut LpClient,
+    transport: &mut dyn ClientTransport,
+    local_fs: &dyn LpFs,
+    project_uid: &str,
+) -> Result<()> {
+    // Send all write requests
+    let write_requests = send_push_requests(client, transport, local_fs, project_uid)?;
+
+    // Process messages once (responses may not be immediately available with async servers)
+    process_messages(client, transport)?;
+
+    // Verify all responses
+    verify_push_responses(client, &write_requests)?;
 
     Ok(())
 }
@@ -153,17 +207,22 @@ pub fn push_project(
 ///
 /// Sends LoadProject request and waits for response.
 /// Returns the project handle.
+///
+/// # Arguments
+///
+/// * `client` - The LpClient instance
+/// * `transport` - The client transport
+/// * `project_uid` - Project UID (the server will look for it in projects/{uid}/)
 pub fn load_project(
     client: &mut LpClient,
     transport: &mut dyn ClientTransport,
     project_uid: &str,
 ) -> Result<lp_model::project::handle::ProjectHandle> {
-    let project_path = format!("/projects/{}/project.json", project_uid);
-
-    // Send load request
-    let (load_msg, load_id) = client.project_load(project_path.clone());
+    // Send load request with just the project UID
+    // The server will construct the path as projects/{uid}/
+    let (load_msg, load_id) = client.project_load(project_uid.to_string());
     send_and_process(client, transport, load_msg)
-        .with_context(|| format!("Failed to send load project request for {}", project_path))?;
+        .with_context(|| format!("Failed to send load project request for {}", project_uid))?;
 
     // Get and extract response
     let response = client
@@ -172,7 +231,75 @@ pub fn load_project(
 
     client
         .extract_load_project_response(load_id, response)
-        .map_err(|e| anyhow::anyhow!("Server error loading project {}: {}", project_path, e))
+        .map_err(|e| anyhow::anyhow!("Server error loading project {}: {}", project_uid, e))
+}
+
+/// Push project files to server (async version)
+///
+/// Recursively reads all files from local project and writes them to server using AsyncLpClient.
+///
+/// # Arguments
+///
+/// * `client` - The AsyncLpClient instance
+/// * `local_fs` - Local filesystem (project root)
+/// * `project_uid` - Project UID (used for server path)
+pub async fn push_project_async(
+    client: &mut AsyncLpClient,
+    local_fs: &dyn LpFs,
+    project_uid: &str,
+) -> Result<()> {
+    // List all files recursively from project root
+    let entries = local_fs
+        .list_dir("/", true)
+        .map_err(|e| anyhow::anyhow!("Failed to list local project files: {}", e))?;
+
+    // Write all files using async client
+    for entry in entries {
+        // Skip directories (directories are created implicitly when files are written)
+        if let Ok(true) = local_fs.is_dir(&entry) {
+            continue;
+        }
+
+        // Read file from local filesystem
+        let content = local_fs
+            .read_file(&entry)
+            .map_err(|e| anyhow::anyhow!("Failed to read local file {}: {}", entry, e))?;
+
+        // Construct server path: /projects/{uid}/...
+        let server_path = if entry.starts_with('/') {
+            format!("/projects/{}{}", project_uid, entry)
+        } else {
+            format!("/projects/{}/{}", project_uid, entry)
+        };
+
+        // Write file using async client (awaits response)
+        client
+            .fs_write(server_path.clone(), content)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to write {}: {}", server_path, e))?;
+    }
+
+    Ok(())
+}
+
+/// Load project on server (async version)
+///
+/// Sends LoadProject request and waits for response using AsyncLpClient.
+/// Returns the project handle.
+///
+/// # Arguments
+///
+/// * `client` - The AsyncLpClient instance
+/// * `project_uid` - Project UID (the server will look for it in projects/{uid}/)
+pub async fn load_project_async(
+    client: &mut AsyncLpClient,
+    project_uid: &str,
+) -> Result<lp_model::project::handle::ProjectHandle> {
+    // Load project using async client (awaits response)
+    client
+        .project_load(project_uid.to_string())
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to load project {}: {}", project_uid, e))
 }
 
 #[cfg(test)]

@@ -27,13 +27,12 @@ enum Cli {
     },
     /// Connect to server and sync local project
     Dev {
-        /// Host specifier (e.g., ws://localhost:2812/). If not provided, uses in-memory server.
-        host: Option<String>,
-        /// Project directory (defaults to current directory)
-        dir: Option<std::path::PathBuf>,
-        /// Push local project to server (default: true)
-        #[arg(long, default_value = "true")]
-        push: bool,
+        /// Project directory
+        dir: std::path::PathBuf,
+        /// Push local project to server. Optionally specify remote host (e.g., ws://localhost:2812/ or serial:auto).
+        /// If --push is specified without a host, uses in-memory server.
+        #[arg(long, value_name = "HOST")]
+        push: Option<Option<String>>,
     },
     /// Create a new project
     Create {
@@ -55,7 +54,12 @@ fn main() -> Result<()> {
         Cli::Serve { dir, init, memory } => {
             serve::handle_serve(serve::ServeArgs { dir, init, memory })
         }
-        Cli::Dev { host, dir, push } => dev::handle_dev(dev::DevArgs { host, dir, push }),
+        Cli::Dev { dir, push } => {
+            dev::handle_dev(dev::DevArgs {
+                dir,
+                push_host: push,
+            })
+        }
         Cli::Create { dir, name, uid } => {
             create::handle_create(create::CreateArgs { dir, name, uid })
         }

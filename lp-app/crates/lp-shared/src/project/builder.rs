@@ -7,12 +7,13 @@ use lp_model::nodes::{
     NodeSpecifier,
 };
 use lp_model::path::LpPath;
-use alloc::{format, string::String};
+use alloc::{format, rc::Rc, string::String};
+use core::cell::RefCell;
 use serde_json;
 
 /// Builder for creating test projects
-pub struct ProjectBuilder<'a> {
-    fs: &'a mut dyn LpFs,
+pub struct ProjectBuilder {
+    fs: Rc<RefCell<dyn LpFs>>,
     uid: String,
     name: String,
     texture_id: u32,
@@ -63,9 +64,9 @@ pub struct FixtureBuilder {
     transform: [[f32; 4]; 4],
 }
 
-impl<'a> ProjectBuilder<'a> {
+impl ProjectBuilder {
     /// Create a new ProjectBuilder with default uid and name
-    pub fn new(fs: &'a mut dyn LpFs) -> Self {
+    pub fn new(fs: Rc<RefCell<dyn LpFs>>) -> Self {
         Self {
             fs,
             uid: String::from("test"),
@@ -89,29 +90,14 @@ impl<'a> ProjectBuilder<'a> {
         self
     }
 
-    /// Helper to write files - tries write_file_mut for LpFsMemory, falls back to write_file
+    /// Helper to write files
     fn write_file_helper(
-        &mut self,
+        &self,
         path: &str,
         data: &[u8],
     ) -> Result<(), crate::error::FsError> {
-        // For LpFsMemory, we need to use write_file_mut
-        // Since we can't downcast through trait objects safely, we'll use a workaround:
-        // Try write_file first, and if it fails with the specific error, we know it's LpFsMemory
-        match self.fs.write_file(path, data) {
-            Ok(()) => Ok(()),
-            Err(crate::error::FsError::Filesystem(msg)) if msg.contains("write_file_mut") => {
-                // This is LpFsMemory - we need mutable access
-                // Use unsafe to get mutable access - this is safe because we know it's LpFsMemory
-                // and write_file_mut is safe to call
-                unsafe {
-                    let fs_ptr = self.fs as *mut dyn LpFs;
-                    let fs_any = fs_ptr as *mut crate::fs::LpFsMemory;
-                    (*fs_any).write_file_mut(path, data)
-                }
-            }
-            Err(e) => Err(e),
-        }
+        // LpFsMemory now uses interior mutability, so write_file() works with &self
+        self.fs.borrow().write_file(path, data)
     }
 
     /// Start building a texture node (defaults to 16x16)
@@ -176,7 +162,7 @@ impl<'a> ProjectBuilder<'a> {
     }
 
     /// Build completes - writes project.json and all node files
-    pub fn build(mut self) {
+    pub fn build(self) {
         // Write project.json
         let project_json = format!(r#"{{"uid": "{}", "name": "{}"}}"#, self.uid, self.name);
         self.write_file_helper("/project.json", project_json.as_bytes())

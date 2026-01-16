@@ -34,6 +34,13 @@ pub trait LpFs {
     /// Path is relative to project root.
     fn file_exists(&self, path: &str) -> Result<bool, FsError>;
 
+    /// Check if a path is a directory
+    ///
+    /// Path is relative to project root.
+    /// Returns `true` if the path exists and is a directory, `false` if it exists and is a file,
+    /// or an error if the path doesn't exist or cannot be accessed.
+    fn is_dir(&self, path: &str) -> Result<bool, FsError>;
+
     /// List directory contents (files and subdirectories)
     ///
     /// Path is relative to project root (e.g., `/src` or `/src/nested`).
@@ -72,5 +79,7 @@ pub trait LpFs {
     /// For example, if the current root is `/projects` and you chroot to `my-project`,
     /// then paths like `/project.json` in the new view will resolve to `/projects/my-project/project.json`
     /// in the original filesystem.
-    fn chroot(&self, subdir: &str) -> Result<alloc::boxed::Box<dyn LpFs>, FsError>;
+    ///
+    /// Returns `Rc<RefCell<dyn LpFs>>` to allow sharing and mutation of the filesystem view.
+    fn chroot(&self, subdir: &str) -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, FsError>;
 }

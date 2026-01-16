@@ -26,8 +26,8 @@ pub struct ProjectRuntime {
     pub frame_id: FrameId,
     /// Frame timing information
     pub frame_time: FrameTime,
-    /// Filesystem (owned for now)
-    pub fs: Box<dyn LpFs>,
+    /// Filesystem (shared via Rc<RefCell<>> to allow external modifications in tests)
+    pub fs: Rc<RefCell<dyn LpFs>>,
     /// Output provider (shared across nodes)
     pub output_provider: Rc<RefCell<dyn OutputProvider>>,
     /// Node entries
@@ -72,10 +72,10 @@ pub enum NodeStatus {
 impl ProjectRuntime {
     /// Create new project runtime
     pub fn new(
-        fs: Box<dyn LpFs>,
+        fs: Rc<RefCell<dyn LpFs>>,
         output_provider: Rc<RefCell<dyn OutputProvider>>,
     ) -> Result<Self, Error> {
-        let _config = crate::project::loader::load_from_filesystem(fs.as_ref())?;
+        let _config = crate::project::loader::load_from_filesystem(&*fs.borrow())?;
 
         Ok(Self {
             frame_id: FrameId::default(),
@@ -89,10 +89,10 @@ impl ProjectRuntime {
 
     /// Load nodes from filesystem (doesn't initialize them)
     pub fn load_nodes(&mut self) -> Result<(), Error> {
-        let node_paths = crate::project::loader::discover_nodes(self.fs.as_ref())?;
+        let node_paths = crate::project::loader::discover_nodes(&*self.fs.borrow())?;
 
         for path in node_paths {
-            match crate::project::loader::load_node(self.fs.as_ref(), &path) {
+            match crate::project::loader::load_node(&*self.fs.borrow(), &path) {
                 Ok((path, config)) => {
                     let handle = NodeHandle::new(self.next_handle);
                     self.next_handle += 1;
@@ -197,7 +197,7 @@ impl ProjectRuntime {
                     })?;
                     // Reload config from filesystem (workaround for trait object limitation)
                     let node_json_path = format!("{}/node.json", entry.path.as_str());
-                    let data = self.fs.read_file(&node_json_path).map_err(|e| Error::Io {
+                    let data = self.fs.borrow().read_file(&node_json_path).map_err(|e| Error::Io {
                         path: node_json_path.clone(),
                         details: format!("Failed to read: {:?}", e),
                     })?;
@@ -218,7 +218,7 @@ impl ProjectRuntime {
                     })?;
                     // Reload config from filesystem (workaround for trait object limitation)
                     let node_json_path = format!("{}/node.json", entry.path.as_str());
-                    let data = self.fs.read_file(&node_json_path).map_err(|e| Error::Io {
+                    let data = self.fs.borrow().read_file(&node_json_path).map_err(|e| Error::Io {
                         path: node_json_path.clone(),
                         details: format!("Failed to read: {:?}", e),
                     })?;
@@ -239,7 +239,7 @@ impl ProjectRuntime {
                     })?;
                     // Reload config from filesystem (workaround for trait object limitation)
                     let node_json_path = format!("{}/node.json", entry.path.as_str());
-                    let data = self.fs.read_file(&node_json_path).map_err(|e| Error::Io {
+                    let data = self.fs.borrow().read_file(&node_json_path).map_err(|e| Error::Io {
                         path: node_json_path.clone(),
                         details: format!("Failed to read: {:?}", e),
                     })?;
@@ -260,7 +260,7 @@ impl ProjectRuntime {
                     })?;
                     // Reload config from filesystem (workaround for trait object limitation)
                     let node_json_path = format!("{}/node.json", entry.path.as_str());
-                    let data = self.fs.read_file(&node_json_path).map_err(|e| Error::Io {
+                    let data = self.fs.borrow().read_file(&node_json_path).map_err(|e| Error::Io {
                         path: node_json_path.clone(),
                         details: format!("Failed to read: {:?}", e),
                     })?;
@@ -606,8 +606,8 @@ impl ProjectRuntime {
             if change.path.ends_with("/node.json") {
                 // Reload config
                 let (_, config_for_update) =
-                    crate::project::loader::load_node(self.fs.as_ref(), &path)?;
-                let (_, new_config) = crate::project::loader::load_node(self.fs.as_ref(), &path)?;
+                    crate::project::loader::load_node(&*self.fs.borrow(), &path)?;
+                let (_, new_config) = crate::project::loader::load_node(&*self.fs.borrow(), &path)?;
 
                 // Update node entry config
                 let has_runtime = {
@@ -712,7 +712,7 @@ impl ProjectRuntime {
 
     /// Load a single node by path
     fn load_node_by_path(&mut self, path: &LpPath) -> Result<NodeHandle, Error> {
-        match crate::project::loader::load_node(self.fs.as_ref(), path) {
+        match crate::project::loader::load_node(&*self.fs.borrow(), path) {
             Ok((path, config)) => {
                 let handle = NodeHandle::new(self.next_handle);
                 self.next_handle += 1;
@@ -1018,13 +1018,13 @@ struct InitContext<'a> {
     runtime: &'a ProjectRuntime,
     #[allow(dead_code)] // Used for chroot filesystem creation, may be needed for future features
     node_path: &'a LpPath,
-    node_fs: alloc::boxed::Box<dyn LpFs>,
+    node_fs: alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>,
 }
 
 impl<'a> InitContext<'a> {
     pub fn new(runtime: &'a ProjectRuntime, node_path: &'a LpPath) -> Result<Self, Error> {
         let node_dir = node_path.as_str();
-        let node_fs = runtime.fs.chroot(node_dir).map_err(|e| Error::Io {
+        let node_fs = runtime.fs.borrow().chroot(node_dir).map_err(|e| Error::Io {
             path: node_dir.to_string(),
             details: format!("Failed to chroot: {:?}", e),
         })?;
@@ -1151,7 +1151,10 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
     }
 
     fn get_node_fs(&self) -> &dyn lp_shared::fs::LpFs {
-        self.node_fs.as_ref()
+        // SAFETY: We're returning a reference from a RefCell borrow, but the trait only allows
+        // immutable access and we're not holding the borrow across any potential panics.
+        // The borrow is valid for the lifetime of the returned reference.
+        unsafe { &*self.node_fs.as_ptr() }
     }
 
     fn output_provider(&self) -> &dyn OutputProvider {

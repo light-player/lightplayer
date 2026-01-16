@@ -9,8 +9,8 @@ use lp_shared::fs::LpFsMemory;
 
 #[test]
 fn test_scene_render() {
-    let mut fs = LpFsMemory::new();
-    let mut builder = ProjectBuilder::new(&mut fs);
+    let fs = Rc::new(RefCell::new(LpFsMemory::new()));
+    let mut builder = ProjectBuilder::new(fs.clone());
 
     // Add nodes
     let texture_path = builder.texture_basic();
@@ -24,8 +24,8 @@ fn test_scene_render() {
     // Create output provider
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
 
-    // Start runtime
-    let mut runtime = ProjectRuntime::new(Box::new(fs), output_provider.clone()).unwrap();
+    // Start runtime with shared filesystem (Rc<RefCell<>> so changes are visible)
+    let mut runtime = ProjectRuntime::new(fs.clone(), output_provider.clone()).unwrap();
     runtime.load_nodes().unwrap();
     runtime.init_nodes().unwrap();
     runtime.ensure_all_nodes_initialized().unwrap();

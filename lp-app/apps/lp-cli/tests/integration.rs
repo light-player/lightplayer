@@ -6,12 +6,12 @@
 
 extern crate alloc;
 
-use alloc::{boxed::Box, rc::Rc, string::String};
+use alloc::{boxed::Box, rc::Rc};
 use core::cell::RefCell;
 use lp_client::{ClientError, LocalTransport, LpClient};
 use lp_model::Message;
 use lp_server::LpServer;
-use lp_shared::fs::{LpFs, LpFsMemory, LpFsMemoryShared};
+use lp_shared::fs::{LpFs, LpFsMemory};
 use lp_shared::output::MemoryOutputProvider;
 use lp_shared::transport::{ClientTransport, ServerTransport};
 
@@ -23,10 +23,9 @@ fn setup_server_and_client(fs: LpFsMemory) -> (LpServer, LpClient, LocalTranspor
     // Create transport pair
     let (client_transport, server_transport) = LocalTransport::new_pair();
 
-    // Create server with shared filesystem (allows mutation through immutable trait)
+    // Create server with filesystem (LpFsMemory now uses interior mutability)
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
-    let shared_fs = LpFsMemoryShared::new(fs);
-    let server = LpServer::new(output_provider, Box::new(shared_fs), "projects".to_string());
+    let server = LpServer::new(output_provider, Box::new(fs), "projects".to_string());
 
     // Create client
     let client = LpClient::new();
@@ -149,8 +148,7 @@ fn test_server_startup_with_memory_filesystem() {
     // Create server with memory filesystem
     let fs = LpFsMemory::new();
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
-    let shared_fs = LpFsMemoryShared::new(fs);
-    let _server = LpServer::new(output_provider, Box::new(shared_fs), "projects".to_string());
+    let _server = LpServer::new(output_provider, Box::new(fs), "projects".to_string());
 
     // Server created successfully
     // (In a real test, we might verify it accepts connections, but with
@@ -325,3 +323,9 @@ fn test_create_command_structure() {
     assert_eq!(config.uid, project_uid);
     assert_eq!(config.name, project_name);
 }
+
+// Note: A full async test for the dev command would require making the server,
+// transport, and command modules public or creating a lib.rs file.
+// The current test structure verifies the synchronous transport works correctly.
+// The async message processing fix in the handler should resolve the issue
+// where responses weren't being received from the async server.

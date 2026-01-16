@@ -4,15 +4,12 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use lp_engine::{MemoryOutputProvider, ProjectRuntime};
 use lp_shared::ProjectBuilder;
-use lp_shared::fs::{LpFsMemory, LpFsMemoryShared};
+use lp_shared::fs::LpFsMemory;
 
 #[test]
 fn test_node_json_modification() {
-    let fs = LpFsMemoryShared::new(LpFsMemory::new());
-    // ProjectBuilder needs &mut dyn LpFs
-    // We need to get a mutable reference through the RefCell
-    let mut fs_mut = fs.get_mut();
-    let mut builder = ProjectBuilder::new(&mut *fs_mut);
+    let fs = Rc::new(RefCell::new(LpFsMemory::new()));
+    let mut builder = ProjectBuilder::new(fs.clone());
 
     // Add nodes
     let texture_path = builder.texture_basic();
@@ -22,14 +19,13 @@ fn test_node_json_modification() {
 
     // Build project
     builder.build();
-    fs_mut.reset_changes();
-    drop(fs_mut); // Release the borrow
+    fs.borrow_mut().reset_changes();
 
     // Create output provider
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
 
-    // Start runtime with shared filesystem
-    let mut runtime = ProjectRuntime::new(Box::new(fs.clone()), output_provider.clone()).unwrap();
+    // Start runtime with shared filesystem (Rc<RefCell<>> so changes are visible)
+    let mut runtime = ProjectRuntime::new(fs.clone(), output_provider.clone()).unwrap();
     runtime.load_nodes().unwrap();
     runtime.init_nodes().unwrap();
     runtime.ensure_all_nodes_initialized().unwrap();
@@ -47,14 +43,14 @@ fn test_node_json_modification() {
         "texture_spec": "/src/texture-1.texture",
         "render_order": 10
     }"#;
-    fs.get_mut()
+    fs.borrow_mut()
         .write_file_mut(shader_config_path, new_config.as_bytes())
         .unwrap();
 
     // Get filesystem changes
-    let changes = fs.get_changes();
+    let changes = fs.borrow().get_changes();
     runtime.handle_fs_changes(&changes).unwrap();
-    fs.get_mut().reset_changes();
+    fs.borrow_mut().reset_changes();
 
     // Advance frame to update frame_id
     runtime.tick(4).unwrap();
@@ -85,10 +81,8 @@ fn test_node_json_modification() {
 
 #[test]
 fn test_main_glsl_modification() {
-    let fs = LpFsMemoryShared::new(LpFsMemory::new());
-    // ProjectBuilder needs &mut dyn LpFs
-    let mut fs_mut = fs.get_mut();
-    let mut builder = ProjectBuilder::new(&mut *fs_mut);
+    let fs = Rc::new(RefCell::new(LpFsMemory::new()));
+    let mut builder = ProjectBuilder::new(fs.clone());
 
     // Add nodes
     let texture_path = builder.texture_basic();
@@ -98,14 +92,13 @@ fn test_main_glsl_modification() {
 
     // Build project
     builder.build();
-    fs_mut.reset_changes();
-    drop(fs_mut); // Release the borrow
+    fs.borrow_mut().reset_changes();
 
     // Create output provider
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
 
-    // Start runtime with shared filesystem
-    let mut runtime = ProjectRuntime::new(Box::new(fs.clone()), output_provider.clone()).unwrap();
+    // Start runtime with shared filesystem (Rc<RefCell<>> so changes are visible)
+    let mut runtime = ProjectRuntime::new(fs.clone(), output_provider.clone()).unwrap();
     runtime.load_nodes().unwrap();
     runtime.init_nodes().unwrap();
     runtime.ensure_all_nodes_initialized().unwrap();
@@ -124,7 +117,7 @@ fn test_main_glsl_modification() {
         .to_vec();
 
     // Modify shader GLSL (change the color)
-    fs.get_mut()
+    fs.borrow_mut()
         .write_file_mut(
             "/src/shader-1.shader/main.glsl",
             r#"
@@ -137,9 +130,9 @@ fn test_main_glsl_modification() {
         .unwrap();
 
     // Get filesystem changes
-    let changes = fs.get_changes();
+    let changes = fs.borrow().get_changes();
     runtime.handle_fs_changes(&changes).unwrap();
-    fs.get_mut().reset_changes();
+    fs.borrow_mut().reset_changes();
 
     // Render another frame to apply the shader changes
     runtime.tick(4).unwrap();
@@ -169,10 +162,8 @@ fn test_main_glsl_modification() {
 
 #[test]
 fn test_node_deletion() {
-    let fs = LpFsMemoryShared::new(LpFsMemory::new());
-    // ProjectBuilder needs &mut dyn LpFs
-    let mut fs_mut = fs.get_mut();
-    let mut builder = ProjectBuilder::new(&mut *fs_mut);
+    let fs = Rc::new(RefCell::new(LpFsMemory::new()));
+    let mut builder = ProjectBuilder::new(fs.clone());
 
     // Add nodes
     let texture_path = builder.texture_basic();
@@ -182,14 +173,13 @@ fn test_node_deletion() {
 
     // Build project
     builder.build();
-    fs_mut.reset_changes();
-    drop(fs_mut); // Release the borrow
+    fs.borrow_mut().reset_changes();
 
     // Create output provider
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
 
-    // Start runtime with shared filesystem
-    let mut runtime = ProjectRuntime::new(Box::new(fs.clone()), output_provider.clone()).unwrap();
+    // Start runtime with shared filesystem (Rc<RefCell<>> so changes are visible)
+    let mut runtime = ProjectRuntime::new(fs.clone(), output_provider.clone()).unwrap();
     runtime.load_nodes().unwrap();
     runtime.init_nodes().unwrap();
     runtime.ensure_all_nodes_initialized().unwrap();
@@ -199,12 +189,12 @@ fn test_node_deletion() {
 
     // Delete node.json
     let shader_config_path = "/src/shader-1.shader/node.json";
-    fs.get_mut().delete_file_mut(shader_config_path).unwrap();
+    fs.borrow_mut().delete_file_mut(shader_config_path).unwrap();
 
     // Get filesystem changes
-    let changes = fs.get_changes();
+    let changes = fs.borrow().get_changes();
     runtime.handle_fs_changes(&changes).unwrap();
-    fs.get_mut().reset_changes();
+    fs.borrow_mut().reset_changes();
 
     // Verify the node was removed
     assert!(
