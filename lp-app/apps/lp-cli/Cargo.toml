@@ -19,6 +19,7 @@ lp-model = { path = "../../crates/lp-model" }
 lp-server = { path = "../../crates/lp-server" }
 lp-client = { path = "../../crates/lp-client" }
 lp-shared = { path = "../../crates/lp-shared" }
+lp-engine-client = { path = "../../crates/lp-engine-client" }
 
 [dev-dependencies]
 tempfile = "3"

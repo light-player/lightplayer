@@ -696,6 +696,7 @@ dependencies = [
  "clap",
  "futures-util",
  "lp-client",
+ "lp-engine-client",
  "lp-model",
  "lp-server",
  "lp-shared",

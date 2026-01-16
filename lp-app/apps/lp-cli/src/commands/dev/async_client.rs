@@ -5,7 +5,12 @@
 
 use anyhow::{Context, Result};
 use lp_client::LpClient;
-use lp_model::{Message, project::handle::ProjectHandle, server::ServerResponse};
+use lp_engine_client::project::ClientProjectView;
+use lp_model::{
+    Message,
+    project::{api::ProjectResponse, handle::ProjectHandle},
+    server::ServerResponse,
+};
 use lp_shared::transport::ClientTransport;
 use std::time::Duration;
 use tokio::time::timeout;
@@ -207,5 +212,145 @@ impl AsyncLpClient {
         self.client
             .extract_load_project_response(load_id, response)
             .map_err(|e| anyhow::anyhow!("Server error loading project {}: {}", path, e))
+    }
+
+    /// Sync project view with server
+    ///
+    /// Sends GetChanges request and updates the ClientProjectView.
+    /// Returns when sync completes or timeout occurs.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - Project handle
+    /// * `view` - Client project view to update
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If sync succeeded
+    /// * `Err` - If sync failed or timeout occurred
+    pub async fn project_sync(
+        &mut self,
+        handle: ProjectHandle,
+        view: &mut ClientProjectView,
+    ) -> Result<()> {
+        // Get since_frame and detail_specifier from view
+        let since_frame = view.frame_id;
+        let detail_specifier = view.detail_specifier();
+
+        // Create get changes request
+        let (get_changes_msg, get_changes_id) =
+            self.client
+                .project_get_changes(handle, since_frame, detail_specifier);
+
+        // Extract ClientMessage and send
+        let client_msg = match get_changes_msg {
+            Message::Client(msg) => msg,
+            Message::Server(_) => {
+                return Err(anyhow::anyhow!("Expected Client message"));
+            }
+        };
+
+        self.transport
+            .send(client_msg)
+            .map_err(|e| anyhow::anyhow!("Failed to send get changes request: {}", e))?;
+
+        // Wait for response
+        let response = self
+            .wait_for_response(get_changes_id)
+            .await
+            .with_context(|| "Failed to get project changes")?;
+
+        // Extract response
+        let serializable_response = self
+            .client
+            .extract_get_changes_response(get_changes_id, response)
+            .map_err(|e| anyhow::anyhow!("Server error getting changes: {}", e))?;
+
+        // Convert SerializableProjectResponse to ProjectResponse
+        let project_response = serializable_response_to_project_response(serializable_response)
+            .map_err(|e| anyhow::anyhow!("Failed to convert response: {}", e))?;
+
+        // Apply changes to view
+        view.apply_changes(&project_response)
+            .map_err(|e| anyhow::anyhow!("Failed to apply changes to view: {}", e))?;
+
+        Ok(())
+    }
+}
+
+/// Convert SerializableProjectResponse to ProjectResponse
+///
+/// This conversion is needed because ClientProjectView::apply_changes expects ProjectResponse,
+/// but the client receives SerializableProjectResponse over the wire.
+fn serializable_response_to_project_response(
+    serializable: lp_model::project::api::SerializableProjectResponse,
+) -> Result<ProjectResponse, String> {
+    match serializable {
+        lp_model::project::api::SerializableProjectResponse::GetChanges {
+            current_frame,
+            node_handles,
+            node_changes,
+            node_details,
+        } => {
+            // Convert SerializableNodeDetail to NodeDetail
+            use std::collections::BTreeMap;
+            let mut details_map = BTreeMap::new();
+            for (handle, serializable_detail) in node_details {
+                let detail = match serializable_detail {
+                    lp_model::project::api::SerializableNodeDetail::Texture {
+                        path,
+                        config,
+                        state,
+                        status,
+                    } => lp_model::project::api::NodeDetail {
+                        path,
+                        config: Box::new(config),
+                        state,
+                        status,
+                    },
+                    lp_model::project::api::SerializableNodeDetail::Shader {
+                        path,
+                        config,
+                        state,
+                        status,
+                    } => lp_model::project::api::NodeDetail {
+                        path,
+                        config: Box::new(config),
+                        state,
+                        status,
+                    },
+                    lp_model::project::api::SerializableNodeDetail::Output {
+                        path,
+                        config,
+                        state,
+                        status,
+                    } => lp_model::project::api::NodeDetail {
+                        path,
+                        config: Box::new(config),
+                        state,
+                        status,
+                    },
+                    lp_model::project::api::SerializableNodeDetail::Fixture {
+                        path,
+                        config,
+                        state,
+                        status,
+                    } => lp_model::project::api::NodeDetail {
+                        path,
+                        config: Box::new(config),
+                        state,
+                        status,
+                    },
+                };
+                details_map.insert(handle, detail);
+            }
+
+            Ok(ProjectResponse::GetChanges {
+                current_frame,
+                node_handles,
+                node_changes,
+                node_details: details_map,
+            })
+        }
     }
 }
