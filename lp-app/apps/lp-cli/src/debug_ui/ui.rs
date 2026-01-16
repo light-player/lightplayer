@@ -177,13 +177,6 @@ impl DebugUiState {
 
 impl eframe::App for DebugUiState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Check for window close request
-        if ctx.input(|i| i.viewport().close_requested()) {
-            self.should_close = true;
-            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-            return;
-        }
-
         // Calculate FPS
         let now = Instant::now();
         let delta_ms = if let Some(last_time) = self.last_frame_time {

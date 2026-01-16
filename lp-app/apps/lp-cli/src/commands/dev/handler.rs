@@ -73,20 +73,23 @@ fn handle_dev_local(
 
     // Spawn server on separate thread with its own tokio runtime
     // Create server inside the thread since LpServer is not Send
-    let server_handle = std::thread::spawn(move || {
-        let runtime = Runtime::new().expect("Failed to create tokio runtime for server");
-        runtime.block_on(async {
-            // Create in-memory server (inside thread since LpServer is not Send)
-            let (server, _base_fs) =
-                create_server(None, true, None).expect("Failed to create server");
+    let _server_handle = std::thread::Builder::new()
+        .name("lp-server".to_string())
+        .spawn(move || {
+            let runtime = Runtime::new().expect("Failed to create tokio runtime for server");
+            runtime.block_on(async {
+                // Create in-memory server (inside thread since LpServer is not Send)
+                let (server, _base_fs) =
+                    create_server(None, true, None).expect("Failed to create server");
 
-            // Create LocalSet for spawn_local (needed because LpServer is not Send)
-            let local_set = tokio::task::LocalSet::new();
-            let _ = local_set
-                .run_until(run_server_loop_async(server, server_transport))
-                .await;
-        });
-    });
+                // Create LocalSet for spawn_local (needed because LpServer is not Send)
+                let local_set = tokio::task::LocalSet::new();
+                let _ = local_set
+                    .run_until(run_server_loop_async(server, server_transport))
+                    .await;
+            });
+        })
+        .expect("Failed to spawn server thread");
 
     // Create tokio runtime for client
     let runtime = Runtime::new()?;
@@ -167,6 +170,9 @@ fn handle_dev_local(
             Box::new(|_cc| Box::new(ui_state)),
         )
         .map_err(|e| anyhow::anyhow!("UI error: {}", e))?;
+
+        // UI closed - drop the shared transport to signal server shutdown
+        drop(shared_transport);
     } else {
         // Enter client loop with Ctrl+C handling
         let result: Result<()> = runtime.block_on(async {
@@ -185,12 +191,13 @@ fn handle_dev_local(
             Ok(())
         });
         result?;
+
+        // Headless mode closed - drop the shared transport to signal server shutdown
+        drop(shared_transport);
     }
 
-    // Wait for server thread to finish (it should run until transport disconnects)
-    server_handle
-        .join()
-        .map_err(|_| anyhow::anyhow!("Server thread panicked"))?;
+    // Don't wait for server thread - it will exit when transport closes or process exits
+    // The server is a background thread and will be cleaned up automatically
 
     Ok(())
 }
