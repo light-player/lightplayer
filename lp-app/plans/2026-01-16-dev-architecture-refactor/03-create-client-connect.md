@@ -7,6 +7,7 @@ Create `client_connect()` factory function that takes a `HostSpecifier` and retu
 ## Tasks
 
 1. Create `lp-app/apps/lp-cli/src/client/client_connect.rs`:
+
    - Define `pub fn client_connect(spec: HostSpecifier) -> Result<Box<dyn ClientTransport + Send>, Error>`
    - Handle `HostSpecifier::Local`:
      - Create `LocalServerTransport::new()`
@@ -18,6 +19,7 @@ Create `client_connect()` factory function that takes a `HostSpecifier` and retu
      - Return error "Serial transport not yet implemented"
 
 2. Update `lp-app/apps/lp-cli/src/client/mod.rs`:
+
    - Add `pub mod client_connect;`
    - Re-export `client_connect` function
 
