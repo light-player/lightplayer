@@ -32,7 +32,7 @@ impl HostSpecifier {
     /// # Examples
     ///
     /// ```
-    /// use lp_cli::transport::specifier::HostSpecifier;
+    /// use lp_cli::client::specifier::HostSpecifier;
     ///
     /// let ws = HostSpecifier::parse("ws://localhost:2812/").unwrap();
     /// assert!(ws.is_websocket());
