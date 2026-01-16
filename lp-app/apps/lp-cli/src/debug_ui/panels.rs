@@ -174,18 +174,22 @@ pub fn render_status_panel(
 }
 
 /// Render nodes panel with checkboxes
+///
+/// Returns true if any checkbox state changed
 pub fn render_nodes_panel(
     ui: &mut egui::Ui,
     view: &ClientProjectView,
     tracked_nodes: &mut std::collections::BTreeSet<NodeHandle>,
     all_detail: &mut bool,
-) {
+) -> bool {
+    let mut changed = false;
     ui.heading("Nodes");
     ui.separator();
 
     // "All detail" checkbox
     let all_detail_changed = ui.checkbox(all_detail, "All detail").changed();
     if all_detail_changed {
+        changed = true;
         if *all_detail {
             // Track all nodes
             tracked_nodes.clear();
@@ -209,6 +213,7 @@ pub fn render_nodes_panel(
             let checkbox_response = ui.checkbox(&mut checked, node_label);
 
             if checkbox_response.changed() {
+                changed = true;
                 if checked {
                     tracked_nodes.insert(*handle);
                 } else {
@@ -221,6 +226,8 @@ pub fn render_nodes_panel(
             }
         }
     });
+
+    changed
 }
 
 /// Render texture panel

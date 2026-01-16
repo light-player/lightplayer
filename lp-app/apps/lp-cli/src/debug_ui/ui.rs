@@ -33,6 +33,8 @@ pub struct DebugUiState {
             Result<lp_model::project::api::SerializableProjectResponse, anyhow::Error>,
         >,
     >,
+    /// Track if tracked_nodes changed since last sync (to trigger immediate sync)
+    tracked_nodes_changed: bool,
     /// GLSL code cache (keyed by node handle)
     glsl_cache: BTreeMap<NodeHandle, String>,
     /// Currently selected node handle (for detail display)
@@ -63,6 +65,7 @@ impl DebugUiState {
             all_detail: false,
             sync_in_progress: false,
             pending_sync: None,
+            tracked_nodes_changed: false,
             glsl_cache: BTreeMap::new(),
             selected_node: None,
             runtime_handle,
@@ -88,6 +91,15 @@ impl DebugUiState {
                             match view.apply_changes(&project_response) {
                                 Ok(()) => {
                                     self.sync_in_progress = false;
+                                    // Check if tracked_nodes changed while sync was in progress
+                                    // If so, we need to sync again immediately
+                                    let current_tracked: BTreeSet<_> =
+                                        self.tracked_nodes.iter().copied().collect();
+                                    let view_tracked: BTreeSet<_> =
+                                        view.detail_tracking.iter().copied().collect();
+                                    if current_tracked != view_tracked {
+                                        self.tracked_nodes_changed = true;
+                                    }
                                 }
                                 Err(e) => {
                                     eprintln!("Failed to apply changes: {}", e);
@@ -118,6 +130,7 @@ impl DebugUiState {
         }
 
         // Start new sync if not in progress
+        // If tracked_nodes changed, we'll sync again after current sync finishes
         if !self.sync_in_progress {
             // Update view's detail_tracking to match tracked_nodes and get sync parameters
             let (since_frame, detail_specifier) = {
@@ -224,12 +237,15 @@ impl eframe::App for DebugUiState {
             .resizable(true)
             .default_width(300.0)
             .show(ctx, |ui| {
-                panels::render_nodes_panel(
+                let nodes_changed = panels::render_nodes_panel(
                     ui,
                     &view,
                     &mut self.tracked_nodes,
                     &mut self.all_detail,
                 );
+                if nodes_changed {
+                    self.tracked_nodes_changed = true;
+                }
             });
 
         // Main panel for node details
