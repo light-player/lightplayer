@@ -154,7 +154,7 @@ impl ClientProjectView {
                 for (handle, detail) in node_details {
                     if let Some(entry) = self.nodes.get_mut(handle) {
                         // Update existing entry
-                        // Clone config based on kind (temporary - will use proper serialization later)
+                        // Use config from detail if available, otherwise keep existing config
                         let config: Box<dyn NodeConfig> = match entry.kind {
                             NodeKind::Texture => {
                                 Box::new(lp_model::nodes::texture::TextureConfig {

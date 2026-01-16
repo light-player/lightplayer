@@ -112,11 +112,20 @@ impl DebugUiState {
             // Update view's detail_tracking to match tracked_nodes and get sync parameters
             let (since_frame, detail_specifier) = {
                 let mut view = self.project_view.lock().unwrap();
+                let is_initial_sync = view.nodes.is_empty();
+
                 view.detail_tracking.clear();
                 view.detail_tracking
                     .extend(self.tracked_nodes.iter().copied());
+
                 let since_frame = view.frame_id;
-                let detail_specifier = view.detail_specifier();
+                // For initial sync (empty view), request all nodes to populate the list
+                // Otherwise use normal detail_specifier
+                let detail_specifier = if is_initial_sync {
+                    lp_model::project::api::ApiNodeSpecifier::All
+                } else {
+                    view.detail_specifier()
+                };
                 (since_frame, detail_specifier)
             };
 
