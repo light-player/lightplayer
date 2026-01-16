@@ -35,7 +35,7 @@ const DEBOUNCE_DURATION: Duration = Duration::from_millis(500);
 /// * `Err` if an unrecoverable error occurred
 pub async fn fs_loop(
     transport: Arc<AsyncClientTransport>,
-    project_dir: std::path::PathBuf,
+    project_dir: PathBuf,
     project_uid: String,
     local_fs: Arc<dyn LpFs + Send + Sync>,
 ) -> Result<()> {
