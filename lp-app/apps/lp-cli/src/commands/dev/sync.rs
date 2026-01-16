@@ -4,7 +4,6 @@
 
 use anyhow::{Context, Result};
 use lp_shared::fs::{fs_event::ChangeType, fs_event::FsChange, LpFs};
-use std::path::Path;
 use std::sync::Arc;
 
 use crate::client::AsyncLpClient;
@@ -18,8 +17,7 @@ use crate::client::AsyncLpClient;
 /// * `client` - Async client for communicating with server
 /// * `change` - File change event to sync
 /// * `project_uid` - Project UID for server-side path
-/// * `project_dir` - Local project directory path (for context)
-/// * `local_fs` - Local filesystem for reading files
+/// * `local_fs` - Local filesystem for reading files (wrapped in Arc for Send + Sync)
 ///
 /// # Returns
 ///
@@ -29,8 +27,8 @@ pub async fn sync_file_change(
     client: &Arc<AsyncLpClient>,
     change: &FsChange,
     project_uid: &str,
-    _project_dir: &Path,
-    local_fs: &dyn LpFs,
+    _project_dir: &std::path::Path,
+    local_fs: &Arc<dyn LpFs + Send + Sync>,
 ) -> Result<()> {
     // Build server path: projects/{project_uid}/{file_path}
     // Remove leading '/' from change.path for server path

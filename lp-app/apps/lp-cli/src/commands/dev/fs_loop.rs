@@ -35,9 +35,9 @@ const DEBOUNCE_DURATION: Duration = Duration::from_millis(500);
 /// * `Err` if an unrecoverable error occurred
 pub async fn fs_loop(
     transport: Arc<AsyncClientTransport>,
-    project_dir: PathBuf,
+    project_dir: std::path::PathBuf,
     project_uid: String,
-    local_fs: Arc<dyn LpFs>,
+    local_fs: Arc<dyn LpFs + Send + Sync>,
 ) -> Result<()> {
     // Create AsyncLpClient with shared transport
     let client = Arc::new(AsyncLpClient::new(transport));
@@ -72,7 +72,7 @@ pub async fn fs_loop(
                     &change,
                     &project_uid,
                     &project_dir,
-                    &*local_fs,
+                    &local_fs,
                 )
                 .await
                 {
