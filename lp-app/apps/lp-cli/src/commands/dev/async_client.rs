@@ -5,7 +5,6 @@
 
 use anyhow::{Context, Result};
 use lp_client::LpClient;
-use lp_engine_client::project::ClientProjectView;
 use lp_model::{
     Message,
     project::{api::ProjectResponse, handle::ProjectHandle},
