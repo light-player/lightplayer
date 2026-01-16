@@ -5,6 +5,9 @@
 //!
 //! The transport handles serialization/deserialization internally.
 
+extern crate alloc;
+
+use alloc::vec::Vec;
 use lp_model::{ClientMessage, ServerMessage, TransportError};
 
 /// Trait for server-side transport implementations
@@ -64,4 +67,35 @@ pub trait ServerTransport {
     /// * `Ok(None)` if no message is available (non-blocking)
     /// * `Err(TransportError)` if receiving failed
     fn receive(&mut self) -> Result<Option<ClientMessage>, TransportError>;
+
+    /// Receive all available client messages (non-blocking)
+    ///
+    /// Drains all available messages from the transport in a single call.
+    /// This is more efficient than calling `receive()` in a loop.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Vec<ClientMessage>)` - Vector of all available messages (may be empty)
+    /// * `Err(TransportError)` if receiving failed
+    fn receive_all(&mut self) -> Result<Vec<ClientMessage>, TransportError> {
+        let mut messages = Vec::new();
+        loop {
+            match self.receive()? {
+                Some(msg) => messages.push(msg),
+                None => break,
+            }
+        }
+        Ok(messages)
+    }
+
+    /// Close the transport connection
+    ///
+    /// Explicitly closes the transport connection. This method is idempotent -
+    /// calling it multiple times is safe and will return `Ok(())` if already closed.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the transport was closed successfully (or already closed)
+    /// * `Err(TransportError)` if closing failed
+    fn close(&mut self) -> Result<(), TransportError>;
 }

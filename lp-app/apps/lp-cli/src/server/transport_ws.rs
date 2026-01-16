@@ -330,6 +330,24 @@ impl ServerTransport for WebSocketServerTransport {
         let mut state = self.shared_state.lock().unwrap();
         Ok(state.pending_messages.pop_front().map(|(_, msg)| msg))
     }
+
+    fn receive_all(&mut self) -> Result<Vec<ClientMessage>, TransportError> {
+        // Drain all messages from the queue
+        let mut state = self.shared_state.lock().unwrap();
+        let mut messages = Vec::new();
+        while let Some((_, msg)) = state.pending_messages.pop_front() {
+            messages.push(msg);
+        }
+        Ok(messages)
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
+        // Close all connections by clearing them
+        let mut state = self.shared_state.lock().unwrap();
+        state.connections.clear();
+        state.pending_messages.clear();
+        Ok(())
+    }
 }
 
 #[cfg(test)]

@@ -20,6 +20,8 @@ struct SharedState {
     client_to_server: VecDeque<Vec<u8>>,
     /// Queue of serialized server messages (server -> client)
     server_to_client: VecDeque<Vec<u8>>,
+    /// Whether the transport is closed
+    closed: bool,
 }
 
 /// Local in-memory transport implementation
@@ -45,6 +47,7 @@ impl LocalTransport {
         let state = Rc::new(RefCell::new(SharedState {
             client_to_server: VecDeque::new(),
             server_to_client: VecDeque::new(),
+            closed: false,
         }));
 
         let client = LocalTransport {
@@ -87,6 +90,10 @@ impl ClientTransport for LocalTransport {
         }
 
         let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
         Ok(state
             .server_to_client
             .pop_front()
@@ -99,6 +106,53 @@ impl ClientTransport for LocalTransport {
                 })
             })
             .transpose()?)
+    }
+
+    fn receive_all(&mut self) -> Result<Vec<ServerMessage>, TransportError> {
+        if !self.is_client {
+            return Err(TransportError::Other(
+                "Cannot use server transport as client transport".to_string(),
+            ));
+        }
+
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        let mut messages = Vec::new();
+        while let Some(payload) = state.server_to_client.pop_front() {
+            let msg = serde_json::from_slice(&payload).map_err(|e| {
+                TransportError::Deserialization(format!(
+                    "Failed to deserialize ServerMessage: {}",
+                    e
+                ))
+            })?;
+            messages.push(msg);
+        }
+        Ok(messages)
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
+        if !self.is_client {
+            return Err(TransportError::Other(
+                "Cannot use server transport as client transport".to_string(),
+            ));
+        }
+
+        let mut state = self.state.borrow_mut();
+        state.closed = true;
+        Ok(())
+    }
+}
+
+impl Drop for LocalTransport {
+    fn drop(&mut self) {
+        // Mark as closed (best-effort, ignore errors)
+        // We can't call close() because LocalTransport implements both ClientTransport and ServerTransport
+        // so we just mark the shared state as closed directly
+        let mut state = self.state.borrow_mut();
+        state.closed = true;
     }
 }
 
@@ -128,6 +182,10 @@ impl ServerTransport for LocalTransport {
         }
 
         let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
         Ok(state
             .client_to_server
             .pop_front()
@@ -140,5 +198,42 @@ impl ServerTransport for LocalTransport {
                 })
             })
             .transpose()?)
+    }
+
+    fn receive_all(&mut self) -> Result<Vec<ClientMessage>, TransportError> {
+        if self.is_client {
+            return Err(TransportError::Other(
+                "Cannot use client transport as server transport".to_string(),
+            ));
+        }
+
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        let mut messages = Vec::new();
+        while let Some(payload) = state.client_to_server.pop_front() {
+            let msg = serde_json::from_slice(&payload).map_err(|e| {
+                TransportError::Deserialization(format!(
+                    "Failed to deserialize ClientMessage: {}",
+                    e
+                ))
+            })?;
+            messages.push(msg);
+        }
+        Ok(messages)
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
+        if self.is_client {
+            return Err(TransportError::Other(
+                "Cannot use client transport as server transport".to_string(),
+            ));
+        }
+
+        let mut state = self.state.borrow_mut();
+        state.closed = true;
+        Ok(())
     }
 }

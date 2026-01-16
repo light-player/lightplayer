@@ -20,6 +20,8 @@ pub struct WebSocketClientTransport {
     socket: Option<WebSocket<MaybeTlsStream<TcpStream>>>,
     /// Buffer for incoming messages
     incoming_buffer: VecDeque<ServerMessage>,
+    /// Whether the transport is closed
+    closed: bool,
 }
 
 impl WebSocketClientTransport {
@@ -49,6 +51,7 @@ impl WebSocketClientTransport {
         Ok(Self {
             socket: Some(socket),
             incoming_buffer: VecDeque::new(),
+            closed: false,
         })
     }
 
@@ -141,11 +144,48 @@ impl ClientTransport for WebSocketClientTransport {
     }
 
     fn receive(&mut self) -> Result<Option<ServerMessage>, TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
         // First, try to fill the buffer from the websocket
         self.fill_buffer()?;
 
         // Return a message from the buffer if available
         Ok(self.incoming_buffer.pop_front())
+    }
+
+    fn receive_all(&mut self) -> Result<Vec<ServerMessage>, TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        // Fill buffer once
+        self.fill_buffer()?;
+
+        // Drain all messages from buffer
+        let mut messages = Vec::new();
+        while let Some(msg) = self.incoming_buffer.pop_front() {
+            messages.push(msg);
+        }
+        Ok(messages)
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
+        if self.closed {
+            return Ok(());
+        }
+
+        self.closed = true;
+
+        // Send close frame if socket is still open
+        if let Some(socket) = &mut self.socket {
+            let _ = socket.close(None);
+        }
+
+        // Clear socket
+        self.socket = None;
+        Ok(())
     }
 }
 

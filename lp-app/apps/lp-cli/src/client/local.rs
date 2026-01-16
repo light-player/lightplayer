@@ -13,9 +13,11 @@ use tokio::sync::mpsc;
 /// Provides non-blocking receive via `try_recv()`.
 pub struct AsyncLocalClientTransport {
     /// Sender for client messages (client -> server)
-    client_tx: mpsc::UnboundedSender<ClientMessage>,
+    client_tx: Option<mpsc::UnboundedSender<ClientMessage>>,
     /// Receiver for server messages (server -> client)
     client_rx: mpsc::UnboundedReceiver<ServerMessage>,
+    /// Whether the transport is closed
+    closed: bool,
 }
 
 impl AsyncLocalClientTransport {
@@ -30,25 +32,65 @@ impl AsyncLocalClientTransport {
         client_rx: mpsc::UnboundedReceiver<ServerMessage>,
     ) -> Self {
         Self {
-            client_tx,
+            client_tx: Some(client_tx),
             client_rx,
+            closed: false,
         }
     }
 }
 
 impl ClientTransport for AsyncLocalClientTransport {
     fn send(&mut self, msg: ClientMessage) -> Result<(), TransportError> {
-        self.client_tx
-            .send(msg)
-            .map_err(|_| TransportError::ConnectionLost)
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        match &self.client_tx {
+            Some(tx) => tx.send(msg).map_err(|_| TransportError::ConnectionLost),
+            None => Err(TransportError::ConnectionLost),
+        }
     }
 
     fn receive(&mut self) -> Result<Option<ServerMessage>, TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
         match self.client_rx.try_recv() {
             Ok(msg) => Ok(Some(msg)),
             Err(mpsc::error::TryRecvError::Empty) => Ok(None),
             Err(mpsc::error::TryRecvError::Disconnected) => Err(TransportError::ConnectionLost),
         }
+    }
+
+    fn receive_all(&mut self) -> Result<Vec<ServerMessage>, TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        let mut messages = Vec::new();
+        loop {
+            match self.client_rx.try_recv() {
+                Ok(msg) => messages.push(msg),
+                Err(mpsc::error::TryRecvError::Empty) => break,
+                Err(mpsc::error::TryRecvError::Disconnected) => {
+                    // If disconnected, return what we have (may be empty)
+                    break;
+                }
+            }
+        }
+        Ok(messages)
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
+        if self.closed {
+            return Ok(());
+        }
+
+        self.closed = true;
+        // Drop the sender to signal closure to the other side
+        self.client_tx = None;
+        Ok(())
     }
 }
 
@@ -58,9 +100,11 @@ impl ClientTransport for AsyncLocalClientTransport {
 /// Provides non-blocking receive via `try_recv()`.
 pub struct AsyncLocalServerTransport {
     /// Sender for server messages (server -> client)
-    server_tx: mpsc::UnboundedSender<ServerMessage>,
+    server_tx: Option<mpsc::UnboundedSender<ServerMessage>>,
     /// Receiver for client messages (client -> server)
     server_rx: mpsc::UnboundedReceiver<ClientMessage>,
+    /// Whether the transport is closed
+    closed: bool,
 }
 
 impl AsyncLocalServerTransport {
@@ -75,25 +119,65 @@ impl AsyncLocalServerTransport {
         server_rx: mpsc::UnboundedReceiver<ClientMessage>,
     ) -> Self {
         Self {
-            server_tx,
+            server_tx: Some(server_tx),
             server_rx,
+            closed: false,
         }
     }
 }
 
 impl ServerTransport for AsyncLocalServerTransport {
     fn send(&mut self, msg: ServerMessage) -> Result<(), TransportError> {
-        self.server_tx
-            .send(msg)
-            .map_err(|_| TransportError::ConnectionLost)
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        match &self.server_tx {
+            Some(tx) => tx.send(msg).map_err(|_| TransportError::ConnectionLost),
+            None => Err(TransportError::ConnectionLost),
+        }
     }
 
     fn receive(&mut self) -> Result<Option<ClientMessage>, TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
         match self.server_rx.try_recv() {
             Ok(msg) => Ok(Some(msg)),
             Err(mpsc::error::TryRecvError::Empty) => Ok(None),
             Err(mpsc::error::TryRecvError::Disconnected) => Err(TransportError::ConnectionLost),
         }
+    }
+
+    fn receive_all(&mut self) -> Result<Vec<ClientMessage>, TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        let mut messages = Vec::new();
+        loop {
+            match self.server_rx.try_recv() {
+                Ok(msg) => messages.push(msg),
+                Err(mpsc::error::TryRecvError::Empty) => break,
+                Err(mpsc::error::TryRecvError::Disconnected) => {
+                    // If disconnected, return what we have (may be empty)
+                    break;
+                }
+            }
+        }
+        Ok(messages)
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
+        if self.closed {
+            return Ok(());
+        }
+
+        self.closed = true;
+        // Drop the sender to signal closure to the other side
+        self.server_tx = None;
+        Ok(())
     }
 }
 
