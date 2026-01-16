@@ -150,6 +150,29 @@ fn draw_mapping_overlay(
     }
 }
 
+/// Render status panel
+pub fn render_status_panel(
+    ui: &mut egui::Ui,
+    frame_count: u64,
+    current_fps: f32,
+    avg_fps: f32,
+    sync_in_progress: bool,
+) {
+    ui.horizontal(|ui| {
+        ui.label(format!("Frame: {}", frame_count));
+        ui.separator();
+        ui.label(format!("FPS: {:.1}", current_fps));
+        ui.separator();
+        ui.label(format!("Avg FPS: {:.1}", avg_fps));
+        ui.separator();
+        if sync_in_progress {
+            ui.label(egui::RichText::new("Syncing...").color(egui::Color32::YELLOW));
+        } else {
+            ui.label(egui::RichText::new("Ready").color(egui::Color32::GREEN));
+        }
+    });
+}
+
 /// Render nodes panel with checkboxes
 pub fn render_nodes_panel(
     ui: &mut egui::Ui,
@@ -161,14 +184,16 @@ pub fn render_nodes_panel(
     ui.separator();
 
     // "All detail" checkbox
-    ui.checkbox(all_detail, "All detail");
-    if *all_detail {
-        // Track all nodes
-        tracked_nodes.clear();
-        tracked_nodes.extend(view.nodes.keys().copied());
-    } else if tracked_nodes.len() == view.nodes.len() {
-        // If all were tracked and we uncheck, clear tracking
-        tracked_nodes.clear();
+    let all_detail_changed = ui.checkbox(all_detail, "All detail").changed();
+    if all_detail_changed {
+        if *all_detail {
+            // Track all nodes
+            tracked_nodes.clear();
+            tracked_nodes.extend(view.nodes.keys().copied());
+        } else if tracked_nodes.len() == view.nodes.len() {
+            // If all were tracked and we uncheck, clear tracking
+            tracked_nodes.clear();
+        }
     }
 
     ui.separator();
@@ -181,15 +206,17 @@ pub fn render_nodes_panel(
 
             let node_label = format!("{:?} ({:?}) - {:?}", entry.path, entry.kind, entry.status);
 
-            ui.checkbox(&mut checked, node_label);
+            let checkbox_response = ui.checkbox(&mut checked, node_label);
 
-            if checked != is_tracked {
+            if checkbox_response.changed() {
                 if checked {
                     tracked_nodes.insert(*handle);
                 } else {
                     tracked_nodes.remove(handle);
                     // If we uncheck a node, also uncheck "all detail"
-                    *all_detail = false;
+                    if *all_detail {
+                        *all_detail = false;
+                    }
                 }
             }
         }

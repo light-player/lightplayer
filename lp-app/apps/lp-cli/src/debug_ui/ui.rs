@@ -9,6 +9,7 @@ use lp_engine_client::project::ClientProjectView;
 use lp_model::{NodeHandle, project::handle::ProjectHandle};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use tokio::sync::oneshot;
 
 /// Debug UI application state
@@ -38,6 +39,14 @@ pub struct DebugUiState {
     selected_node: Option<NodeHandle>,
     /// Tokio runtime handle for spawning async tasks
     runtime_handle: tokio::runtime::Handle,
+    /// Last frame time for FPS calculation
+    last_frame_time: Option<Instant>,
+    /// Frame count
+    frame_count: u64,
+    /// FPS history (last 60 frames)
+    fps_history: Vec<f32>,
+    /// Whether window should close
+    should_close: bool,
 }
 
 impl DebugUiState {
@@ -59,6 +68,10 @@ impl DebugUiState {
             glsl_cache: BTreeMap::new(),
             selected_node: None,
             runtime_handle,
+            last_frame_time: None,
+            frame_count: 0,
+            fps_history: Vec::new(),
+            should_close: false,
         }
     }
 
@@ -164,6 +177,34 @@ impl DebugUiState {
 
 impl eframe::App for DebugUiState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Check for window close request
+        if ctx.input(|i| i.viewport().close_requested()) {
+            self.should_close = true;
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            return;
+        }
+
+        // Calculate FPS
+        let now = Instant::now();
+        let delta_ms = if let Some(last_time) = self.last_frame_time {
+            let delta = now.duration_since(last_time);
+            delta.as_millis().min(u32::MAX as u128) as u32
+        } else {
+            0
+        };
+        self.last_frame_time = Some(now);
+        self.frame_count += 1;
+
+        let current_fps = if delta_ms > 0 {
+            1000.0 / delta_ms as f32
+        } else {
+            0.0
+        };
+        self.fps_history.push(current_fps);
+        if self.fps_history.len() > 60 {
+            self.fps_history.remove(0);
+        }
+
         // Handle sync
         self.handle_sync();
 
@@ -172,6 +213,21 @@ impl eframe::App for DebugUiState {
 
         // Get view snapshot for rendering
         let view = self.project_view.lock().unwrap();
+
+        // Status panel (top)
+        egui::TopBottomPanel::top("status_panel").show(ctx, |ui| {
+            panels::render_status_panel(
+                ui,
+                self.frame_count,
+                self.fps_history.last().copied().unwrap_or(0.0),
+                if !self.fps_history.is_empty() {
+                    self.fps_history.iter().sum::<f32>() / self.fps_history.len() as f32
+                } else {
+                    0.0
+                },
+                self.sync_in_progress,
+            );
+        });
 
         // Side panel for nodes list
         egui::SidePanel::left("nodes_panel")
