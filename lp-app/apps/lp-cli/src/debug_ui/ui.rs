@@ -1,6 +1,7 @@
 //! Main UI state and egui App implementation
 
 use crate::commands::dev::async_client::AsyncLpClient;
+use crate::debug_ui::panels;
 use eframe::egui;
 use lp_engine_client::project::ClientProjectView;
 use lp_model::{NodeHandle, project::handle::ProjectHandle};
@@ -25,6 +26,8 @@ pub struct DebugUiState {
     sync_in_progress: bool,
     /// GLSL code cache (keyed by node handle)
     glsl_cache: BTreeMap<NodeHandle, String>,
+    /// Currently selected node handle (for detail display)
+    selected_node: Option<NodeHandle>,
 }
 
 impl DebugUiState {
@@ -51,6 +54,7 @@ impl DebugUiState {
             all_detail: false,
             sync_in_progress: false,
             glsl_cache: BTreeMap::new(),
+            selected_node: None,
         }
     }
 
@@ -80,11 +84,91 @@ impl eframe::App for DebugUiState {
         // Request repaint to keep loop running
         ctx.request_repaint_after(std::time::Duration::from_millis(16)); // ~60 FPS
 
-        // Render UI (placeholder for now)
+        // Get view snapshot for rendering
+        let view = self.project_view.lock().unwrap();
+
+        // Side panel for nodes list
+        egui::SidePanel::left("nodes_panel")
+            .resizable(true)
+            .default_width(300.0)
+            .show(ctx, |ui| {
+                panels::render_nodes_panel(
+                    ui,
+                    &view,
+                    &mut self.tracked_nodes,
+                    &mut self.all_detail,
+                );
+            });
+
+        // Main panel for node details
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Debug UI");
-            ui.label("UI implementation in progress...");
-            ui.label(format!("Tracked nodes: {}", self.tracked_nodes.len()));
+            // Find selected node (first tracked node, or first node if none tracked)
+            let node_to_show = if let Some(selected) = self.selected_node {
+                view.nodes.get(&selected)
+            } else {
+                // Show first tracked node, or first node if none tracked
+                self.tracked_nodes
+                    .iter()
+                    .next()
+                    .and_then(|handle| view.nodes.get(handle))
+                    .or_else(|| view.nodes.values().next())
+            };
+
+            if let Some(entry) = node_to_show {
+                // Update selected_node
+                if let Some(handle) = view
+                    .nodes
+                    .iter()
+                    .find(|(_, e)| std::ptr::eq(*e, entry))
+                    .map(|(h, _)| *h)
+                {
+                    self.selected_node = Some(handle);
+                }
+
+                // Render appropriate panel based on node kind
+                match &entry.kind {
+                    lp_model::NodeKind::Texture => {
+                        if let Some(lp_model::project::api::NodeState::Texture(state)) =
+                            &entry.state
+                        {
+                            panels::render_texture_panel(ui, entry, state);
+                        } else {
+                            ui.label("No texture state available");
+                        }
+                    }
+                    lp_model::NodeKind::Shader => {
+                        if let Some(lp_model::project::api::NodeState::Shader(state)) = &entry.state
+                        {
+                            panels::render_shader_panel(ui, entry, state);
+                        } else {
+                            ui.label("No shader state available");
+                        }
+                    }
+                    lp_model::NodeKind::Fixture => {
+                        if let Some(lp_model::project::api::NodeState::Fixture(state)) =
+                            &entry.state
+                        {
+                            if let Some(handle) = self.selected_node {
+                                panels::render_fixture_panel(ui, &view, entry, state, &handle);
+                            } else {
+                                ui.label("No fixture handle available");
+                            }
+                        } else {
+                            ui.label("No fixture state available");
+                        }
+                    }
+                    lp_model::NodeKind::Output => {
+                        if let Some(lp_model::project::api::NodeState::Output(state)) = &entry.state
+                        {
+                            panels::render_output_panel(ui, entry, state);
+                        } else {
+                            ui.label("No output state available");
+                        }
+                    }
+                }
+            } else {
+                ui.label("No nodes available");
+            }
         });
     }
 }
