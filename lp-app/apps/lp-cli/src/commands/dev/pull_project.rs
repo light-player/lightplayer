@@ -1,0 +1,72 @@
+//! Pull project files from server
+//!
+//! Provides async function to pull project files from the server to local filesystem.
+
+use anyhow::{Context, Result};
+use lp_shared::fs::LpFs;
+
+use crate::client::AsyncLpClient;
+
+/// Pull project files from server to local filesystem
+///
+/// Recursively lists all files in the project on the server and writes
+/// them to the local filesystem.
+///
+/// # Arguments
+///
+/// * `client` - Async client for communicating with server
+/// * `local_fs` - Local filesystem (project root)
+/// * `project_uid` - Project UID (used for server-side project path)
+///
+/// # Returns
+///
+/// * `Ok(())` if all files were pulled successfully
+/// * `Err` if any file operation failed
+pub async fn pull_project_async(
+    client: &AsyncLpClient,
+    local_fs: &dyn LpFs,
+    project_uid: &str,
+) -> Result<()> {
+    // Build server project path
+    let server_project_path = format!("projects/{}", project_uid);
+
+    // List all files recursively in the project on server
+    let files = client
+        .fs_list_dir(&server_project_path, true)
+        .await
+        .with_context(|| format!("Failed to list files in project: {}", server_project_path))?;
+
+    // Pull each file from the server
+    for file_path in files {
+        // Read file from server
+        let data = client
+            .fs_read(&file_path)
+            .await
+            .with_context(|| format!("Failed to read file from server: {}", file_path))?;
+
+        // Extract local path by removing the "projects/{project_uid}/" prefix
+        let local_path = if file_path.starts_with(&format!("projects/{}/", project_uid)) {
+            // Remove prefix and ensure it starts with '/'
+            let relative = &file_path[format!("projects/{}/", project_uid).len()..];
+            if relative.starts_with('/') {
+                relative.to_string()
+            } else {
+                format!("/{}", relative)
+            }
+        } else if file_path == format!("projects/{}", project_uid) {
+            // This is the project directory itself, skip
+            continue;
+        } else {
+            // Unexpected path format, skip with warning
+            eprintln!("Warning: Unexpected file path format: {}", file_path);
+            continue;
+        };
+
+        // Write file to local filesystem
+        local_fs
+            .write_file(&local_path, &data)
+            .with_context(|| format!("Failed to write file to local filesystem: {}", local_path))?;
+    }
+
+    Ok(())
+}
