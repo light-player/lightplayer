@@ -100,7 +100,7 @@ impl LpServer {
     /// ```
     pub fn tick(
         &mut self,
-        _delta_ms: u32,
+        delta_ms: u32,
         incoming: Vec<Message>,
     ) -> Result<Vec<Message>, ServerError> {
         let mut responses = Vec::new();
@@ -127,6 +127,24 @@ impl LpServer {
             }
         }
 
+        // Tick all loaded projects
+        // Collect handles first to avoid borrowing issues
+        let project_handles: Vec<_> = self
+            .project_manager
+            .list_loaded_projects()
+            .iter()
+            .map(|p| p.handle)
+            .collect();
+
+        // Tick each project's runtime
+        for handle in project_handles {
+            if let Some(project) = self.project_manager.get_project_mut(handle) {
+                // Ignore errors and continue with other projects
+                // Errors will be visible when clients sync or query project state
+                let _ = project.runtime_mut().tick(delta_ms);
+            }
+        }
+
         Ok(responses)
     }
 
@@ -143,5 +161,13 @@ impl LpServer {
     /// Get a mutable reference to the project manager
     pub fn project_manager_mut(&mut self) -> &mut ProjectManager {
         &mut self.project_manager
+    }
+
+    /// Get a mutable reference to the base filesystem
+    ///
+    /// This is primarily for testing purposes where we need mutable access
+    /// to load projects.
+    pub fn base_fs_mut(&mut self) -> &mut dyn LpFs {
+        &mut *self.base_fs
     }
 }

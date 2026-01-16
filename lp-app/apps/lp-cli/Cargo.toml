@@ -17,6 +17,7 @@ tokio-tungstenite = "0.21"
 futures-util = "0.3"
 egui = "0.27"
 eframe = "0.27"
+notify = "6"
 lp-model = { path = "../../crates/lp-model" }
 lp-server = { path = "../../crates/lp-server" }
 lp-client = { path = "../../crates/lp-client" }

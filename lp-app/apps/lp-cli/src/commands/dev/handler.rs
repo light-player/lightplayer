@@ -9,6 +9,8 @@ use super::async_client::AsyncLpClient;
 use super::push::{
     load_project, load_project_async, push_project, push_project_async, validate_local_project,
 };
+use super::sync::sync_changes;
+use super::watcher::FileWatcher;
 use crate::debug_ui::DebugUiState;
 use crate::messages;
 use crate::server::{create_server, run_server_loop_async};
@@ -98,6 +100,9 @@ fn handle_dev_local(
     let shared_transport: Arc<Mutex<Box<dyn ClientTransport + Send>>> =
         Arc::new(Mutex::new(Box::new(client_transport)));
 
+    // Create local filesystem view of project directory (needed for both push and watch)
+    let local_fs = LpFsStd::new(args.dir.clone());
+
     // Run async client code to load project
     let (handle, async_client_for_ui) = runtime.block_on(async {
         // Create async client with shared transport
@@ -105,9 +110,6 @@ fn handle_dev_local(
 
         // Push project if requested
         if should_push {
-            // Create local filesystem view of project directory
-            let local_fs = LpFsStd::new(args.dir.clone());
-
             println!(
                 "Pushing project '{}' (uid: {}) to server...",
                 project_name, project_uid
@@ -150,6 +152,86 @@ fn handle_dev_local(
         ))
     })?;
 
+    // Start file watcher for automatic sync
+    // Note: We need to clone the local_fs for the watcher task, but LpFsStd is not Send.
+    // For now, we'll create a new LpFsStd instance in the watcher task since it's just a path wrapper.
+    let project_dir = args.dir.clone();
+    let project_uid_clone = project_uid.clone();
+    let shared_transport_clone = Arc::clone(&shared_transport);
+
+    // Spawn background task for file watching and syncing
+    // Use spawn_blocking since FileWatcher uses blocking I/O
+    let _watcher_handle = runtime.spawn(async move {
+        // Create file watcher
+        let mut watcher = match FileWatcher::new(project_dir.clone()) {
+            Ok(w) => {
+                println!("File watcher started for {}", project_dir.display());
+                w
+            }
+            Err(e) => {
+                eprintln!("Failed to start file watcher: {}", e);
+                return;
+            }
+        };
+
+        // Create async client for syncing (using shared transport)
+        let mut sync_client = AsyncLpClient::new(shared_transport_clone);
+
+        // Debouncing: collect changes and wait for inactivity before syncing
+        let debounce_duration = Duration::from_millis(500); // Wait 500ms after last change
+        let mut pending_changes: Vec<lp_shared::fs::fs_event::FsChange> = Vec::new();
+        let mut last_change_time: Option<tokio::time::Instant> = None;
+
+        // Watch loop: collect changes and sync them with debouncing
+        loop {
+            // Collect pending changes (non-blocking)
+            match watcher.collect_changes() {
+                Ok(new_changes) => {
+                    if !new_changes.is_empty() {
+                        // Add new changes to pending list (deduplicate by path)
+                        for change in new_changes {
+                            // Remove any existing change for the same path
+                            pending_changes.retain(|c| c.path != change.path);
+                            // Add the new change (most recent wins)
+                            pending_changes.push(change);
+                        }
+                        // Update last change time
+                        last_change_time = Some(tokio::time::Instant::now());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("File watcher error: {}", e);
+                    // Watcher disconnected, exit loop
+                    break;
+                }
+            }
+
+            // Check if we should sync (debounce period has passed since last change)
+            if let Some(last_time) = last_change_time {
+                if last_time.elapsed() >= debounce_duration && !pending_changes.is_empty() {
+                    // Time to sync - take ownership of pending changes
+                    let changes_to_sync = std::mem::take(&mut pending_changes);
+                    last_change_time = None;
+
+                    // Sync changes to server (sync_changes creates its own LpFsStd instance)
+                    if let Err(e) = sync_changes(
+                        &mut sync_client,
+                        changes_to_sync,
+                        &project_uid_clone,
+                        &project_dir,
+                    )
+                    .await
+                    {
+                        eprintln!("Error syncing file changes: {}", e);
+                    }
+                }
+            }
+
+            // Sleep briefly to avoid busy-waiting
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    });
+
     // If not headless, spawn UI
     if !args.headless {
         // Create ClientProjectView (use std::sync::Mutex for sync UI context)
@@ -163,7 +245,13 @@ fn handle_dev_local(
 
         // Run UI (blocks until window closes)
         // This runs outside the async context
-        let native_options = eframe::NativeOptions::default();
+        let native_options = eframe::NativeOptions {
+            // On macOS, eframe uses WGPU (Metal) by default, but the underlying
+            // windowing library may still probe OpenGL first, causing harmless warnings.
+            // These warnings can be safely ignored - the app will use Metal for rendering.
+            ..Default::default()
+        };
+        
         eframe::run_native(
             "LP Debug UI",
             native_options,

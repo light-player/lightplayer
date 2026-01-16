@@ -6,7 +6,7 @@ use crate::commands::dev::async_client::{
 use crate::debug_ui::panels;
 use eframe::egui;
 use lp_engine_client::project::ClientProjectView;
-use lp_model::{NodeHandle, project::handle::ProjectHandle};
+use lp_model::{NodeHandle, project::FrameId, project::handle::ProjectHandle};
 use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -37,12 +37,14 @@ pub struct DebugUiState {
     tracked_nodes_changed: bool,
     /// Tokio runtime handle for spawning async tasks
     runtime_handle: tokio::runtime::Handle,
-    /// Last frame time for FPS calculation
+    /// Last frame time for UI FPS calculation
     last_frame_time: Option<Instant>,
-    /// Frame count
-    frame_count: u64,
-    /// FPS history (last 60 frames)
-    fps_history: Vec<f32>,
+    /// Last server frame ID (for server FPS calculation)
+    last_server_frame_id: Option<FrameId>,
+    /// Last time we saw a server frame update (for server FPS calculation)
+    last_server_frame_time: Option<Instant>,
+    /// Server FPS history (last 60 measurements)
+    server_fps_history: Vec<f32>,
 }
 
 impl DebugUiState {
@@ -64,8 +66,9 @@ impl DebugUiState {
             tracked_nodes_changed: false,
             runtime_handle,
             last_frame_time: None,
-            frame_count: 0,
-            fps_history: Vec::new(),
+            last_server_frame_id: None,
+            last_server_frame_time: None,
+            server_fps_history: Vec::new(),
         }
     }
 
@@ -183,24 +186,7 @@ impl eframe::App for DebugUiState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Calculate FPS
         let now = Instant::now();
-        let delta_ms = if let Some(last_time) = self.last_frame_time {
-            let delta = now.duration_since(last_time);
-            delta.as_millis().min(u32::MAX as u128) as u32
-        } else {
-            0
-        };
         self.last_frame_time = Some(now);
-        self.frame_count += 1;
-
-        let current_fps = if delta_ms > 0 {
-            1000.0 / delta_ms as f32
-        } else {
-            0.0
-        };
-        self.fps_history.push(current_fps);
-        if self.fps_history.len() > 60 {
-            self.fps_history.remove(0);
-        }
 
         // Handle sync
         self.handle_sync();
@@ -211,14 +197,39 @@ impl eframe::App for DebugUiState {
         // Get view snapshot for rendering
         let view = self.project_view.lock().unwrap();
 
+        // Calculate server FPS based on frame_id progression
+        let current_frame_id = view.frame_id;
+        if let Some(prev_frame_id) = self.last_server_frame_id {
+            if current_frame_id != prev_frame_id {
+                // Server frame advanced - calculate FPS
+                if let Some(prev_time) = self.last_server_frame_time {
+                    let frame_delta = current_frame_id.as_i64() - prev_frame_id.as_i64();
+                    let time_delta = now.duration_since(prev_time);
+                    if frame_delta > 0 && !time_delta.is_zero() {
+                        let server_fps = frame_delta as f32 / time_delta.as_secs_f32();
+                        self.server_fps_history.push(server_fps);
+                        if self.server_fps_history.len() > 60 {
+                            self.server_fps_history.remove(0);
+                        }
+                    }
+                }
+                self.last_server_frame_time = Some(now);
+            }
+        } else {
+            // First time seeing a server frame
+            self.last_server_frame_time = Some(now);
+        }
+        self.last_server_frame_id = Some(current_frame_id);
+
         // Status panel (top)
         egui::TopBottomPanel::top("status_panel").show(ctx, |ui| {
             panels::render_status_panel(
                 ui,
-                self.frame_count,
-                self.fps_history.last().copied().unwrap_or(0.0),
-                if !self.fps_history.is_empty() {
-                    self.fps_history.iter().sum::<f32>() / self.fps_history.len() as f32
+                view.frame_id,
+                self.server_fps_history.last().copied().unwrap_or(0.0),
+                if !self.server_fps_history.is_empty() {
+                    self.server_fps_history.iter().sum::<f32>()
+                        / self.server_fps_history.len() as f32
                 } else {
                     0.0
                 },

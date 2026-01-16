@@ -4,22 +4,20 @@ use crate::debug_ui::nodes::shader;
 use crate::debug_ui::nodes::{fixture, output, texture};
 use eframe::egui::{self};
 use lp_engine_client::project::ClientProjectView;
-use lp_model::{NodeHandle, NodeKind};
+use lp_model::{NodeHandle, NodeKind, project::FrameId};
 
 /// Render status panel
 pub fn render_status_panel(
     ui: &mut egui::Ui,
-    frame_count: u64,
-    current_fps: f32,
-    avg_fps: f32,
+    frame_id: FrameId,
+    _current_server_fps: f32,
+    avg_server_fps: f32,
     sync_in_progress: bool,
 ) {
     ui.horizontal(|ui| {
-        ui.label(format!("Frame: {}", frame_count));
+        ui.label(format!("Frame: {}", frame_id.as_i64()));
         ui.separator();
-        ui.label(format!("FPS: {:.1}", current_fps));
-        ui.separator();
-        ui.label(format!("Avg FPS: {:.1}", avg_fps));
+        ui.label(format!("Server FPS: {:.0}", avg_server_fps));
         ui.separator();
         if sync_in_progress {
             ui.label(egui::RichText::new("Syncing...").color(egui::Color32::YELLOW));

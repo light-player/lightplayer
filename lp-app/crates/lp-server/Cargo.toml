@@ -19,6 +19,10 @@ lp-shared = { path = "../lp-shared", default-features = false }
 serde_json = { workspace = true, default-features = false, features = ["alloc"] }
 hashbrown = { workspace = true }
 
+[dev-dependencies]
+lp-engine = { path = "../lp-engine", default-features = false, features = ["std"] }
+lp-engine-client = { path = "../lp-engine-client", default-features = false, features = ["std"] }
+lp-shared = { path = "../lp-shared", default-features = false, features = ["std"] }
 
 [lints]
 workspace = true
