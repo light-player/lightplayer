@@ -400,6 +400,100 @@ pub fn render_fixture_panel(
     }
 }
 
+/// Render all nodes panel (grouped by type)
+pub fn render_all_nodes_panel(ui: &mut egui::Ui, view: &ClientProjectView) {
+    // Group nodes by kind
+    let mut textures = Vec::new();
+    let mut shaders = Vec::new();
+    let mut fixtures = Vec::new();
+    let mut outputs = Vec::new();
+
+    for (handle, entry) in &view.nodes {
+        match entry.kind {
+            NodeKind::Texture => textures.push((*handle, entry)),
+            NodeKind::Shader => shaders.push((*handle, entry)),
+            NodeKind::Fixture => fixtures.push((*handle, entry)),
+            NodeKind::Output => outputs.push((*handle, entry)),
+        }
+    }
+
+    // Render textures
+    if !textures.is_empty() {
+        ui.heading("Textures");
+        ui.separator();
+        for (_handle, entry) in &textures {
+            if let Some(lp_model::project::api::NodeState::Texture(state)) = &entry.state {
+                render_texture_panel(ui, entry, state);
+            } else {
+                ui.group(|ui| {
+                    ui.label(format!("Path: {:?}", entry.path));
+                    ui.label(format!("Status: {:?}", entry.status));
+                    ui.label("(Not tracked for detail - check the box to see texture data)");
+                });
+            }
+            ui.separator();
+        }
+    }
+
+    // Render shaders
+    if !shaders.is_empty() {
+        ui.heading("Shaders");
+        ui.separator();
+        for (_handle, entry) in &shaders {
+            if let Some(lp_model::project::api::NodeState::Shader(state)) = &entry.state {
+                render_shader_panel(ui, entry, state);
+            } else {
+                ui.group(|ui| {
+                    ui.label(format!("Path: {:?}", entry.path));
+                    ui.label(format!("Status: {:?}", entry.status));
+                    ui.label("(Not tracked for detail - check the box to see GLSL code)");
+                });
+            }
+            ui.separator();
+        }
+    }
+
+    // Render fixtures
+    if !fixtures.is_empty() {
+        ui.heading("Fixtures");
+        ui.separator();
+        for (handle, entry) in &fixtures {
+            if let Some(lp_model::project::api::NodeState::Fixture(state)) = &entry.state {
+                render_fixture_panel(ui, view, entry, state, handle);
+            } else {
+                ui.group(|ui| {
+                    ui.label(format!("Path: {:?}", entry.path));
+                    ui.label(format!("Status: {:?}", entry.status));
+                    ui.label("(Not tracked for detail - check the box to see mapping overlay)");
+                });
+            }
+            ui.separator();
+        }
+    }
+
+    // Render outputs
+    if !outputs.is_empty() {
+        ui.heading("Outputs");
+        ui.separator();
+        for (_handle, entry) in &outputs {
+            if let Some(lp_model::project::api::NodeState::Output(state)) = &entry.state {
+                render_output_panel(ui, entry, state);
+            } else {
+                ui.group(|ui| {
+                    ui.label(format!("Path: {:?}", entry.path));
+                    ui.label(format!("Status: {:?}", entry.status));
+                    ui.label("(Not tracked for detail - check the box to see output data)");
+                });
+            }
+            ui.separator();
+        }
+    }
+
+    if textures.is_empty() && shaders.is_empty() && fixtures.is_empty() && outputs.is_empty() {
+        ui.label("No nodes available");
+    }
+}
+
 /// Render output panel
 pub fn render_output_panel(ui: &mut egui::Ui, entry: &ClientNodeEntry, state: &OutputState) {
     ui.heading("Output");

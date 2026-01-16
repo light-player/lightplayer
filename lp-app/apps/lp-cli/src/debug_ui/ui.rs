@@ -248,75 +248,21 @@ impl eframe::App for DebugUiState {
                 }
             });
 
-        // Main panel for node details
+        // Right panel for all node details (scrollable)
+        egui::SidePanel::right("details_panel")
+            .resizable(true)
+            .default_width(500.0)
+            .show(ctx, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| {
+                        panels::render_all_nodes_panel(ui, &view);
+                    });
+            });
+
+        // Central panel (can be used for other info or left empty)
         egui::CentralPanel::default().show(ctx, |ui| {
-            // Find selected node (first tracked node, or first node if none tracked)
-            let node_to_show = if let Some(selected) = self.selected_node {
-                view.nodes.get(&selected)
-            } else {
-                // Show first tracked node, or first node if none tracked
-                self.tracked_nodes
-                    .iter()
-                    .next()
-                    .and_then(|handle| view.nodes.get(handle))
-                    .or_else(|| view.nodes.values().next())
-            };
-
-            if let Some(entry) = node_to_show {
-                // Update selected_node
-                if let Some(handle) = view
-                    .nodes
-                    .iter()
-                    .find(|(_, e)| std::ptr::eq(*e, entry))
-                    .map(|(h, _)| *h)
-                {
-                    self.selected_node = Some(handle);
-                }
-
-                // Render appropriate panel based on node kind
-                match &entry.kind {
-                    lp_model::NodeKind::Texture => {
-                        if let Some(lp_model::project::api::NodeState::Texture(state)) =
-                            &entry.state
-                        {
-                            panels::render_texture_panel(ui, entry, state);
-                        } else {
-                            ui.label("No texture state available");
-                        }
-                    }
-                    lp_model::NodeKind::Shader => {
-                        if let Some(lp_model::project::api::NodeState::Shader(state)) = &entry.state
-                        {
-                            panels::render_shader_panel(ui, entry, state);
-                        } else {
-                            ui.label("No shader state available");
-                        }
-                    }
-                    lp_model::NodeKind::Fixture => {
-                        if let Some(lp_model::project::api::NodeState::Fixture(state)) =
-                            &entry.state
-                        {
-                            if let Some(handle) = self.selected_node {
-                                panels::render_fixture_panel(ui, &view, entry, state, &handle);
-                            } else {
-                                ui.label("No fixture handle available");
-                            }
-                        } else {
-                            ui.label("No fixture state available");
-                        }
-                    }
-                    lp_model::NodeKind::Output => {
-                        if let Some(lp_model::project::api::NodeState::Output(state)) = &entry.state
-                        {
-                            panels::render_output_panel(ui, entry, state);
-                        } else {
-                            ui.label("No output state available");
-                        }
-                    }
-                }
-            } else {
-                ui.label("No nodes available");
-            }
+            ui.label("Select nodes in the left panel to view their details in the right panel");
         });
     }
 }
