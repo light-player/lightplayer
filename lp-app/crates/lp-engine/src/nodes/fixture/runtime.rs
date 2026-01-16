@@ -8,10 +8,10 @@ use lp_shared::fs::fs_event::FsChange;
 
 // Simplified mapping point (will be replaced with structured type later)
 #[derive(Debug, Clone)]
-struct MappingPoint {
-    channel: u32,
-    center: [f32; 2], // UV coordinates in fixture space [-1,-1] to [1,1]
-    radius: f32,
+pub struct MappingPoint {
+    pub channel: u32,
+    pub center: [f32; 2], // UV coordinates in fixture space [-1,-1] to [1,1]
+    pub radius: f32,
 }
 
 /// Fixture node runtime
@@ -50,6 +50,16 @@ impl FixtureRuntime {
     /// Get the fixture config (for state extraction)
     pub fn get_config(&self) -> Option<&FixtureConfig> {
         self.config.as_ref()
+    }
+
+    /// Get mapping points (for state extraction)
+    pub fn get_mapping(&self) -> &Vec<MappingPoint> {
+        &self.mapping
+    }
+
+    /// Get transform matrix (for state extraction)
+    pub fn get_transform(&self) -> [[f32; 4]; 4] {
+        self.transform
     }
 }
 

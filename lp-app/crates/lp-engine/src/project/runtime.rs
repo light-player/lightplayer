@@ -69,6 +69,27 @@ pub enum NodeStatus {
     Error(String),
 }
 
+/// Apply 4x4 transform matrix to a 2D point
+///
+/// Treats the point as homogeneous coordinate [x, y, 0, 1] and applies the transform.
+/// Returns the transformed 2D point.
+fn apply_transform_2d(point: [f32; 2], transform: [[f32; 4]; 4]) -> [f32; 2] {
+    let x = point[0];
+    let y = point[1];
+
+    // Apply transform: [x', y', z', w'] = transform * [x, y, 0, 1]
+    let x_prime = transform[0][0] * x + transform[0][1] * y + transform[0][3];
+    let y_prime = transform[1][0] * x + transform[1][1] * y + transform[1][3];
+    let w_prime = transform[3][0] * x + transform[3][1] * y + transform[3][3];
+
+    // Normalize by w if not zero
+    if w_prime.abs() > 1e-6 {
+        [x_prime / w_prime, y_prime / w_prime]
+    } else {
+        [x_prime, y_prime]
+    }
+}
+
 impl ProjectRuntime {
     /// Create new project runtime
     pub fn new(
@@ -892,12 +913,54 @@ impl ProjectRuntime {
                     }
                     NodeKind::Fixture => {
                         // Fixture runtime state extraction
-                        // FixtureState has lamp_colors - we'd need to extract from runtime
-                        // For now, return empty (will implement when fixture state is needed)
-                        NodeState::Fixture(lp_model::nodes::fixture::FixtureState {
-                            lamp_colors: Vec::new(),
-                            mapping_cells: Vec::new(), // Will be populated in Phase 3
-                        })
+                        if let Some(runtime) = &entry.runtime {
+                            if let Some(fixture_runtime) =
+                                runtime.as_any().downcast_ref::<FixtureRuntime>()
+                            {
+                                // Get mapping points and transform from runtime
+                                let mapping_points = fixture_runtime.get_mapping();
+                                let transform = fixture_runtime.get_transform();
+
+                                // Convert mapping points to MappingCells with post-transform coordinates
+                                let mapping_cells: Vec<lp_model::nodes::fixture::MappingCell> =
+                                    mapping_points
+                                        .iter()
+                                        .map(|mp| {
+                                            // Apply transform to convert from fixture space to texture space
+                                            // Fixture space is [-1, 1], texture space is [0, 1]
+                                            let transformed =
+                                                apply_transform_2d(mp.center, transform);
+                                            // Ensure coordinates are in [0, 1] range (clamp if needed)
+                                            let texture_coords = [
+                                                transformed[0].max(0.0).min(1.0),
+                                                transformed[1].max(0.0).min(1.0),
+                                            ];
+
+                                            lp_model::nodes::fixture::MappingCell {
+                                                channel: mp.channel,
+                                                center: texture_coords,
+                                                radius: mp.radius,
+                                            }
+                                        })
+                                        .collect();
+
+                                NodeState::Fixture(lp_model::nodes::fixture::FixtureState {
+                                    lamp_colors: Vec::new(), // TODO: Extract from runtime if needed
+                                    mapping_cells,
+                                })
+                            } else {
+                                // Fallback to empty state
+                                NodeState::Fixture(lp_model::nodes::fixture::FixtureState {
+                                    lamp_colors: Vec::new(),
+                                    mapping_cells: Vec::new(),
+                                })
+                            }
+                        } else {
+                            NodeState::Fixture(lp_model::nodes::fixture::FixtureState {
+                                lamp_colors: Vec::new(),
+                                mapping_cells: Vec::new(),
+                            })
+                        }
                     }
                 };
 

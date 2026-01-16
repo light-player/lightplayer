@@ -7,6 +7,7 @@ Add `MappingCell` struct and `mapping_cells` field to `FixtureState` to enable f
 ## Tasks
 
 1. Create `lp-model/src/nodes/fixture/state.rs` (or update if exists):
+
    - Define `MappingCell` struct:
      ```rust
      pub struct MappingCell {
