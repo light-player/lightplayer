@@ -4,9 +4,10 @@
 //! a client transport interface for communicating with it.
 
 use anyhow::Result;
+use lp_model::TransportError;
 use lp_shared::transport::ClientTransport;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
 use crate::client::local::create_local_transport_pair;
@@ -121,6 +122,42 @@ impl LocalServerTransport {
             handle
                 .join()
                 .map_err(|_| anyhow::anyhow!("Server thread panicked"))?;
+        }
+
+        Ok(())
+    }
+}
+
+impl ClientTransport for LocalServerTransport {
+    fn send(&mut self, msg: lp_model::ClientMessage) -> Result<(), TransportError> {
+        self.client_transport.send(msg)
+    }
+
+    fn receive(&mut self) -> Result<Option<lp_model::ServerMessage>, TransportError> {
+        self.client_transport.receive()
+    }
+
+    fn receive_all(&mut self) -> Result<Vec<lp_model::ServerMessage>, TransportError> {
+        self.client_transport.receive_all()
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
+        // Check if already closed
+        if self.closed.load(Ordering::Relaxed) {
+            return Ok(());
+        }
+
+        // Mark as closed
+        self.closed.store(true, Ordering::Relaxed);
+
+        // Close the client transport (signals server to shut down)
+        let _ = self.client_transport.close();
+
+        // Wait for server thread to finish
+        if let Some(handle) = self.server_handle.take() {
+            handle.join().map_err(|_| {
+                TransportError::Other("Server thread panicked".to_string())
+            })?;
         }
 
         Ok(())

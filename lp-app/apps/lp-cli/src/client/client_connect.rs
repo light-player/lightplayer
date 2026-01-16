@@ -1,0 +1,92 @@
+//! Client transport connection factory
+//!
+//! Provides `client_connect()` function that creates appropriate `ClientTransport`
+//! based on a `HostSpecifier`.
+
+use anyhow::{Result, bail};
+use lp_shared::transport::ClientTransport;
+
+use crate::client::local_server::LocalServerTransport;
+use crate::client::specifier::HostSpecifier;
+use crate::client::transport_ws::WebSocketClientTransport;
+
+/// Connect to a server using the specified host specifier
+///
+/// Creates and returns an appropriate `ClientTransport` based on the `HostSpecifier`.
+/// For `Local`, creates an in-memory server on a separate thread.
+///
+/// # Arguments
+///
+/// * `spec` - Host specifier indicating transport type and connection details
+///
+/// # Returns
+///
+/// * `Ok(Box<dyn ClientTransport + Send>)` if connection succeeded
+/// * `Err` if connection failed or transport type not supported
+///
+/// # Examples
+///
+/// ```
+/// use lp_cli::client::{client_connect, specifier::HostSpecifier};
+///
+/// // Connect to local in-memory server
+/// let transport = client_connect(HostSpecifier::Local)?;
+///
+/// // Connect to websocket server
+/// let spec = HostSpecifier::parse("ws://localhost:2812/")?;
+/// let transport = client_connect(spec)?;
+/// ```
+pub fn client_connect(spec: HostSpecifier) -> Result<Box<dyn ClientTransport + Send>> {
+    match spec {
+        HostSpecifier::Local => {
+            // Create local server transport (now implements ClientTransport directly)
+            let local_server = LocalServerTransport::new()?;
+            Ok(Box::new(local_server))
+        }
+        HostSpecifier::WebSocket { url } => {
+            let transport = WebSocketClientTransport::new(&url)
+                .map_err(|e| anyhow::anyhow!("Failed to connect to {}: {}", url, e))?;
+            Ok(Box::new(transport))
+        }
+        HostSpecifier::Serial { .. } => {
+            bail!("Serial transport not yet implemented");
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_client_connect_local() {
+        let spec = HostSpecifier::Local;
+        let result = client_connect(spec);
+        assert!(result.is_ok());
+        let mut transport = result.unwrap();
+        // Verify we can call methods on it
+        let _ = transport.receive(); // Should return Ok(None) when no messages
+        let _ = transport.close(); // Should close successfully
+    }
+
+    #[test]
+    fn test_client_connect_websocket() {
+        // This test would require a running websocket server
+        // For now, just verify it parses correctly and attempts connection
+        let spec = HostSpecifier::parse("ws://localhost:2812/").unwrap();
+        let result = client_connect(spec);
+        // Will likely fail to connect without a server, but should parse correctly
+        // We can't easily test connection without a server, so we just verify it doesn't panic
+        let _ = result;
+    }
+
+    #[test]
+    fn test_client_connect_serial() {
+        let spec = HostSpecifier::parse("serial:auto").unwrap();
+        let result = client_connect(spec);
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert!(format!("{}", e).contains("not yet implemented"));
+        }
+    }
+}
