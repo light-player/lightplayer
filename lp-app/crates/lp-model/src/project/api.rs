@@ -123,7 +123,7 @@ pub struct NodeDetail {
 }
 
 /// Node state - external state (shared with clients)
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum NodeState {
     Texture(crate::nodes::texture::TextureState),
     Shader(crate::nodes::shader::ShaderState),

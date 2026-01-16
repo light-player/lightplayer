@@ -896,6 +896,7 @@ impl ProjectRuntime {
                         // For now, return empty (will implement when fixture state is needed)
                         NodeState::Fixture(lp_model::nodes::fixture::FixtureState {
                             lamp_colors: Vec::new(),
+                            mapping_cells: Vec::new(), // Will be populated in Phase 3
                         })
                     }
                 };
