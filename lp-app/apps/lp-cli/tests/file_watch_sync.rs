@@ -23,53 +23,51 @@ use lp_cli::commands::dev::sync::sync_file_change;
 ///
 /// This wraps LpFsMemory in a Mutex to make it Sync-safe for use in async contexts.
 /// This is only for testing purposes.
-struct SyncLpFsMemory(Arc<tokio::sync::Mutex<LpFsMemory>>);
+struct SyncLpFsMemory(Arc<std::sync::Mutex<LpFsMemory>>);
 
 impl SyncLpFsMemory {
     fn new(fs: LpFsMemory) -> Self {
-        Self(Arc::new(tokio::sync::Mutex::new(fs)))
+        Self(Arc::new(std::sync::Mutex::new(fs)))
     }
 
-    async fn get_changes(&self) -> Vec<lp_shared::fs::fs_event::FsChange> {
-        self.0.lock().await.get_changes()
+    fn get_changes(&self) -> Vec<lp_shared::fs::fs_event::FsChange> {
+        self.0.lock().unwrap().get_changes()
     }
 }
 
 impl LpFs for SyncLpFsMemory {
     fn read_file(&self, path: &str) -> Result<Vec<u8>, lp_shared::error::FsError> {
-        // This is tricky - we need async but LpFs is sync
-        // For testing, we'll use blocking
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.read_file(path)
     }
 
     fn write_file(&self, path: &str, data: &[u8]) -> Result<(), lp_shared::error::FsError> {
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.write_file(path, data)
     }
 
     fn file_exists(&self, path: &str) -> Result<bool, lp_shared::error::FsError> {
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.file_exists(path)
     }
 
     fn is_dir(&self, path: &str) -> Result<bool, lp_shared::error::FsError> {
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.is_dir(path)
     }
 
     fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, lp_shared::error::FsError> {
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.list_dir(path, recursive)
     }
 
     fn delete_file(&self, path: &str) -> Result<(), lp_shared::error::FsError> {
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.delete_file(path)
     }
 
     fn delete_dir(&self, path: &str) -> Result<(), lp_shared::error::FsError> {
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.delete_dir(path)
     }
 
@@ -77,7 +75,7 @@ impl LpFs for SyncLpFsMemory {
         &self,
         subdir: &str,
     ) -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, lp_shared::error::FsError> {
-        let fs = self.0.blocking_lock();
+        let fs = self.0.lock().unwrap();
         fs.chroot(subdir)
     }
 }
@@ -239,24 +237,38 @@ async fn test_sync_file_create() {
     let sync_fs = SyncLpFsMemory::new(client_fs);
     let client_fs_arc: Arc<dyn LpFs + Send + Sync> = Arc::new(sync_fs);
 
-    // Sync the change to server
-    sync_file_change(
+    // Sync the change to server (this will send the request)
+    let sync_future = sync_file_change(
         &async_client,
         change,
         project_uid,
         project_dir,
         &client_fs_arc,
-    )
-    .await
-    .unwrap();
+    );
 
-    // Process messages to ensure server receives the write request
-    // Note: We can't access client_transport directly, but the async client handles it internally
-    // For testing, we'll process server-side messages manually
-    process_messages_server_only(&mut server_transport, &mut server).unwrap();
+    // Process server messages while waiting for response
+    // Use select! to process messages and wait for sync to complete
+    tokio::select! {
+        result = sync_future => {
+            result.unwrap();
+        }
+        _ = async {
+            // Process server messages in a loop
+            for _ in 0..100 {
+                let _ = process_messages_server_only(&mut server_transport, &mut server);
+                tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+            }
+        } => {
+            // Timeout - this shouldn't happen if sync completes
+            panic!("Sync timed out");
+        }
+    }
 
-    // Give async client time to process response
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    // Process any remaining messages
+    for _ in 0..10 {
+        let _ = process_messages_server_only(&mut server_transport, &mut server);
+        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+    }
 
     // Verify file was synced to server
     let server_path = format!("projects/{}{}", project_uid, file_path);
