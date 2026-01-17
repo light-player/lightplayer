@@ -8,13 +8,17 @@ use anyhow::{Error, Result};
 use lp_client::LpClient;
 use lp_model::{
     project::{
-        api::{ApiNodeSpecifier, SerializableProjectResponse},
+        api::{
+            ApiNodeSpecifier, NodeDetail, ProjectResponse, SerializableNodeDetail,
+            SerializableProjectResponse,
+        },
         handle::ProjectHandle,
         FrameId,
     },
     server::{AvailableProject, LoadedProject},
     ClientMessage, Message, ServerMessage, ServerResponse,
 };
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use crate::client::async_transport::AsyncClientTransport;
@@ -415,15 +419,87 @@ impl AsyncLpClient {
     }
 }
 
+/// Convert SerializableNodeDetail to NodeDetail
+///
+/// Converts the serializable wrapper back to NodeDetail by boxing the concrete config type.
+fn serializable_node_detail_to_node_detail(
+    serializable: SerializableNodeDetail,
+) -> Result<NodeDetail, Error> {
+    match serializable {
+        SerializableNodeDetail::Texture {
+            path,
+            config,
+            state,
+            status,
+        } => Ok(NodeDetail {
+            path,
+            config: Box::new(config),
+            state,
+            status,
+        }),
+        SerializableNodeDetail::Shader {
+            path,
+            config,
+            state,
+            status,
+        } => Ok(NodeDetail {
+            path,
+            config: Box::new(config),
+            state,
+            status,
+        }),
+        SerializableNodeDetail::Output {
+            path,
+            config,
+            state,
+            status,
+        } => Ok(NodeDetail {
+            path,
+            config: Box::new(config),
+            state,
+            status,
+        }),
+        SerializableNodeDetail::Fixture {
+            path,
+            config,
+            state,
+            status,
+        } => Ok(NodeDetail {
+            path,
+            config: Box::new(config),
+            state,
+            status,
+        }),
+    }
+}
+
 /// Convert SerializableProjectResponse to project response
 ///
 /// This is a helper function for converting the serializable response
 /// to the engine client's ProjectResponse type (which is actually `lp_model::project::api::ProjectResponse`).
 pub fn serializable_response_to_project_response(
     response: SerializableProjectResponse,
-) -> Result<lp_model::project::api::ProjectResponse> {
-    // TODO: Implement conversion from SerializableProjectResponse to ProjectResponse
-    // This requires converting SerializableNodeDetail back to NodeDetail with Box<dyn NodeConfig>
-    // For now, this is a placeholder
-    Err(Error::msg("serializable_response_to_project_response not yet implemented - needs conversion from SerializableNodeDetail to NodeDetail"))
+) -> Result<ProjectResponse, Error> {
+    match response {
+        SerializableProjectResponse::GetChanges {
+            current_frame,
+            node_handles,
+            node_changes,
+            node_details,
+        } => {
+            // Convert Vec<(NodeHandle, SerializableNodeDetail)> to BTreeMap<NodeHandle, NodeDetail>
+            let mut node_details_map = BTreeMap::new();
+            for (handle, serializable_detail) in node_details {
+                let detail = serializable_node_detail_to_node_detail(serializable_detail)?;
+                node_details_map.insert(handle, detail);
+            }
+
+            Ok(ProjectResponse::GetChanges {
+                current_frame,
+                node_handles,
+                node_changes,
+                node_details: node_details_map,
+            })
+        }
+    }
 }
