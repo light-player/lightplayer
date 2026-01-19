@@ -2,11 +2,11 @@
 //!
 //! Implements `ClientTransport` using async `tokio-tungstenite`.
 
-use lp_model::{ClientMessage, ServerMessage, TransportError};
 use crate::client::transport::ClientTransport;
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use futures_util::{SinkExt, StreamExt};
+use lp_model::{ClientMessage, ServerMessage, TransportError};
 use tokio::net::TcpStream;
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
 
 /// WebSocket client transport
 ///

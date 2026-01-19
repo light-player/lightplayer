@@ -2,18 +2,18 @@
 //!
 //! Provides async methods for filesystem and project operations.
 
-use anyhow::{Context, Error, Result};
+use anyhow::{Error, Result};
 use lp_model::{
+    ClientMessage, ClientRequest, ServerMessage, TransportError,
     project::{
+        FrameId,
         api::{ApiNodeSpecifier, SerializableProjectResponse},
         handle::ProjectHandle,
-        FrameId,
     },
     server::{AvailableProject, FsResponse, LoadedProject, ServerMsgBody},
-    ClientMessage, ClientRequest, ServerMessage, TransportError,
 };
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::client::transport::ClientTransport;
 
@@ -64,20 +64,21 @@ impl LpClient {
     /// Send a request and wait for the response
     ///
     /// Helper method that generates a request ID, sends the request, and waits for the response.
-    async fn send_request(
-        &self,
-        request: ClientRequest,
-    ) -> Result<ServerMessage> {
+    async fn send_request(&self, request: ClientRequest) -> Result<ServerMessage> {
         let id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
         let msg = ClientMessage { id, msg: request };
 
         // Lock transport and send
         let mut transport = self.transport.lock().await;
-        transport.send(msg).await
+        transport
+            .send(msg)
+            .await
             .map_err(|e| Error::msg(format!("Transport error: {}", e)))?;
 
         // Wait for response
-        transport.receive().await
+        transport
+            .receive()
+            .await
             .map_err(|e| Error::msg(format!("Transport error: {}", e)))
     }
 

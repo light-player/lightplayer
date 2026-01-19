@@ -64,7 +64,11 @@ pub async fn pull_project_async(
 
         // Write file to local filesystem
         local_fs.write_file(&local_path, &data).map_err(|e| {
-            anyhow::anyhow!("Failed to write file to local filesystem {}: {}", local_path, e)
+            anyhow::anyhow!(
+                "Failed to write file to local filesystem {}: {}",
+                local_path,
+                e
+            )
         })?;
     }
 

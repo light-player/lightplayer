@@ -2,9 +2,8 @@
 //!
 //! Monitors file changes in the project directory and syncs them to the server.
 
-use anyhow::{Context, Result};
-use lp_model::TransportError;
-use lp_shared::fs::{fs_event::FsChange, LpFs};
+use anyhow::Result;
+use lp_shared::fs::{LpFs, fs_event::FsChange};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -51,7 +50,7 @@ pub async fn fs_loop(
         // TODO: Collect file changes from watcher (non-blocking)
         // For now, we'll use a simple polling approach
         // In the future, this should use a FileWatcher that provides changes via channel
-        
+
         // Check if debounce period has passed
         let should_sync = if let Some(last_time) = last_change_time {
             last_time.elapsed() >= DEBOUNCE_DURATION && !pending_changes.is_empty()
@@ -67,14 +66,8 @@ pub async fn fs_loop(
 
             for change in changes {
                 // Sync each change to server
-                if let Err(e) = sync_file_change(
-                    &client,
-                    &change,
-                    &project_uid,
-                    &project_dir,
-                    &local_fs,
-                )
-                .await
+                if let Err(e) =
+                    sync_file_change(&client, &change, &project_uid, &project_dir, &local_fs).await
                 {
                     eprintln!("Failed to sync file change {}: {}", change.path, e);
                     // Continue with other changes even if one fails

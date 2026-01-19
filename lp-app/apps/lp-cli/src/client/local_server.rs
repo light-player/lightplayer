@@ -3,14 +3,14 @@
 //! Encapsulates an in-memory server running on a separate thread and provides
 //! a client transport interface for communicating with it.
 
+use crate::client::transport::ClientTransport;
 use anyhow::Result;
 use lp_model::TransportError;
-use crate::client::transport::ClientTransport;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 
-use crate::client::local::{create_local_transport_pair, AsyncLocalClientTransport};
+use crate::client::local::{AsyncLocalClientTransport, create_local_transport_pair};
 use crate::server::{create_server, run_server_loop_async};
 
 /// Local server transport that manages an in-memory server thread
@@ -145,9 +145,9 @@ impl ClientTransport for LocalServerTransport {
 
         // Wait for server thread to finish
         if let Some(handle) = self.server_handle.take() {
-            handle.join().map_err(|_| {
-                TransportError::Other("Server thread panicked".to_string())
-            })?;
+            handle
+                .join()
+                .map_err(|_| TransportError::Other("Server thread panicked".to_string()))?;
         }
 
         Ok(())

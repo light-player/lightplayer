@@ -3,7 +3,7 @@
 //! Provides functions for syncing individual file changes to the server.
 
 use anyhow::{Context, Result};
-use lp_shared::fs::{fs_event::ChangeType, fs_event::FsChange, LpFs};
+use lp_shared::fs::{LpFs, fs_event::ChangeType, fs_event::FsChange};
 use std::sync::Arc;
 
 use crate::client::LpClient;
@@ -41,9 +41,9 @@ pub async fn sync_file_change(
     match change.change_type {
         ChangeType::Create | ChangeType::Modify => {
             // Read file from local filesystem
-            let data = local_fs.read_file(&change.path).map_err(|e| {
-                anyhow::anyhow!("Failed to read file {}: {}", change.path, e)
-            })?;
+            let data = local_fs
+                .read_file(&change.path)
+                .map_err(|e| anyhow::anyhow!("Failed to read file {}: {}", change.path, e))?;
 
             // Write file to server
             client

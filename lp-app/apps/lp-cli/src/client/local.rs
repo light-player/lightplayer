@@ -3,8 +3,8 @@
 //! Provides tokio channel-based transport for communication between server and client
 //! running in the same process. Uses unbounded channels for simplicity.
 
-use lp_model::{ClientMessage, ServerMessage, TransportError};
 use crate::client::transport::ClientTransport;
+use lp_model::{ClientMessage, ServerMessage, TransportError};
 use lp_shared::transport::ServerTransport;
 use tokio::sync::mpsc;
 
@@ -58,7 +58,10 @@ impl ClientTransport for AsyncLocalClientTransport {
             return Err(TransportError::ConnectionLost);
         }
 
-        self.client_rx.recv().await.ok_or(TransportError::ConnectionLost)
+        self.client_rx
+            .recv()
+            .await
+            .ok_or(TransportError::ConnectionLost)
     }
 
     async fn close(&mut self) -> Result<(), TransportError> {
@@ -162,7 +165,10 @@ impl ServerTransport for AsyncLocalServerTransport {
         tokio::task::block_in_place(|| {
             if let Ok(handle) = tokio::runtime::Handle::try_current() {
                 handle.block_on(async {
-                    self.server_rx.recv().await.ok_or(TransportError::ConnectionLost)
+                    self.server_rx
+                        .recv()
+                        .await
+                        .ok_or(TransportError::ConnectionLost)
                         .map(Some)
                 })
             } else {

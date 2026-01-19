@@ -3,8 +3,8 @@
 //! Provides `client_connect()` function that creates appropriate `ClientTransport`
 //! based on a `HostSpecifier`.
 
-use anyhow::{Result, bail};
 use crate::client::transport::ClientTransport;
+use anyhow::{Result, bail};
 
 use crate::client::local_server::LocalServerTransport;
 use crate::client::specifier::HostSpecifier;
@@ -48,7 +48,8 @@ pub fn client_connect(spec: HostSpecifier) -> Result<Box<dyn ClientTransport>> {
             // We need to use tokio runtime to connect
             let rt = tokio::runtime::Runtime::new()
                 .map_err(|e| anyhow::anyhow!("Failed to create tokio runtime: {}", e))?;
-            let transport = rt.block_on(WebSocketClientTransport::new(&url))
+            let transport = rt
+                .block_on(WebSocketClientTransport::new(&url))
                 .map_err(|e| anyhow::anyhow!("Failed to connect to {}: {}", url, e))?;
             Ok(Box::new(transport))
         }
