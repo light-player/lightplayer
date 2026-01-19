@@ -5,6 +5,7 @@
 
 use lp_model::{ClientMessage, ServerMessage, TransportError};
 use crate::client::transport::ClientTransport;
+use lp_shared::transport::ServerTransport;
 use tokio::sync::mpsc;
 
 /// Async local client transport
@@ -128,6 +129,54 @@ impl AsyncLocalServerTransport {
 
     /// Close the transport
     pub fn close(&mut self) -> Result<(), TransportError> {
+        if self.closed {
+            return Ok(());
+        }
+
+        self.closed = true;
+        // Drop the sender to signal closure to the other side
+        self.server_tx = None;
+        Ok(())
+    }
+}
+
+impl ServerTransport for AsyncLocalServerTransport {
+    fn send(&mut self, msg: ServerMessage) -> Result<(), TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        match &self.server_tx {
+            Some(tx) => tx.send(msg).map_err(|_| TransportError::ConnectionLost),
+            None => Err(TransportError::ConnectionLost),
+        }
+    }
+
+    fn receive(&mut self) -> Result<Option<ClientMessage>, TransportError> {
+        if self.closed {
+            return Err(TransportError::ConnectionLost);
+        }
+
+        // Use tokio::task::block_in_place to bridge async to sync
+        // This is safe because we're in an async context (run_server_loop_async)
+        tokio::task::block_in_place(|| {
+            if let Ok(handle) = tokio::runtime::Handle::try_current() {
+                handle.block_on(async {
+                    self.server_rx.recv().await.ok_or(TransportError::ConnectionLost)
+                        .map(Some)
+                })
+            } else {
+                // No runtime available - try non-blocking receive
+                match self.server_rx.try_recv() {
+                    Ok(msg) => Ok(Some(msg)),
+                    Err(tokio::sync::mpsc::error::TryRecvError::Empty) => Ok(None),
+                    Err(_) => Err(TransportError::ConnectionLost),
+                }
+            }
+        })
+    }
+
+    fn close(&mut self) -> Result<(), TransportError> {
         if self.closed {
             return Ok(());
         }
