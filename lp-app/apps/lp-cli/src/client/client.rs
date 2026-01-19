@@ -4,7 +4,7 @@
 
 use anyhow::{Error, Result};
 use lp_model::{
-    ClientMessage, ClientRequest, ServerMessage, TransportError,
+    ClientMessage, ClientRequest, ServerMessage,
     project::{
         FrameId,
         api::{ApiNodeSpecifier, SerializableProjectResponse},
