@@ -97,6 +97,7 @@ impl LocalServerTransport {
     ///
     /// * `Ok(())` if the server was stopped successfully (or already closed)
     /// * `Err` if waiting for the thread failed
+    #[allow(dead_code)] // Will be used in future cleanup/shutdown scenarios
     pub fn close(&mut self) -> Result<()> {
         // Check if already closed
         if self.closed.load(Ordering::Relaxed) {
@@ -177,7 +178,9 @@ impl ClientTransport for LocalServerTransport {
                     break;
                 }
                 if start.elapsed() > std::time::Duration::from_secs(1) {
-                    return Err(TransportError::Other("Server thread did not stop within timeout".to_string()));
+                    return Err(TransportError::Other(
+                        "Server thread did not stop within timeout".to_string(),
+                    ));
                 }
                 tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
             }
@@ -193,9 +196,23 @@ impl Drop for LocalServerTransport {
         if !self.closed.load(Ordering::Relaxed) {
             // Mark as closed
             self.closed.store(true, Ordering::Relaxed);
-            // Try to join the thread if we still have the handle
+            // Close the client transport first (signals server to shut down)
+            drop(self.client_transport.take());
+            // Try to join the thread if we still have the handle (with timeout to avoid hanging)
             if let Some(handle) = self.server_handle.take() {
-                let _ = handle.join();
+                // Use a short timeout to avoid hanging forever in doctests
+                let start = std::time::Instant::now();
+                loop {
+                    if handle.is_finished() {
+                        let _ = handle.join();
+                        break;
+                    }
+                    if start.elapsed() > std::time::Duration::from_millis(100) {
+                        // Timeout - don't wait forever in Drop
+                        break;
+                    }
+                    std::thread::yield_now();
+                }
             }
         }
     }

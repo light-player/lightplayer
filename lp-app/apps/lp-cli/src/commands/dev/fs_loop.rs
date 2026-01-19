@@ -14,7 +14,7 @@ use crate::client::LpClient;
 use crate::commands::dev::sync::sync_file_change;
 
 /// Debounce duration for file changes (500ms)
-const DEBOUNCE_DURATION: Duration = Duration::from_millis(500);
+pub const DEBOUNCE_DURATION: Duration = Duration::from_millis(500);
 
 /// Filesystem watching and syncing loop
 ///
@@ -88,6 +88,7 @@ pub async fn fs_loop(
 /// Add a file change to the pending changes list
 ///
 /// Deduplicates changes by path (later changes override earlier ones).
+#[allow(dead_code)] // Will be used in future filesystem watching improvements
 pub fn add_pending_change(
     pending_changes: &mut HashMap<String, FsChange>,
     last_change_time: &mut Option<Instant>,

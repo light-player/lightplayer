@@ -29,12 +29,17 @@ use crate::client::transport_ws::WebSocketClientTransport;
 /// ```
 /// use lp_cli::client::{client_connect, specifier::HostSpecifier};
 ///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// // Connect to local in-memory server
-/// let transport = client_connect(HostSpecifier::Local)?;
+/// let mut transport = client_connect(HostSpecifier::Local)?;
+/// // Note: In real usage, you would use the transport and then close it.
+/// // For doctest purposes, we just demonstrate creation.
 ///
-/// // Connect to websocket server
+/// // Connect to websocket server (will fail without a running server, but shows usage)
 /// let spec = HostSpecifier::parse("ws://localhost:2812/")?;
-/// let transport = client_connect(spec)?;
+/// // Note: This would connect to a websocket server if one was running
+/// # Ok(())
+/// # }
 /// ```
 pub fn client_connect(spec: HostSpecifier) -> Result<Box<dyn ClientTransport>> {
     match spec {

@@ -38,6 +38,7 @@ impl LpClient {
     /// # Returns
     ///
     /// * `Self` - The client
+    #[allow(dead_code)] // Will be used in tests and other contexts
     pub fn new(transport: Box<dyn ClientTransport>) -> Self {
         Self {
             transport: Arc::new(tokio::sync::Mutex::new(transport)),
@@ -246,6 +247,7 @@ impl LpClient {
     ///
     /// * `Ok(())` if the project was unloaded successfully
     /// * `Err` if unloading failed or transport error occurred
+    #[allow(dead_code)] // Will be used in future commands
     pub async fn project_unload(&self, handle: ProjectHandle) -> Result<()> {
         let request = ClientRequest::UnloadProject { handle };
 
@@ -306,6 +308,7 @@ impl LpClient {
     ///
     /// * `Ok(Vec<AvailableProject>)` - List of available projects
     /// * `Err` if listing failed or transport error occurred
+    #[allow(dead_code)] // Will be used in future commands
     pub async fn project_list_available(&self) -> Result<Vec<AvailableProject>> {
         let request = ClientRequest::ListAvailableProjects;
 
@@ -326,6 +329,7 @@ impl LpClient {
     ///
     /// * `Ok(Vec<LoadedProject>)` - List of loaded projects
     /// * `Err` if listing failed or transport error occurred
+    #[allow(dead_code)] // Will be used in future commands
     pub async fn project_list_loaded(&self) -> Result<Vec<LoadedProject>> {
         let request = ClientRequest::ListLoadedProjects;
 

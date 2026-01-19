@@ -28,23 +28,44 @@ pub async fn push_project_async(
     project_uid: &str,
 ) -> Result<()> {
     // List all files recursively in the project directory
-    let files = local_fs
+    let entries = local_fs
         .list_dir("/", true)
         .map_err(|e| anyhow::anyhow!("Failed to list project files: {}", e))?;
 
-    // Push each file to the server
-    for file_path in files {
-        // Read file from local filesystem
-        let data = local_fs
-            .read_file(&file_path)
-            .map_err(|e| anyhow::anyhow!("Failed to read file {}: {}", file_path, e))?;
+    // Push each file to the server (skip directories)
+    for entry_path in entries {
+        // Skip directories - check if it's a directory before trying to read
+        match local_fs.is_dir(&entry_path) {
+            Ok(true) => {
+                // It's a directory, skip it (directories are created implicitly when files are written)
+                continue;
+            }
+            Ok(false) => {
+                // It's a file, proceed to read and push
+            }
+            Err(_) => {
+                // If we can't determine, try to read it anyway (might be a file)
+            }
+        }
 
-        // Build server path: projects/{project_uid}/{file_path}
-        // Remove leading '/' from file_path for server path
-        let server_path = if file_path.starts_with('/') {
-            format!("projects/{}/{}", project_uid, &file_path[1..])
+        // Read file from local filesystem
+        let data = match local_fs.read_file(&entry_path) {
+            Ok(data) => data,
+            Err(e) => {
+                // If read fails and it's because it's a directory, skip it
+                if entry_path.ends_with('/') || local_fs.is_dir(&entry_path).unwrap_or(false) {
+                    continue;
+                }
+                return Err(anyhow::anyhow!("Failed to read file {}: {}", entry_path, e));
+            }
+        };
+
+        // Build server path: projects/{project_uid}/{entry_path}
+        // Remove leading '/' from entry_path for server path
+        let server_path = if entry_path.starts_with('/') {
+            format!("projects/{}/{}", project_uid, &entry_path[1..])
         } else {
-            format!("projects/{}/{}", project_uid, file_path)
+            format!("projects/{}/{}", project_uid, entry_path)
         };
 
         // Write file to server

@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tokio::signal;
 
 use crate::client::{LpClient, client_connect, specifier::HostSpecifier};
-use crate::commands::dev::{fs_loop, pull_project_async, push_project_async};
+use crate::commands::dev::{fs_loop, push_project_async};
 use crate::debug_ui::DebugUiState;
 
 use super::args::DevArgs;
@@ -53,19 +53,24 @@ fn validate_local_project(project_dir: &PathBuf) -> Result<(String, String)> {
 /// Handle the dev command
 ///
 /// Connects to server, syncs project files, and runs file watching and UI loops.
-pub fn handle_dev(args: DevArgs) -> Result<()> {
+pub fn handle_dev(mut args: DevArgs) -> Result<()> {
+    // Resolve relative paths to absolute
+    args.dir = std::env::current_dir()?
+        .join(&args.dir)
+        .canonicalize()
+        .with_context(|| format!("Failed to resolve project directory: {}", args.dir.display()))?;
+
     // Validate local project
     let (project_uid, _project_name) = validate_local_project(&args.dir)?;
 
     // Parse host specifier
+    // Default behavior: push to local server (equivalent to --push without argument)
     let host_spec = if let Some(Some(host)) = &args.push_host {
         // Push to specified host
         HostSpecifier::parse(host)?
-    } else if args.push_host.is_some() {
-        // Push to local in-memory server
-        HostSpecifier::Local
     } else {
-        // No push specified - use local for now (could be changed to require explicit host)
+        // Default: push to local in-memory server
+        // This covers both --push (without argument) and no --push flag
         HostSpecifier::Local
     };
 
@@ -82,6 +87,9 @@ async fn handle_dev_async(
     project_uid: String,
     host_spec: HostSpecifier,
 ) -> Result<()> {
+    // Format host specifier for error messages before it's moved
+    let host_spec_str = format!("{:?}", host_spec);
+    
     // Connect to server
     let transport = client_connect(host_spec).context("Failed to connect to server")?;
 
@@ -94,20 +102,16 @@ async fn handle_dev_async(
     // Create local filesystem
     let local_fs: Arc<dyn LpFs> = Arc::new(LpFsStd::new(args.dir.clone()));
 
-    // Run initial tasks: push or pull project if needed
-    if args.push_host.is_some() {
-        // Push project to server
-        push_project_async(&client, &*local_fs, &project_uid)
-            .await
-            .context("Failed to push project to server")?;
-    } else {
-        // Pull project from server (if it exists)
-        // Note: This might fail if project doesn't exist on server, which is OK
-        if let Err(e) = pull_project_async(&client, &*local_fs, &project_uid).await {
-            eprintln!("Warning: Failed to pull project from server: {}", e);
-            eprintln!("Continuing with local project files...");
-        }
-    }
+    // Always push project to server (default is local server)
+    // This ensures the project exists on the server before we try to load it
+    push_project_async(&client, &*local_fs, &project_uid)
+        .await
+        .with_context(|| {
+            format!(
+                "Failed to push project to server (host: {})",
+                host_spec_str
+            )
+        })?;
 
     // Load project on server
     let project_path = format!("projects/{}", project_uid);

@@ -108,7 +108,7 @@ fn test_file_change_detection() {
 #[test]
 fn test_multiple_file_changes() {
     // Test that multiple file changes are detected correctly
-    let mut fs = LpFsMemory::new();
+    let fs = LpFsMemory::new();
 
     // Create multiple files
     fs.write_file("/src/file1.glsl", b"file1").unwrap();
