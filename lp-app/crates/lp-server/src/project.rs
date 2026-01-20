@@ -6,7 +6,7 @@ use crate::error::ServerError;
 use alloc::{format, rc::Rc, string::String};
 use core::cell::RefCell;
 use lp_engine::ProjectRuntime;
-use lp_shared::fs::{LpFs, FsVersion};
+use lp_shared::fs::{FsVersion, LpFs};
 use lp_shared::output::OutputProvider;
 
 /// A project instance wrapping a ProjectRuntime

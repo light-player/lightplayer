@@ -14,6 +14,7 @@ pub struct FileWatcher {
     /// Receiver for file change events
     event_receiver: mpsc::UnboundedReceiver<FsChange>,
     /// Root path of the project (for path normalization)
+    #[allow(dead_code)]
     root_path: PathBuf,
     /// Watcher handle (kept alive to continue watching)
     _watcher: notify::RecommendedWatcher,

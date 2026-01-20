@@ -7,8 +7,8 @@ use crate::project_manager::ProjectManager;
 use alloc::{format, rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;
 use lp_model::{
-    server::{AvailableProject, FsRequest, FsResponse, ServerMsgBody as ServerMessagePayload}, ClientMessage,
-    ServerMessage,
+    ClientMessage, ServerMessage,
+    server::{AvailableProject, FsRequest, FsResponse, ServerMsgBody as ServerMessagePayload},
 };
 use lp_shared::fs::LpFs;
 use lp_shared::output::OutputProvider;

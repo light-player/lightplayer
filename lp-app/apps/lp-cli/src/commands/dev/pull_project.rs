@@ -22,6 +22,7 @@ use crate::client::LpClient;
 ///
 /// * `Ok(())` if all files were pulled successfully
 /// * `Err` if any file operation failed
+#[allow(dead_code)]
 pub async fn pull_project_async(
     client: &LpClient,
     local_fs: &dyn LpFs,

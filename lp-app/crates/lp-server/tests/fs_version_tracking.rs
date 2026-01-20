@@ -4,7 +4,7 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use lp_engine::MemoryOutputProvider;
 use lp_server::LpServer;
-use lp_shared::fs::{FsVersion, LpFsMemory};
+use lp_shared::fs::LpFsMemory;
 
 #[test]
 fn test_fs_changes_not_repeated() {
@@ -46,7 +46,10 @@ fn test_fs_changes_not_repeated() {
 
     // Write a file to the project
     let file_path = format!("{}/src/test.glsl", project_path);
-    server.base_fs_mut().write_file(&file_path, b"test content").unwrap();
+    server
+        .base_fs_mut()
+        .write_file(&file_path, b"test content")
+        .unwrap();
 
     // Get the current version after the write
     let current_version_after_write = server.base_fs().current_version();
@@ -60,12 +63,19 @@ fn test_fs_changes_not_repeated() {
     assert!(version_after_first.as_i64() > initial_version.as_i64());
     // After processing, last_fs_version should be current_version.next() (one more than the next version)
     // This ensures that get_changes_since(version_after_first) returns nothing
-    assert_eq!(version_after_first.as_i64(), current_version_after_write.next().as_i64());
+    assert_eq!(
+        version_after_first.as_i64(),
+        current_version_after_write.next().as_i64()
+    );
 
     // Second tick - should NOT process the same change again
     // Query changes directly to verify
     let changes_after_first = server.base_fs().get_changes_since(version_after_first);
-    assert_eq!(changes_after_first.len(), 0, "No changes should be returned after processing");
+    assert_eq!(
+        changes_after_first.len(),
+        0,
+        "No changes should be returned after processing"
+    );
 
     let responses = server.tick(16, vec![]).unwrap();
     assert_eq!(responses.len(), 0);
@@ -77,7 +87,10 @@ fn test_fs_changes_not_repeated() {
 
     // Write another file
     let file_path2 = format!("{}/src/test2.glsl", project_path);
-    server.base_fs_mut().write_file(&file_path2, b"test content 2").unwrap();
+    server
+        .base_fs_mut()
+        .write_file(&file_path2, b"test content 2")
+        .unwrap();
 
     // Third tick - should process the new change
     let responses = server.tick(16, vec![]).unwrap();
