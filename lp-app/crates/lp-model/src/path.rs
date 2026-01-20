@@ -3,6 +3,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::convert::AsRef;
 use core::fmt;
+use core::ops::Deref;
 use serde::{Deserialize, Serialize};
 
 /// Light Player path slice - borrowed view of a path (like `Path`).
@@ -325,7 +326,6 @@ impl LpPathBuf {
 
         // Split into components
         let mut components: Vec<&str> = self
-            .as_path()
             .components()
             .collect::<Vec<_>>()
             .iter()
@@ -343,7 +343,7 @@ impl LpPathBuf {
                     // Parent directory - remove last component
                     if components.is_empty() {
                         // Going above root for absolute path
-                        if self.as_path().is_absolute() {
+                        if self.is_absolute() {
                             return None;
                         }
                         // For relative paths, allow going "up"
@@ -363,12 +363,12 @@ impl LpPathBuf {
 
         // Reconstruct path
         let resolved_path = if components.is_empty() {
-            if self.as_path().is_absolute() {
+            if self.is_absolute() {
                 "/".to_string()
             } else {
                 ".".to_string()
             }
-        } else if self.as_path().is_absolute() {
+        } else if self.is_absolute() {
             format!("/{}", components.join("/"))
         } else {
             components.join("/")
@@ -412,7 +412,14 @@ impl AsRef<LpPath> for &LpPath {
 
 impl AsRef<LpPath> for LpPathBuf {
     fn as_ref(&self) -> &LpPath {
-        // Will use Deref once implemented in Phase 3
+        self.deref()
+    }
+}
+
+impl Deref for LpPathBuf {
+    type Target = LpPath;
+
+    fn deref(&self) -> &LpPath {
         LpPath::new(&self.0)
     }
 }
@@ -531,16 +538,18 @@ mod tests {
 
     #[test]
     fn test_is_absolute() {
-        assert!(LpPathBuf::from("/src/test").as_path().is_absolute());
-        assert!(!LpPathBuf::from("src/test").as_path().is_absolute());
-        assert!(LpPathBuf::from("/").as_path().is_absolute());
+        // Test via Deref - LpPathBuf can use LpPath methods directly
+        assert!(LpPathBuf::from("/src/test").is_absolute());
+        assert!(!LpPathBuf::from("src/test").is_absolute());
+        assert!(LpPathBuf::from("/").is_absolute());
     }
 
     #[test]
     fn test_is_relative() {
-        assert!(!LpPathBuf::from("/src/test").as_path().is_relative());
-        assert!(LpPathBuf::from("src/test").as_path().is_relative());
-        assert!(!LpPathBuf::from("/").as_path().is_relative());
+        // Test via Deref - LpPathBuf can use LpPath methods directly
+        assert!(!LpPathBuf::from("/src/test").is_relative());
+        assert!(LpPathBuf::from("src/test").is_relative());
+        assert!(!LpPathBuf::from("/").is_relative());
     }
 
     #[test]
@@ -572,52 +581,37 @@ mod tests {
 
     #[test]
     fn test_file_name() {
+        // Test via Deref
         assert_eq!(
-            LpPathBuf::from("/src/test.txt").as_path().file_name(),
+            LpPathBuf::from("/src/test.txt").file_name(),
             Some("test.txt")
         );
-        assert_eq!(
-            LpPathBuf::from("/src/test").as_path().file_name(),
-            Some("test")
-        );
-        assert_eq!(LpPathBuf::from("/").as_path().file_name(), None);
-        assert_eq!(
-            LpPathBuf::from("test.txt").as_path().file_name(),
-            Some("test.txt")
-        );
+        assert_eq!(LpPathBuf::from("/src/test").file_name(), Some("test"));
+        assert_eq!(LpPathBuf::from("/").file_name(), None);
+        assert_eq!(LpPathBuf::from("test.txt").file_name(), Some("test.txt"));
     }
 
     #[test]
     fn test_file_stem() {
+        // Test via Deref
+        assert_eq!(LpPathBuf::from("/src/test.txt").file_stem(), Some("test"));
         assert_eq!(
-            LpPathBuf::from("/src/test.txt").as_path().file_stem(),
-            Some("test")
-        );
-        assert_eq!(
-            LpPathBuf::from("/src/test.tar.gz").as_path().file_stem(),
+            LpPathBuf::from("/src/test.tar.gz").file_stem(),
             Some("test.tar")
         );
-        assert_eq!(
-            LpPathBuf::from("/src/test").as_path().file_stem(),
-            Some("test")
-        );
-        assert_eq!(LpPathBuf::from("/src/.hidden").as_path().file_stem(), None);
-        assert_eq!(LpPathBuf::from("/").as_path().file_stem(), None);
+        assert_eq!(LpPathBuf::from("/src/test").file_stem(), Some("test"));
+        assert_eq!(LpPathBuf::from("/src/.hidden").file_stem(), None);
+        assert_eq!(LpPathBuf::from("/").file_stem(), None);
     }
 
     #[test]
     fn test_extension() {
-        assert_eq!(
-            LpPathBuf::from("/src/test.txt").as_path().extension(),
-            Some("txt")
-        );
-        assert_eq!(
-            LpPathBuf::from("/src/test.tar.gz").as_path().extension(),
-            Some("gz")
-        );
-        assert_eq!(LpPathBuf::from("/src/test").as_path().extension(), None);
-        assert_eq!(LpPathBuf::from("/src/test.").as_path().extension(), None);
-        assert_eq!(LpPathBuf::from("/").as_path().extension(), None);
+        // Test via Deref
+        assert_eq!(LpPathBuf::from("/src/test.txt").extension(), Some("txt"));
+        assert_eq!(LpPathBuf::from("/src/test.tar.gz").extension(), Some("gz"));
+        assert_eq!(LpPathBuf::from("/src/test").extension(), None);
+        assert_eq!(LpPathBuf::from("/src/test.").extension(), None);
+        assert_eq!(LpPathBuf::from("/").extension(), None);
     }
 
     #[test]
