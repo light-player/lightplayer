@@ -1,7 +1,7 @@
 //! Host filesystem implementation using std::fs
 
 use crate::error::FsError;
-use crate::fs::LpFs;
+use crate::fs::{LpFs, fs_event::{ChangeType, FsChange, FsVersion}};
 use alloc::{
     format,
     rc::Rc,
@@ -9,6 +9,7 @@ use alloc::{
     vec::Vec,
 };
 use core::cell::RefCell;
+use hashbrown::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -18,6 +19,10 @@ use std::path::PathBuf;
 /// they stay within the root directory for security.
 pub struct LpFsStd {
     root_path: PathBuf,
+    /// Version counter (increments on each change)
+    current_version: RefCell<FsVersion>,
+    /// Map of path -> (version, ChangeType) - only latest change per path
+    changes: RefCell<HashMap<String, (FsVersion, ChangeType)>>,
 }
 
 impl LpFsStd {
@@ -30,7 +35,21 @@ impl LpFsStd {
         if let Err(e) = fs::create_dir_all(&root_path) {
             log::warn!("Failed to create root directory {:?}: {}", root_path, e);
         }
-        Self { root_path }
+        Self {
+            root_path,
+            current_version: RefCell::new(FsVersion::default()),
+            changes: RefCell::new(HashMap::new()),
+        }
+    }
+
+    /// Record a filesystem change
+    fn record_change(&self, path: String, change_type: ChangeType) {
+        let mut current = self.current_version.borrow_mut();
+        *current = current.next();
+        let version = *current;
+        drop(current);
+
+        self.changes.borrow_mut().insert(path, (version, change_type));
     }
 
     /// Normalize a path string
@@ -384,6 +403,41 @@ impl LpFs for LpFsStd {
         }
 
         Ok(Rc::new(RefCell::new(LpFsStd::new(new_root))))
+    }
+
+    fn current_version(&self) -> FsVersion {
+        *self.current_version.borrow()
+    }
+
+    fn get_changes_since(&self, since_version: FsVersion) -> Vec<FsChange> {
+        self.changes
+            .borrow()
+            .iter()
+            .filter_map(|(path, (version, change_type))| {
+                if *version >= since_version {
+                    Some(FsChange {
+                        path: path.clone(),
+                        change_type: *change_type,
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn clear_changes_before(&mut self, before_version: FsVersion) {
+        self.changes.borrow_mut().retain(|_, (version, _)| {
+            *version >= before_version
+        });
+    }
+
+    fn record_changes(&mut self, changes: Vec<FsChange>) {
+        for change in changes {
+            // Normalize path to match LpFs conventions
+            let normalized = Self::normalize_path(&change.path);
+            self.record_change(normalized, change.change_type);
+        }
     }
 }
 
