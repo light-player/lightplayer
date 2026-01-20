@@ -53,18 +53,18 @@ static ALLOCATOR: TrackingAllocator = TrackingAllocator;
 unsafe impl core::alloc::GlobalAlloc for TrackingAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let result = BASE_ALLOCATOR.lock().allocate_first_fit(layout);
-        
+
         let ptr = match result {
             Ok(nn) => {
                 let p = nn.as_ptr();
-                
+
                 // Track allocation
                 let size = layout.size();
                 let old_total = TOTAL_ALLOCATED.fetch_add(size, Ordering::Relaxed);
                 let new_total = old_total + size;
                 let deallocated = TOTAL_DEALLOCATED.load(Ordering::Relaxed);
                 let current = new_total - deallocated;
-                
+
                 // Update peak
                 let mut peak = PEAK_USAGE.load(Ordering::Relaxed);
                 while current > peak {
@@ -78,7 +78,7 @@ unsafe impl core::alloc::GlobalAlloc for TrackingAllocator {
                         Err(x) => peak = x,
                     }
                 }
-                
+
                 ALLOC_COUNT.fetch_add(1, Ordering::Relaxed);
                 p
             }
@@ -87,11 +87,13 @@ unsafe impl core::alloc::GlobalAlloc for TrackingAllocator {
                 unsafe extern "C" {
                     fn _print(ptr: *const u8, len: usize);
                 }
-                
+
                 // We can't use format! here, so build message manually
                 let msg = b"[ALLOC FAILED] size=";
-                unsafe { _print(msg.as_ptr(), msg.len()); }
-                
+                unsafe {
+                    _print(msg.as_ptr(), msg.len());
+                }
+
                 // Print size as decimal (simple approach)
                 let mut size_buf = [0u8; 32];
                 let mut size_str_len = 0;
@@ -112,11 +114,15 @@ unsafe impl core::alloc::GlobalAlloc for TrackingAllocator {
                     }
                     size_str_len = digits;
                 }
-                unsafe { _print(size_buf.as_ptr(), size_str_len); }
-                
+                unsafe {
+                    _print(size_buf.as_ptr(), size_str_len);
+                }
+
                 let msg2 = b" align=";
-                unsafe { _print(msg2.as_ptr(), msg2.len()); }
-                
+                unsafe {
+                    _print(msg2.as_ptr(), msg2.len());
+                }
+
                 let mut align_buf = [0u8; 32];
                 let mut align_str_len = 0;
                 let mut n = layout.align();
@@ -136,15 +142,19 @@ unsafe impl core::alloc::GlobalAlloc for TrackingAllocator {
                     }
                     align_str_len = digits;
                 }
-                unsafe { _print(align_buf.as_ptr(), align_str_len); }
-                
+                unsafe {
+                    _print(align_buf.as_ptr(), align_str_len);
+                }
+
                 let msg3 = b"\n";
-                unsafe { _print(msg3.as_ptr(), msg3.len()); }
-                
+                unsafe {
+                    _print(msg3.as_ptr(), msg3.len());
+                }
+
                 core::ptr::null_mut()
             }
         };
-        
+
         ptr
     }
 
@@ -223,4 +233,3 @@ pub unsafe fn init_allocator() {
             .init(safe_heap_start as *mut u8, safe_heap_size);
     }
 }
-

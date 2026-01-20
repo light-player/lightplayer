@@ -10,12 +10,12 @@ use core::{
     result::Result,
 };
 
-use critical_section::{set_impl, Impl, RawRestoreState};
+use critical_section::{Impl, RawRestoreState, set_impl};
 
 mod alloc;
 mod print;
 
-pub use alloc::{init_allocator, get_memory_usage, reset_memory_stats};
+pub use alloc::{get_memory_usage, init_allocator, reset_memory_stats};
 
 pub use print::_print;
 
@@ -241,4 +241,3 @@ unsafe extern "C" fn _code_entry() -> ! {
     // Exit the interpreter
     ebreak()
 }
-

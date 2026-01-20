@@ -1,6 +1,6 @@
 use core::fmt::{self, Write};
 
-use crate::{syscall, SYSCALL_ARGS};
+use crate::{SYSCALL_ARGS, syscall};
 
 /// Writer that sends output to the host via syscall
 ///
@@ -61,4 +61,3 @@ macro_rules! println {
         $crate::print!("\n");
     };
 }
-
