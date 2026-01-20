@@ -6,8 +6,7 @@ pub mod handler;
 pub mod pull_project;
 pub mod push_project;
 pub mod sync;
-// TODO: May be kept or recreated in phase 7
-// pub mod watcher;
+pub mod watcher;
 
 pub use args::DevArgs;
 pub use fs_loop::fs_loop;

@@ -6,6 +6,7 @@ pub mod lp_fs_mem;
 #[cfg(feature = "std")]
 pub mod lp_fs_std;
 
+pub use fs_event::{ChangeType, FsChange, FsVersion};
 pub use lp_fs::LpFs;
 pub use lp_fs_mem::LpFsMemory;
 
