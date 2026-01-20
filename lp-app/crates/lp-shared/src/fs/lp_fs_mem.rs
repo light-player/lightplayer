@@ -15,6 +15,7 @@ use alloc::{
 };
 use core::cell::RefCell;
 use hashbrown::HashMap;
+use lp_model::path::{LpPath, LpPathBuf};
 
 /// In-memory filesystem implementation for testing
 pub struct LpFsMemory {
@@ -51,10 +52,11 @@ impl LpFsMemory {
     /// Write a file (mutable version)
     pub fn write_file_mut(&mut self, path: &str, data: &[u8]) -> Result<(), FsError> {
         self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(path);
+        let normalized_str = normalized.as_str();
         let mut files = self.files.borrow_mut();
-        let existed = files.contains_key(&normalized);
-        files.insert(normalized.clone(), data.to_vec());
+        let existed = files.contains_key(normalized_str);
+        files.insert(normalized_str.to_string(), data.to_vec());
         drop(files); // Release borrow before recording change
 
         // Record change
@@ -63,7 +65,7 @@ impl LpFsMemory {
         } else {
             ChangeType::Create
         };
-        self.record_change(normalized, change_type);
+        self.record_change(normalized_str.to_string(), change_type);
 
         Ok(())
     }
@@ -73,10 +75,11 @@ impl LpFsMemory {
         // Validate path is safe to delete (explicitly reject "/")
         Self::validate_path_for_deletion(path)?;
         self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(path);
+        let normalized_str = normalized.as_str();
 
         // Check if it's a directory (by checking if any file starts with normalized + "/")
-        let dir_prefix = format!("{}/", normalized);
+        let dir_prefix = format!("{}/", normalized_str);
         let mut files = self.files.borrow_mut();
         for file_path in files.keys() {
             if file_path.starts_with(&dir_prefix) {
@@ -87,13 +90,13 @@ impl LpFsMemory {
             }
         }
 
-        if files.remove(&normalized).is_none() {
+        if files.remove(normalized_str).is_none() {
             return Err(FsError::NotFound(path.to_string()));
         }
         drop(files); // Release borrow before recording change
 
         // Record change
-        self.record_change(normalized, ChangeType::Delete);
+        self.record_change(normalized_str.to_string(), ChangeType::Delete);
 
         Ok(())
     }
@@ -103,13 +106,14 @@ impl LpFsMemory {
         // Validate path is safe to delete (explicitly reject "/")
         Self::validate_path_for_deletion(path)?;
         self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(path);
+        let normalized_str = normalized.as_str();
 
         // Check if it's actually a directory (has files with this prefix)
-        let prefix = if normalized.ends_with('/') {
-            normalized.clone()
+        let prefix = if normalized_str.ends_with('/') {
+            normalized_str.to_string()
         } else {
-            format!("{}/", normalized)
+            format!("{}/", normalized_str)
         };
 
         let mut files = self.files.borrow_mut();
@@ -117,7 +121,7 @@ impl LpFsMemory {
         let mut files_to_remove = Vec::new();
 
         for file_path in files.keys() {
-            if file_path.starts_with(&prefix) || file_path == &normalized {
+            if file_path.starts_with(&prefix) || file_path == normalized_str {
                 files_to_remove.push(file_path.clone());
                 found_any = true;
             }
@@ -130,15 +134,13 @@ impl LpFsMemory {
         // Remove all files with this prefix (recursive deletion)
         let files_to_remove_clone = files_to_remove.clone();
         for file_path in &files_to_remove {
-            let normalized_path = file_path; // TODO: Phase 6 - convert to LpPathBuf::from()
-            files.remove(&normalized_path);
+            files.remove(file_path);
         }
         drop(files); // Release borrow before recording changes
 
         // Record changes
         for file_path in files_to_remove_clone {
-            let normalized_path = Self::normalize_path(&file_path);
-            self.record_change(normalized_path, ChangeType::Delete);
+            self.record_change(file_path, ChangeType::Delete);
         }
 
         Ok(())
@@ -180,23 +182,25 @@ impl Default for LpFsMemory {
 }
 
 impl LpFs for LpFsMemory {
-    fn read_file(&self, path: &str) -> Result<Vec<u8>, FsError> {
-        self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+    fn read_file(&self, path: &LpPath) -> Result<Vec<u8>, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
         self.files
             .borrow()
-            .get(&normalized)
+            .get(normalized_str)
             .cloned()
-            .ok_or_else(|| FsError::NotFound(path.to_string()))
+            .ok_or_else(|| FsError::NotFound(normalized_str.to_string()))
     }
 
-    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), FsError> {
+    fn write_file(&self, path: &LpPath, data: &[u8]) -> Result<(), FsError> {
         // Use interior mutability to allow writes through immutable reference
-        self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
         let mut files = self.files.borrow_mut();
-        let existed = files.contains_key(&normalized);
-        files.insert(normalized.clone(), data.to_vec());
+        let existed = files.contains_key(normalized_str);
+        files.insert(normalized_str.to_string(), data.to_vec());
         drop(files); // Release borrow before recording change
 
         // Record change
@@ -205,29 +209,31 @@ impl LpFs for LpFsMemory {
         } else {
             ChangeType::Create
         };
-        self.record_change(normalized, change_type);
+        self.record_change(normalized_str.to_string(), change_type);
 
         Ok(())
     }
 
-    fn file_exists(&self, path: &str) -> Result<bool, FsError> {
-        self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
-        Ok(self.files.borrow().contains_key(&normalized))
+    fn file_exists(&self, path: &LpPath) -> Result<bool, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
+        Ok(self.files.borrow().contains_key(normalized_str))
     }
 
-    fn is_dir(&self, path: &str) -> Result<bool, FsError> {
-        self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+    fn is_dir(&self, path: &LpPath) -> Result<bool, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
         let files = self.files.borrow();
 
         // Check if it exists as a file
-        if files.contains_key(&normalized) {
+        if files.contains_key(normalized_str) {
             return Ok(false);
         }
 
         // Check if any file path starts with normalized + "/" (indicating it's a directory)
-        let dir_prefix = format!("{}/", normalized);
+        let dir_prefix = format!("{}/", normalized_str);
         for file_path in files.keys() {
             if file_path.starts_with(&dir_prefix) {
                 return Ok(true);
@@ -235,17 +241,18 @@ impl LpFs for LpFsMemory {
         }
 
         // Path doesn't exist
-        Err(FsError::NotFound(path.to_string()))
+        Err(FsError::NotFound(normalized_str.to_string()))
     }
 
-    fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, FsError> {
-        self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+    fn list_dir(&self, path: &LpPath, recursive: bool) -> Result<Vec<LpPathBuf>, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
         let mut entries = Vec::new();
-        let prefix = if normalized.ends_with('/') {
-            normalized.clone()
+        let prefix = if normalized_str.ends_with('/') {
+            normalized_str.to_string()
         } else {
-            alloc::format!("{}/", normalized)
+            alloc::format!("{}/", normalized_str)
         };
         let files = self.files.borrow();
 
@@ -253,7 +260,7 @@ impl LpFs for LpFsMemory {
             // Recursive: return all files/directories with this prefix
             for file_path in files.keys() {
                 if file_path.starts_with(&prefix) {
-                    entries.push(file_path.clone());
+                    entries.push(LpPathBuf::from(file_path.as_str()));
                 }
             }
             // Also include directories (paths that are prefixes of files)
@@ -269,8 +276,9 @@ impl LpFs for LpFsMemory {
             }
             // Add directories that aren't already in entries
             for dir_path in dirs {
-                if !entries.contains(&dir_path) {
-                    entries.push(dir_path);
+                let dir_path_buf = LpPathBuf::from(dir_path.as_str());
+                if !entries.iter().any(|e| e.as_str() == dir_path_buf.as_str()) {
+                    entries.push(dir_path_buf);
                 }
             }
         } else {
@@ -283,12 +291,16 @@ impl LpFs for LpFsMemory {
                         // It's a subdirectory - add the directory path
                         let dir_name = &remainder[..slash_pos];
                         let full_dir_path = format!("{}{}", prefix, dir_name);
-                        if !entries.contains(&full_dir_path) {
-                            entries.push(full_dir_path);
+                        let full_dir_path_buf = LpPathBuf::from(full_dir_path.as_str());
+                        if !entries
+                            .iter()
+                            .any(|e| e.as_str() == full_dir_path_buf.as_str())
+                        {
+                            entries.push(full_dir_path_buf);
                         }
                     } else {
                         // It's a file directly in this directory
-                        entries.push(file_path.clone());
+                        entries.push(LpPathBuf::from(file_path.as_str()));
                     }
                 }
             }
@@ -297,46 +309,48 @@ impl LpFs for LpFsMemory {
         Ok(entries)
     }
 
-    fn delete_file(&self, path: &str) -> Result<(), FsError> {
+    fn delete_file(&self, path: &LpPath) -> Result<(), FsError> {
         // Use interior mutability to allow deletes through immutable reference
-        Self::validate_path_for_deletion(path)?;
-        self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        Self::validate_path_for_deletion(normalized_str)?;
+        self.validate_path(normalized_str)?;
 
         // Check if it's a directory (by checking if any file starts with normalized + "/")
-        let dir_prefix = format!("{}/", normalized);
+        let dir_prefix = format!("{}/", normalized_str);
         let mut files = self.files.borrow_mut();
         for file_path in files.keys() {
             if file_path.starts_with(&dir_prefix) {
                 return Err(FsError::Filesystem(format!(
                     "Path {:?} is a directory, use delete_dir() instead",
-                    path
+                    normalized_str
                 )));
             }
         }
 
-        if files.remove(&normalized).is_none() {
-            return Err(FsError::NotFound(path.to_string()));
+        if files.remove(normalized_str).is_none() {
+            return Err(FsError::NotFound(normalized_str.to_string()));
         }
         drop(files); // Release borrow before recording change
 
         // Record change
-        self.record_change(normalized, ChangeType::Delete);
+        self.record_change(normalized_str.to_string(), ChangeType::Delete);
 
         Ok(())
     }
 
-    fn delete_dir(&self, path: &str) -> Result<(), FsError> {
+    fn delete_dir(&self, path: &LpPath) -> Result<(), FsError> {
         // Use interior mutability to allow deletes through immutable reference
-        Self::validate_path_for_deletion(path)?;
-        self.validate_path(path)?;
-        let normalized = path; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        Self::validate_path_for_deletion(normalized_str)?;
+        self.validate_path(normalized_str)?;
 
         // Check if it's actually a directory (has files with this prefix)
-        let prefix = if normalized.ends_with('/') {
-            normalized.clone()
+        let prefix = if normalized_str.ends_with('/') {
+            normalized_str.to_string()
         } else {
-            format!("{}/", normalized)
+            format!("{}/", normalized_str)
         };
 
         let mut files = self.files.borrow_mut();
@@ -344,27 +358,25 @@ impl LpFs for LpFsMemory {
         let mut files_to_remove = Vec::new();
 
         for file_path in files.keys() {
-            if file_path.starts_with(&prefix) || file_path == &normalized {
+            if file_path.starts_with(&prefix) || file_path == normalized_str {
                 files_to_remove.push(file_path.clone());
                 found_any = true;
             }
         }
 
         if !found_any {
-            return Err(FsError::NotFound(path.to_string()));
+            return Err(FsError::NotFound(normalized_str.to_string()));
         }
 
         // Remove all files with this prefix (recursive deletion)
         for file_path in &files_to_remove {
-            let normalized_path = file_path; // TODO: Phase 6 - convert to LpPathBuf::from()
-            files.remove(&normalized_path);
+            files.remove(file_path);
         }
         drop(files); // Release borrow before recording changes
 
         // Record changes
         for file_path in files_to_remove {
-            let normalized_path = Self::normalize_path(&file_path);
-            self.record_change(normalized_path, ChangeType::Delete);
+            self.record_change(file_path, ChangeType::Delete);
         }
 
         Ok(())
@@ -372,14 +384,15 @@ impl LpFs for LpFsMemory {
 
     fn chroot(
         &self,
-        subdir: &str,
+        subdir: &LpPath,
     ) -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, FsError> {
         // Normalize the subdirectory path
-        let normalized_subdir = subdir; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(subdir.as_str());
+        let normalized_subdir = normalized.as_str();
 
         // Ensure it ends with / for prefix matching
         let prefix = if normalized_subdir.ends_with('/') {
-            normalized_subdir.clone()
+            normalized_subdir.to_string()
         } else {
             format!("{}/", normalized_subdir)
         };

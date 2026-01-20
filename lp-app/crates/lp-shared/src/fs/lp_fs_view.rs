@@ -13,6 +13,7 @@ use alloc::{
     vec::Vec,
 };
 use core::cell::RefCell;
+use lp_model::path::{LpPath, LpPathBuf};
 
 /// A filesystem view that translates paths relative to a prefix
 ///
@@ -75,8 +76,8 @@ impl LpFsView {
     ///
     /// Paths must start with `/` (absolute from chroot root).
     fn validate_path(&self, path: &str) -> Result<(), FsError> {
-        let normalized = Self::normalize_path(path);
-        if !normalized.starts_with('/') {
+        let normalized = LpPathBuf::from(path);
+        if !normalized.is_absolute() {
             return Err(FsError::InvalidPath(format!(
                 "Path must be relative to view root (start with /): {}",
                 path
@@ -87,86 +88,101 @@ impl LpFsView {
 }
 
 impl LpFs for LpFsView {
-    fn read_file(&self, path: &str) -> Result<Vec<u8>, FsError> {
-        let normalized = Self::normalize_path(path);
-        self.validate_path(&normalized)?;
-        let parent_path = self.parent_path(&normalized);
-        self.parent.borrow().read_file(&parent_path)
+    fn read_file(&self, path: &LpPath) -> Result<Vec<u8>, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
+        let parent_path = self.parent_path(normalized_str);
+        let parent_lp_path = LpPath::new(parent_path.as_str());
+        self.parent.borrow().read_file(parent_lp_path)
     }
 
-    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), FsError> {
-        let normalized = Self::normalize_path(path);
-        self.validate_path(&normalized)?;
-        let parent_path = self.parent_path(&normalized);
-        self.parent.borrow().write_file(&parent_path, data)
+    fn write_file(&self, path: &LpPath, data: &[u8]) -> Result<(), FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
+        let parent_path = self.parent_path(normalized_str);
+        let parent_lp_path = LpPath::new(parent_path.as_str());
+        self.parent.borrow().write_file(parent_lp_path, data)
     }
 
-    fn file_exists(&self, path: &str) -> Result<bool, FsError> {
-        let normalized = Self::normalize_path(path);
-        self.validate_path(&normalized)?;
-        let parent_path = self.parent_path(&normalized);
-        self.parent.borrow().file_exists(&parent_path)
+    fn file_exists(&self, path: &LpPath) -> Result<bool, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
+        let parent_path = self.parent_path(normalized_str);
+        let parent_lp_path = LpPath::new(parent_path.as_str());
+        self.parent.borrow().file_exists(parent_lp_path)
     }
 
-    fn is_dir(&self, path: &str) -> Result<bool, FsError> {
-        let normalized = Self::normalize_path(path);
-        self.validate_path(&normalized)?;
-        let parent_path = self.parent_path(&normalized);
-        self.parent.borrow().is_dir(&parent_path)
+    fn is_dir(&self, path: &LpPath) -> Result<bool, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
+        let parent_path = self.parent_path(normalized_str);
+        let parent_lp_path = LpPath::new(parent_path.as_str());
+        self.parent.borrow().is_dir(parent_lp_path)
     }
 
-    fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, FsError> {
-        let normalized = Self::normalize_path(path);
-        self.validate_path(&normalized)?;
-        let parent_path = self.parent_path(&normalized);
-        let parent_entries = self.parent.borrow().list_dir(&parent_path, recursive)?;
+    fn list_dir(&self, path: &LpPath, recursive: bool) -> Result<Vec<LpPathBuf>, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
+        let parent_path = self.parent_path(normalized_str);
+        let parent_lp_path = LpPath::new(parent_path.as_str());
+        let parent_entries = self.parent.borrow().list_dir(parent_lp_path, recursive)?;
 
         // Translate parent paths to chrooted-relative paths
         let mut entries = Vec::new();
         for parent_entry in parent_entries {
-            if let Some(chrooted_path) = self.chrooted_path(&parent_entry) {
-                entries.push(chrooted_path);
+            if let Some(chrooted_path) = self.chrooted_path(parent_entry.as_str()) {
+                entries.push(LpPathBuf::from(chrooted_path.as_str()));
             }
         }
 
         Ok(entries)
     }
 
-    fn delete_file(&self, path: &str) -> Result<(), FsError> {
-        let normalized = Self::normalize_path(path);
-        self.validate_path(&normalized)?;
+    fn delete_file(&self, path: &LpPath) -> Result<(), FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
 
-        if normalized == "/" {
+        if normalized_str == "/" {
             return Err(FsError::InvalidPath(
                 "Cannot delete root directory".to_string(),
             ));
         }
 
-        let parent_path = self.parent_path(&normalized);
-        self.parent.borrow().delete_file(&parent_path)
+        let parent_path = self.parent_path(normalized_str);
+        let parent_lp_path = LpPath::new(parent_path.as_str());
+        self.parent.borrow().delete_file(parent_lp_path)
     }
 
-    fn delete_dir(&self, path: &str) -> Result<(), FsError> {
-        let normalized = Self::normalize_path(path);
-        self.validate_path(&normalized)?;
+    fn delete_dir(&self, path: &LpPath) -> Result<(), FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        self.validate_path(normalized_str)?;
 
-        if normalized == "/" {
+        if normalized_str == "/" {
             return Err(FsError::InvalidPath(
                 "Cannot delete root directory".to_string(),
             ));
         }
 
-        let parent_path = self.parent_path(&normalized);
-        self.parent.borrow().delete_dir(&parent_path)
+        let parent_path = self.parent_path(normalized_str);
+        let parent_lp_path = LpPath::new(parent_path.as_str());
+        self.parent.borrow().delete_dir(parent_lp_path)
     }
 
-    fn chroot(&self, subdir: &str) -> Result<Rc<RefCell<dyn LpFs>>, FsError> {
+    fn chroot(&self, subdir: &LpPath) -> Result<Rc<RefCell<dyn LpFs>>, FsError> {
         // Normalize the subdirectory path
-        let normalized_subdir = subdir; // TODO: Phase 6 - convert to LpPathBuf::from()
+        let normalized = LpPathBuf::from(subdir.as_str());
+        let normalized_subdir = normalized.as_str();
 
         // Construct prefix relative to current chroot
         let relative_prefix = if normalized_subdir.ends_with('/') {
-            normalized_subdir.clone()
+            normalized_subdir.to_string()
         } else {
             format!("{}/", normalized_subdir)
         };

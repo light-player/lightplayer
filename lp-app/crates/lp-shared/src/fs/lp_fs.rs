@@ -22,26 +22,26 @@ pub trait LpFs {
     ///
     /// Returns the file contents as a byte vector, or an error if the file doesn't exist
     /// or cannot be read.
-    fn read_file<P: AsRef<LpPath>>(&self, path: P) -> Result<alloc::vec::Vec<u8>, FsError>;
+    fn read_file(&self, path: &LpPath) -> Result<alloc::vec::Vec<u8>, FsError>;
 
     /// Write data to a file in the filesystem
     ///
     /// Path is relative to project root.
     ///
     /// Creates the file if it doesn't exist, overwrites if it does.
-    fn write_file<P: AsRef<LpPath>>(&self, path: P, data: &[u8]) -> Result<(), FsError>;
+    fn write_file(&self, path: &LpPath, data: &[u8]) -> Result<(), FsError>;
 
     /// Check if a file exists in the filesystem
     ///
     /// Path is relative to project root.
-    fn file_exists<P: AsRef<LpPath>>(&self, path: P) -> Result<bool, FsError>;
+    fn file_exists(&self, path: &LpPath) -> Result<bool, FsError>;
 
     /// Check if a path is a directory
     ///
     /// Path is relative to project root.
     /// Returns `true` if the path exists and is a directory, `false` if it exists and is a file,
     /// or an error if the path doesn't exist or cannot be accessed.
-    fn is_dir<P: AsRef<LpPath>>(&self, path: P) -> Result<bool, FsError>;
+    fn is_dir(&self, path: &LpPath) -> Result<bool, FsError>;
 
     /// List directory contents (files and subdirectories)
     ///
@@ -52,9 +52,9 @@ pub trait LpFs {
     ///
     /// If `recursive` is `true`, lists all files and directories recursively. If `false`, only lists
     /// immediate children.
-    fn list_dir<P: AsRef<LpPath>>(
+    fn list_dir(
         &self,
-        path: P,
+        path: &LpPath,
         recursive: bool,
     ) -> Result<alloc::vec::Vec<LpPathBuf>, FsError>;
 
@@ -63,7 +63,7 @@ pub trait LpFs {
     /// Path is relative to project root.
     ///
     /// Returns an error if the path is "/" (root), would escape the root directory, or the file doesn't exist.
-    fn delete_file<P: AsRef<LpPath>>(&self, path: P) -> Result<(), FsError>;
+    fn delete_file(&self, path: &LpPath) -> Result<(), FsError>;
 
     /// Delete a directory from the filesystem
     ///
@@ -71,7 +71,7 @@ pub trait LpFs {
     ///
     /// Always deletes recursively (removes directory and all contents).
     /// Returns an error if the path is "/" (root), would escape the root directory, or the directory doesn't exist.
-    fn delete_dir<P: AsRef<LpPath>>(&self, path: P) -> Result<(), FsError>;
+    fn delete_dir(&self, path: &LpPath) -> Result<(), FsError>;
 
     /// Create a new filesystem view rooted at a subdirectory
     ///
@@ -83,9 +83,9 @@ pub trait LpFs {
     /// in the original filesystem.
     ///
     /// Returns `Rc<RefCell<dyn LpFs>>` to allow sharing and mutation of the filesystem view.
-    fn chroot<P: AsRef<LpPath>>(
+    fn chroot(
         &self,
-        subdir: P,
+        subdir: &LpPath,
     ) -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, FsError>;
 
     /// Get the current filesystem version

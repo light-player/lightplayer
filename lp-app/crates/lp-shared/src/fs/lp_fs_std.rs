@@ -14,6 +14,7 @@ use alloc::{
 };
 use core::cell::RefCell;
 use hashbrown::HashMap;
+use lp_model::path::{LpPath, LpPathBuf};
 use std::fs;
 use std::path::PathBuf;
 #[cfg(feature = "std")]
@@ -66,14 +67,15 @@ impl LpFsStd {
     /// Resolve a path relative to the root and validate it stays within root
     ///
     /// Returns an error if the path would escape the root directory.
-    fn resolve_and_validate(&self, path: &str) -> Result<PathBuf, FsError> {
+    fn resolve_and_validate(&self, path: &LpPath) -> Result<PathBuf, FsError> {
         // Normalize the input path
-        let normalized = Self::normalize_path(path);
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
         // Remove leading slash for joining with root_path
-        let normalized_path = if normalized == "/" {
+        let normalized_path = if normalized_str == "/" {
             ""
         } else {
-            &normalized[1..]
+            &normalized_str[1..]
         };
 
         // Join with root path
@@ -110,8 +112,8 @@ impl LpFsStd {
     ///
     /// This is a separate function so we can test it without attempting dangerous operations.
     pub fn validate_path_for_deletion(path: &str) -> Result<(), FsError> {
-        let normalized = Self::normalize_path(path);
-        if normalized == "/" {
+        let normalized = LpPathBuf::from(path);
+        if normalized.as_str() == "/" {
             return Err(FsError::InvalidPath(
                 "Cannot delete root directory".to_string(),
             ));
@@ -123,14 +125,15 @@ impl LpFsStd {
     ///
     /// This is used when we need to create files that don't exist yet.
     /// Still validates that the path would be within root.
-    fn get_path(&self, path: &str) -> Result<PathBuf, FsError> {
+    fn get_path(&self, path: &LpPath) -> Result<PathBuf, FsError> {
         // Normalize the input path
-        let normalized = Self::normalize_path(path);
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
         // Remove leading slash for joining with root_path
-        let normalized_path = if normalized == "/" {
+        let normalized_path = if normalized_str == "/" {
             ""
         } else {
-            &normalized[1..]
+            &normalized_str[1..]
         };
 
         let full_path = self.root_path.join(normalized_path);
@@ -160,7 +163,7 @@ impl LpFsStd {
     fn list_dir_recursive_helper(
         dir_path: &std::path::Path,
         canonical_root: &std::path::Path,
-        results: &mut Vec<String>,
+        results: &mut Vec<LpPathBuf>,
     ) -> Result<(), FsError> {
         let entries = fs::read_dir(dir_path).map_err(|e| {
             FsError::Filesystem(format!("Failed to read directory {:?}: {}", dir_path, e))
@@ -192,7 +195,7 @@ impl LpFsStd {
             // Convert to string with leading slash
             let path_str = format!("/{}", relative_path.to_string_lossy().replace('\\', "/"));
 
-            results.push(path_str);
+            results.push(LpPathBuf::from(path_str.as_str()));
 
             // If it's a directory, recurse
             if canonical_entry.is_dir() {
@@ -205,13 +208,13 @@ impl LpFsStd {
 }
 
 impl LpFs for LpFsStd {
-    fn read_file(&self, path: &str) -> Result<Vec<u8>, FsError> {
+    fn read_file(&self, path: &LpPath) -> Result<Vec<u8>, FsError> {
         let full_path = self.resolve_and_validate(path)?;
         fs::read(&full_path)
             .map_err(|e| FsError::Filesystem(format!("Failed to read file {:?}: {}", full_path, e)))
     }
 
-    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), FsError> {
+    fn write_file(&self, path: &LpPath, data: &[u8]) -> Result<(), FsError> {
         let full_path = self.get_path(path)?;
         // Create parent directory if it doesn't exist
         if let Some(parent) = full_path.parent() {
@@ -227,27 +230,31 @@ impl LpFs for LpFsStd {
         })
     }
 
-    fn file_exists(&self, path: &str) -> Result<bool, FsError> {
+    fn file_exists(&self, path: &LpPath) -> Result<bool, FsError> {
         let full_path = self.get_path(path)?;
         Ok(full_path.exists())
     }
 
-    fn is_dir(&self, path: &str) -> Result<bool, FsError> {
+    fn is_dir(&self, path: &LpPath) -> Result<bool, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
         let full_path = self.get_path(path)?;
         if !full_path.exists() {
-            return Err(FsError::NotFound(path.to_string()));
+            return Err(FsError::NotFound(normalized_str.to_string()));
         }
         Ok(full_path.is_dir())
     }
 
-    fn list_dir(&self, path: &str, recursive: bool) -> Result<Vec<String>, FsError> {
+    fn list_dir(&self, path: &LpPath, recursive: bool) -> Result<Vec<LpPathBuf>, FsError> {
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
         let full_path = self.resolve_and_validate(path)?;
 
         // Check if it's actually a directory
         if !full_path.is_dir() {
             return Err(FsError::Filesystem(format!(
                 "Path {:?} is not a directory",
-                path
+                normalized_str
             )));
         }
 
@@ -295,16 +302,18 @@ impl LpFs for LpFsStd {
                 // Convert to string with leading slash
                 let path_str = format!("/{}", relative_path.to_string_lossy().replace('\\', "/"));
 
-                results.push(path_str);
+                results.push(LpPathBuf::from(path_str.as_str()));
             }
         }
 
         Ok(results)
     }
 
-    fn delete_file(&self, path: &str) -> Result<(), FsError> {
+    fn delete_file(&self, path: &LpPath) -> Result<(), FsError> {
         // Validate path is safe to delete (explicitly reject "/")
-        Self::validate_path_for_deletion(path)?;
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        Self::validate_path_for_deletion(normalized_str)?;
 
         let full_path = self.resolve_and_validate(path)?;
 
@@ -312,7 +321,7 @@ impl LpFs for LpFsStd {
         if full_path.is_dir() {
             return Err(FsError::Filesystem(format!(
                 "Path {:?} is a directory, use delete_dir() instead",
-                path
+                normalized_str
             )));
         }
 
@@ -321,9 +330,11 @@ impl LpFs for LpFsStd {
         })
     }
 
-    fn delete_dir(&self, path: &str) -> Result<(), FsError> {
+    fn delete_dir(&self, path: &LpPath) -> Result<(), FsError> {
         // Validate path is safe to delete (explicitly reject "/")
-        Self::validate_path_for_deletion(path)?;
+        let normalized = LpPathBuf::from(path.as_str());
+        let normalized_str = normalized.as_str();
+        Self::validate_path_for_deletion(normalized_str)?;
 
         let full_path = self.resolve_and_validate(path)?;
 
@@ -331,7 +342,7 @@ impl LpFs for LpFsStd {
         if !full_path.is_dir() {
             return Err(FsError::Filesystem(format!(
                 "Path {:?} is not a directory, use delete_file() instead",
-                path
+                normalized_str
             )));
         }
 
@@ -343,15 +354,16 @@ impl LpFs for LpFsStd {
 
     fn chroot(
         &self,
-        subdir: &str,
+        subdir: &LpPath,
     ) -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, FsError> {
         // Normalize the subdirectory path
-        let normalized = Self::normalize_path(subdir);
+        let normalized = LpPathBuf::from(subdir.as_str());
+        let normalized_str = normalized.as_str();
         // Remove leading slash for joining with root_path
-        let normalized_subdir = if normalized == "/" {
+        let normalized_subdir = if normalized_str == "/" {
             ""
         } else {
-            &normalized[1..]
+            &normalized_str[1..]
         };
 
         // Join with root path
@@ -373,16 +385,16 @@ impl LpFs for LpFsStd {
         if !canonical_new_root.starts_with(&canonical_current_root) {
             return Err(FsError::InvalidPath(format!(
                 "Chroot path {:?} would escape root directory {:?}",
-                subdir, self.root_path
+                normalized_str, self.root_path
             )));
         }
 
         // Construct prefix path for LpFsView
         // The prefix is the normalized subdir path
-        let prefix = if normalized.ends_with('/') {
-            normalized.clone()
+        let prefix = if normalized_str.ends_with('/') {
+            normalized_str.to_string()
         } else {
-            format!("{}/", normalized)
+            format!("{}/", normalized_str)
         };
 
         // Wrap self in Rc<RefCell<>> for LpFsView
@@ -429,8 +441,8 @@ impl LpFs for LpFsStd {
     fn record_changes(&mut self, changes: Vec<FsChange>) {
         for change in changes {
             // Normalize path to match LpFs conventions
-            let normalized = &change.path; // TODO: Phase 6 - convert to LpPathBuf::from()
-            self.record_change(normalized, change.change_type);
+            let normalized = LpPathBuf::from(change.path.as_str());
+            self.record_change(normalized.as_str().to_string(), change.change_type);
         }
     }
 }
