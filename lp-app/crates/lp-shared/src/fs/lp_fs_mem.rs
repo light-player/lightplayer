@@ -1,7 +1,7 @@
 //! In-memory filesystem implementation for testing
 
 use crate::error::FsError;
-use crate::fs::{LpFs, fs_event::ChangeType, fs_event::FsChange};
+use crate::fs::{LpFs, fs_event::ChangeType, fs_event::{FsChange, FsVersion}};
 use alloc::{
     format,
     rc::Rc,
@@ -15,8 +15,10 @@ use hashbrown::HashMap;
 pub struct LpFsMemory {
     /// File storage: path -> contents (using RefCell for interior mutability)
     files: RefCell<HashMap<String, Vec<u8>>>,
-    /// Tracked filesystem changes (using RefCell for interior mutability)
-    changes: RefCell<Vec<FsChange>>,
+    /// Version counter (increments on each change)
+    current_version: RefCell<FsVersion>,
+    /// Map of path -> (version, ChangeType) - only latest change per path
+    changes: RefCell<HashMap<String, (FsVersion, ChangeType)>>,
 }
 
 impl LpFsMemory {
@@ -24,25 +26,19 @@ impl LpFsMemory {
     pub fn new() -> Self {
         Self {
             files: RefCell::new(HashMap::new()),
-            changes: RefCell::new(Vec::new()),
+            current_version: RefCell::new(FsVersion::default()),
+            changes: RefCell::new(HashMap::new()),
         }
-    }
-
-    /// Get all filesystem changes since last reset
-    pub fn get_changes(&self) -> Vec<FsChange> {
-        self.changes.borrow().clone()
-    }
-
-    /// Reset the change tracking (clear all tracked changes)
-    pub fn reset_changes(&mut self) {
-        self.changes.borrow_mut().clear();
     }
 
     /// Record a filesystem change
     fn record_change(&self, path: String, change_type: ChangeType) {
-        self.changes
-            .borrow_mut()
-            .push(FsChange { path, change_type });
+        let mut current = self.current_version.borrow_mut();
+        *current = current.next();
+        let version = *current;
+        drop(current);
+
+        self.changes.borrow_mut().insert(path, (version, change_type));
     }
 
     /// Normalize a path string
@@ -655,6 +651,39 @@ impl LpFs for LpFsMemory {
             files: RefCell::new(new_files),
             changes: RefCell::new(Vec::new()),
         })))
+    }
+
+    fn current_version(&self) -> FsVersion {
+        *self.current_version.borrow()
+    }
+
+    fn get_changes_since(&self, since_version: FsVersion) -> Vec<FsChange> {
+        self.changes
+            .borrow()
+            .iter()
+            .filter_map(|(path, (version, change_type))| {
+                if *version >= since_version {
+                    Some(FsChange {
+                        path: path.clone(),
+                        change_type: *change_type,
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn clear_changes_before(&mut self, before_version: FsVersion) {
+        self.changes.borrow_mut().retain(|_, (version, _)| {
+            *version >= before_version
+        });
+    }
+
+    fn record_changes(&mut self, changes: Vec<FsChange>) {
+        for change in changes {
+            self.record_change(change.path, change.change_type);
+        }
     }
 }
 
