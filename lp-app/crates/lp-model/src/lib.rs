@@ -11,7 +11,7 @@ pub mod transport_error;
 
 pub use message::{ClientMessage, ClientRequest, Message, ServerMessage};
 pub use nodes::{NodeConfig, NodeHandle, NodeKind, NodeSpecifier};
-pub use path::LpPathBuf;
+pub use path::{LpPath, LpPathBuf};
 pub use project::{FrameId, ProjectConfig};
 pub use server::{AvailableProject, FsRequest, FsResponse, LoadedProject};
 pub use transport_error::TransportError;

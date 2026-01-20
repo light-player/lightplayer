@@ -1,9 +1,39 @@
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use core::convert::AsRef;
 use serde::{Deserialize, Serialize};
 
-/// Light Player path - paths from project root
+/// Light Player path slice - borrowed view of a path (like `Path`).
+///
+/// This is an unsized type that provides a view into path data stored elsewhere.
+/// Use `LpPathBuf` for owned paths.
+#[repr(transparent)]
+pub struct LpPath(str);
+
+impl LpPath {
+    /// Directly wraps a string slice as a `LpPath` slice.
+    ///
+    /// This is a cost-free conversion. No normalization is performed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lp_model::path::LpPath;
+    ///
+    /// let path = LpPath::new("foo.txt");
+    /// ```
+    pub fn new(s: &str) -> &LpPath {
+        unsafe { &*(s as *const str as *const LpPath) }
+    }
+
+    /// Get the path as a string slice
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Light Player path buffer - owned, mutable path (like `PathBuf`).
 ///
 /// Supports both absolute (starting with `/`) and relative paths.
 /// Paths are automatically normalized on construction.
@@ -308,6 +338,33 @@ impl From<String> for LpPathBuf {
 impl From<&str> for LpPathBuf {
     fn from(s: &str) -> Self {
         Self(normalize(s))
+    }
+}
+
+// AsRef implementations for LpPath
+
+impl AsRef<LpPath> for &str {
+    fn as_ref(&self) -> &LpPath {
+        LpPath::new(self)
+    }
+}
+
+impl AsRef<LpPath> for String {
+    fn as_ref(&self) -> &LpPath {
+        LpPath::new(self.as_str())
+    }
+}
+
+impl AsRef<LpPath> for &LpPath {
+    fn as_ref(&self) -> &LpPath {
+        self
+    }
+}
+
+impl AsRef<LpPath> for LpPathBuf {
+    fn as_ref(&self) -> &LpPath {
+        // Will use Deref once implemented in Phase 3
+        LpPath::new(&self.0)
     }
 }
 
