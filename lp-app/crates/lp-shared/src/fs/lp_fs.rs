@@ -8,6 +8,7 @@
 //! provide security by preventing access outside the project directory.
 
 use crate::error::FsError;
+use crate::fs::fs_event::{FsChange, FsVersion};
 
 /// Platform-agnostic filesystem trait
 ///
@@ -83,4 +84,31 @@ pub trait LpFs {
     /// Returns `Rc<RefCell<dyn LpFs>>` to allow sharing and mutation of the filesystem view.
     fn chroot(&self, subdir: &str)
     -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, FsError>;
+
+    /// Get the current filesystem version
+    ///
+    /// Returns the version number that will be assigned to the next change.
+    /// If no changes have occurred, returns the initial version (typically 0).
+    fn current_version(&self) -> FsVersion;
+
+    /// Get all changes since a specific version
+    ///
+    /// Returns changes for paths that were modified at or after `since_version`.
+    /// Changes are returned with paths relative to the filesystem root.
+    /// Only the latest change per path is returned (if a file was modified
+    /// multiple times, only the most recent change is included).
+    fn get_changes_since(&self, since_version: FsVersion) -> alloc::vec::Vec<FsChange>;
+
+    /// Clear changes older than the specified version
+    ///
+    /// Removes change tracking for versions older than `before_version`.
+    /// This is useful for memory management when no consumers need old versions.
+    fn clear_changes_before(&mut self, before_version: FsVersion);
+
+    /// Record externally detected changes
+    ///
+    /// Used by filesystem implementations that don't directly track changes
+    /// (e.g., `LpFsStd` receiving changes from `FileWatcher`).
+    /// Each change is assigned the next version number.
+    fn record_changes(&mut self, changes: alloc::vec::Vec<FsChange>);
 }
