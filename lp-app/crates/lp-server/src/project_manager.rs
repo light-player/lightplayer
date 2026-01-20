@@ -132,21 +132,16 @@ impl ProjectManager {
             normalized_path = normalized_path.trim_start_matches('/').to_string();
         }
 
-        // Extract last component
-        let name = normalized_path
-            .rsplit('/')
-            .next()
-            .unwrap_or(&normalized_path)
-            .to_string();
-
-        if name.is_empty() {
-            return Err(ServerError::Core(format!(
+        // Extract last component using LpPath::file_name()
+        let project_path = lp_model::LpPath::from(normalized_path);
+        let name = project_path.file_name().ok_or_else(|| {
+            ServerError::Core(format!(
                 "Invalid project path: cannot extract name from '{}'",
                 path
-            )));
-        }
+            ))
+        })?;
 
-        Ok(name)
+        Ok(name.to_string())
     }
 
     /// Unload a project
