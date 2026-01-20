@@ -6,7 +6,7 @@ use crate::error::ServerError;
 use alloc::{format, rc::Rc, string::String};
 use core::cell::RefCell;
 use lp_engine::ProjectRuntime;
-use lp_shared::fs::LpFs;
+use lp_shared::fs::{LpFs, FsVersion};
 use lp_shared::output::OutputProvider;
 
 /// A project instance wrapping a ProjectRuntime
@@ -17,6 +17,8 @@ pub struct Project {
     path: String,
     /// The underlying ProjectRuntime instance
     runtime: ProjectRuntime,
+    /// Last filesystem version processed by this project
+    last_fs_version: FsVersion,
 }
 
 impl Project {
@@ -37,6 +39,7 @@ impl Project {
             name,
             path,
             runtime,
+            last_fs_version: FsVersion::default(),
         })
     }
 
@@ -64,5 +67,15 @@ impl Project {
     pub fn reload(&mut self) -> Result<(), ServerError> {
         // todo!("Implement project reload")
         Ok(())
+    }
+
+    /// Get the last filesystem version processed by this project
+    pub fn last_fs_version(&self) -> FsVersion {
+        self.last_fs_version
+    }
+
+    /// Update the last filesystem version processed by this project
+    pub fn update_fs_version(&mut self, version: FsVersion) {
+        self.last_fs_version = version;
     }
 }
