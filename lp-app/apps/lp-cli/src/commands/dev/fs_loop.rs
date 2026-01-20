@@ -82,10 +82,14 @@ pub async fn fs_loop(
             pending_changes.clear();
             last_change_time = None;
 
-            for change in changes {
+            // Note: Changes are tracked on the server side when files are synced via fs_write.
+            // Client-side LpFsStd change tracking would require thread-safe access (Mutex instead of RefCell),
+            // which is a larger refactoring. For now, we rely on server-side tracking.
+
+            for change in &changes {
                 // Sync each change to server
                 if let Err(e) =
-                    sync_file_change(&client, &change, &project_uid, &project_dir, &local_fs).await
+                    sync_file_change(&client, change, &project_uid, &project_dir, &local_fs).await
                 {
                     eprintln!("Failed to sync file change {}: {}", change.path, e);
                     // Continue with other changes even if one fails

@@ -12,6 +12,8 @@ use core::cell::RefCell;
 use hashbrown::HashMap;
 use std::fs;
 use std::path::PathBuf;
+#[cfg(feature = "std")]
+use std::sync::Mutex;
 
 /// LP filesystem implementation using std::fs
 ///
@@ -20,9 +22,11 @@ use std::path::PathBuf;
 pub struct LpFsStd {
     root_path: PathBuf,
     /// Version counter (increments on each change)
-    current_version: RefCell<FsVersion>,
+    /// Uses Mutex for thread-safety (required for Send + Sync)
+    current_version: Mutex<FsVersion>,
     /// Map of path -> (version, ChangeType) - only latest change per path
-    changes: RefCell<HashMap<String, (FsVersion, ChangeType)>>,
+    /// Uses Mutex for thread-safety (required for Send + Sync)
+    changes: Mutex<HashMap<String, (FsVersion, ChangeType)>>,
 }
 
 impl LpFsStd {
@@ -37,19 +41,19 @@ impl LpFsStd {
         }
         Self {
             root_path,
-            current_version: RefCell::new(FsVersion::default()),
-            changes: RefCell::new(HashMap::new()),
+            current_version: Mutex::new(FsVersion::default()),
+            changes: Mutex::new(HashMap::new()),
         }
     }
 
     /// Record a filesystem change
     fn record_change(&self, path: String, change_type: ChangeType) {
-        let mut current = self.current_version.borrow_mut();
+        let mut current = self.current_version.lock().unwrap();
         *current = current.next();
         let version = *current;
         drop(current);
 
-        self.changes.borrow_mut().insert(path, (version, change_type));
+        self.changes.lock().unwrap().insert(path, (version, change_type));
     }
 
     /// Normalize a path string
@@ -406,12 +410,13 @@ impl LpFs for LpFsStd {
     }
 
     fn current_version(&self) -> FsVersion {
-        *self.current_version.borrow()
+        *self.current_version.lock().unwrap()
     }
 
     fn get_changes_since(&self, since_version: FsVersion) -> Vec<FsChange> {
         self.changes
-            .borrow()
+            .lock()
+            .unwrap()
             .iter()
             .filter_map(|(path, (version, change_type))| {
                 if *version >= since_version {
@@ -427,7 +432,7 @@ impl LpFs for LpFsStd {
     }
 
     fn clear_changes_before(&mut self, before_version: FsVersion) {
-        self.changes.borrow_mut().retain(|_, (version, _)| {
+        self.changes.lock().unwrap().retain(|_, (version, _)| {
             *version >= before_version
         });
     }
