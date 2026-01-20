@@ -4,8 +4,8 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use lp_model::{
-    FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
-    project::api::{ApiNodeSpecifier, NodeChange, NodeState, NodeStatus},
+    project::api::{ApiNodeSpecifier, NodeChange, NodeState, NodeStatus}, FrameId, LpPathBuf, NodeConfig, NodeHandle,
+    NodeKind,
 };
 
 /// Client view of project
@@ -20,7 +20,7 @@ pub struct ClientProjectView {
 
 /// Client node entry
 pub struct ClientNodeEntry {
-    pub path: LpPath,
+    pub path: LpPathBuf,
     pub kind: NodeKind,
     pub config: Box<dyn NodeConfig>, // todo!("Proper config storage/cloning")
     pub config_ver: FrameId,

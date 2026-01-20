@@ -1,8 +1,8 @@
-use crate::nodes::{NodeConfig, NodeHandle, NodeKind};
 use crate::nodes::{
     fixture::FixtureConfig, output::OutputConfig, shader::ShaderConfig, texture::TextureConfig,
 };
-use crate::path::LpPath;
+use crate::nodes::{NodeConfig, NodeHandle, NodeKind};
+use crate::path::LpPathBuf;
 use crate::project::FrameId;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -63,7 +63,7 @@ pub enum NodeChange {
     /// New node created
     Created {
         handle: NodeHandle,
-        path: LpPath,
+        path: LpPathBuf,
         kind: NodeKind,
     },
     /// Config updated
@@ -116,7 +116,7 @@ pub enum NodeStatus {
 /// See: `lp-model/src/server/api.rs::ServerResponse` for where this blocks serialization
 #[derive(Debug)]
 pub struct NodeDetail {
-    pub path: LpPath,
+    pub path: LpPathBuf,
     pub config: Box<dyn NodeConfig>, // TODO: Needs serialization support (see struct docs)
     pub state: NodeState,            // External state only
     pub status: NodeStatus,
@@ -139,28 +139,28 @@ pub enum NodeState {
 pub enum SerializableNodeDetail {
     /// Texture node detail
     Texture {
-        path: LpPath,
+        path: LpPathBuf,
         config: TextureConfig,
         state: NodeState,
         status: NodeStatus,
     },
     /// Shader node detail
     Shader {
-        path: LpPath,
+        path: LpPathBuf,
         config: ShaderConfig,
         state: NodeState,
         status: NodeStatus,
     },
     /// Output node detail
     Output {
-        path: LpPath,
+        path: LpPathBuf,
         config: OutputConfig,
         state: NodeState,
         status: NodeStatus,
     },
     /// Fixture node detail
     Fixture {
-        path: LpPath,
+        path: LpPathBuf,
         config: FixtureConfig,
         state: NodeState,
         status: NodeStatus,
@@ -352,7 +352,7 @@ mod tests {
     fn test_node_detail_to_serializable_texture() {
         use crate::nodes::texture::TextureConfig;
         let detail = NodeDetail {
-            path: LpPath::from("/src/texture.texture"),
+            path: LpPathBuf::from("/src/texture.texture"),
             config: Box::new(TextureConfig {
                 width: 100,
                 height: 200,
@@ -387,7 +387,7 @@ mod tests {
     fn test_node_detail_to_serializable_shader() {
         use crate::nodes::shader::ShaderConfig;
         let detail = NodeDetail {
-            path: LpPath::from("/src/shader.shader"),
+            path: LpPathBuf::from("/src/shader.shader"),
             config: Box::new(ShaderConfig::default()),
             state: NodeState::Shader(crate::nodes::shader::ShaderState {
                 glsl_code: String::new(),
@@ -418,7 +418,7 @@ mod tests {
         node_details.insert(
             NodeHandle::new(1),
             NodeDetail {
-                path: LpPath::from("/src/texture.texture"),
+                path: LpPathBuf::from("/src/texture.texture"),
                 config: Box::new(TextureConfig {
                     width: 100,
                     height: 200,
@@ -465,7 +465,7 @@ mod tests {
     fn test_serializable_node_detail_serialization() {
         use crate::nodes::texture::TextureConfig;
         let detail = SerializableNodeDetail::Texture {
-            path: LpPath::from("/src/texture.texture"),
+            path: LpPathBuf::from("/src/texture.texture"),
             config: TextureConfig {
                 width: 100,
                 height: 200,
@@ -503,7 +503,7 @@ mod tests {
         node_details.push((
             NodeHandle::new(1),
             SerializableNodeDetail::Texture {
-                path: LpPath::from("/src/texture.texture"),
+                path: LpPathBuf::from("/src/texture.texture"),
                 config: TextureConfig {
                     width: 100,
                     height: 200,

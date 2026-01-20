@@ -10,13 +10,13 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cell::RefCell;
 use lp_model::{
-    FrameId, LpPath, NodeConfig, NodeHandle, NodeKind,
     project::api::{
         ApiNodeSpecifier, NodeChange, NodeDetail, NodeState, NodeStatus as ApiNodeStatus,
         ProjectResponse,
-    },
+    }, FrameId, LpPathBuf, NodeConfig, NodeHandle,
+    NodeKind,
 };
-use lp_shared::fs::{LpFs, fs_event::FsChange};
+use lp_shared::fs::{fs_event::FsChange, LpFs};
 #[cfg(feature = "std")]
 use serde_json;
 
@@ -39,7 +39,7 @@ pub struct ProjectRuntime {
 /// Node entry in runtime
 pub struct NodeEntry {
     /// Node path
-    pub path: LpPath,
+    pub path: LpPathBuf,
     /// Node kind
     pub kind: NodeKind,
     /// Node config
@@ -613,7 +613,7 @@ impl ProjectRuntime {
     fn handle_create_change(&mut self, change: &FsChange) -> Result<(), Error> {
         // Check if this is a new node directory
         if self.is_node_directory_path(&change.path) {
-            let node_path = LpPath::from(change.path.as_str());
+            let node_path = LpPathBuf::from(change.path.as_str());
             // Check if node already exists
             if self.handle_for_path(change.path.as_str()).is_err() {
                 // Load the new node
@@ -628,7 +628,7 @@ impl ProjectRuntime {
     fn handle_modify_change(&mut self, change: &FsChange) -> Result<(), Error> {
         // Find which node this file belongs to - collect handle and path first
         let mut target_handle: Option<NodeHandle> = None;
-        let mut target_path: Option<LpPath> = None;
+        let mut target_path: Option<LpPathBuf> = None;
 
         for (handle, entry) in &self.nodes {
             if self.file_belongs_to_node(&change.path, &entry.path) {
@@ -720,7 +720,7 @@ impl ProjectRuntime {
     }
 
     /// Check if a file path belongs to a node directory
-    fn file_belongs_to_node(&self, file_path: &str, node_path: &LpPath) -> bool {
+    fn file_belongs_to_node(&self, file_path: &str, node_path: &LpPathBuf) -> bool {
         let node_path_str = node_path.as_str();
         file_path.starts_with(node_path_str) && file_path.len() > node_path_str.len()
     }
@@ -748,7 +748,7 @@ impl ProjectRuntime {
     }
 
     /// Load a single node by path
-    fn load_node_by_path(&mut self, path: &LpPath) -> Result<NodeHandle, Error> {
+    fn load_node_by_path(&mut self, path: &LpPathBuf) -> Result<NodeHandle, Error> {
         match crate::project::loader::load_node(&*self.fs.borrow(), path) {
             Ok((path, config)) => {
                 let handle = NodeHandle::new(self.next_handle);
@@ -776,7 +776,7 @@ impl ProjectRuntime {
     ///
     /// Returns the handle for the node at the given path, or an error if not found.
     pub fn handle_for_path(&self, path: &str) -> Result<NodeHandle, Error> {
-        let node_path = lp_model::LpPath::from(path);
+        let node_path = lp_model::LpPathBuf::from(path);
 
         // Look up node by path
         for (handle, entry) in &self.nodes {
@@ -1117,12 +1117,12 @@ impl ProjectRuntime {
 struct InitContext<'a> {
     runtime: &'a ProjectRuntime,
     #[allow(dead_code)] // Used for chroot filesystem creation, may be needed for future features
-    node_path: &'a LpPath,
+    node_path: &'a LpPathBuf,
     node_fs: alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>,
 }
 
 impl<'a> InitContext<'a> {
-    pub fn new(runtime: &'a ProjectRuntime, node_path: &'a LpPath) -> Result<Self, Error> {
+    pub fn new(runtime: &'a ProjectRuntime, node_path: &'a LpPathBuf) -> Result<Self, Error> {
         let node_dir = node_path.as_str();
         let node_fs = runtime
             .fs
@@ -1146,14 +1146,14 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
         let spec_path = spec.as_str();
         let node_path = if spec_path.starts_with('/') {
             // Absolute path
-            lp_model::LpPath::from(spec_path)
+            lp_model::LpPathBuf::from(spec_path)
         } else {
             // Relative path - resolve from current node's directory
             // Current node path is self.node_path (e.g., "/src/texture.texture")
             // Relative spec is relative to the parent directory (e.g., "../output.output")
             let parent_dir = self.node_path.parent().unwrap_or_else(|| {
                 // No parent, use root
-                lp_model::LpPath::from("/")
+                lp_model::LpPathBuf::from("/")
             });
 
             // Resolve relative path using join_relative

@@ -159,7 +159,7 @@ impl LpServer {
                     .into_iter()
                     .filter_map(|change| {
                         // Use LpPath to strip prefix and normalize
-                        let change_path = lp_model::LpPath::from(change.path.as_str());
+                        let change_path = lp_model::LpPathBuf::from(change.path.as_str());
                         if let Some(stripped) = change_path.strip_prefix(&project_prefix) {
                             Some(FsChange {
                                 path: stripped.as_str().to_string(),

@@ -5,10 +5,10 @@ use alloc::{format, rc::Rc, string::String};
 use core::cell::RefCell;
 use lp_model::nodes::fixture::ColorOrder;
 use lp_model::nodes::{
-    NodeSpecifier, fixture::FixtureConfig, output::OutputConfig, shader::ShaderConfig,
-    texture::TextureConfig,
+    fixture::FixtureConfig, output::OutputConfig, shader::ShaderConfig, texture::TextureConfig,
+    NodeSpecifier,
 };
-use lp_model::path::LpPath;
+use lp_model::path::LpPathBuf;
 use serde_json;
 
 /// Builder for creating test projects
@@ -44,7 +44,7 @@ impl TextureBuilder {
 
 /// Builder for shader nodes
 pub struct ShaderBuilder {
-    texture_path: LpPath,
+    texture_path: LpPathBuf,
     glsl_source: String,
     render_order: i32,
 }
@@ -56,8 +56,8 @@ pub struct OutputBuilder {
 
 /// Builder for fixture nodes
 pub struct FixtureBuilder {
-    output_path: LpPath,
-    texture_path: LpPath,
+    output_path: LpPathBuf,
+    texture_path: LpPathBuf,
     mapping: String,
     lamp_type: String,
     color_order: ColorOrder,
@@ -105,7 +105,7 @@ impl ProjectBuilder {
     }
 
     /// Start building a shader node
-    pub fn shader(&mut self, texture_path: &LpPath) -> ShaderBuilder {
+    pub fn shader(&mut self, texture_path: &LpPathBuf) -> ShaderBuilder {
         ShaderBuilder {
             texture_path: texture_path.clone(),
             glsl_source: String::from(
@@ -121,7 +121,7 @@ impl ProjectBuilder {
     }
 
     /// Start building a fixture node
-    pub fn fixture(&mut self, output_path: &LpPath, texture_path: &LpPath) -> FixtureBuilder {
+    pub fn fixture(&mut self, output_path: &LpPathBuf, texture_path: &LpPathBuf) -> FixtureBuilder {
         FixtureBuilder {
             output_path: output_path.clone(),
             texture_path: texture_path.clone(),
@@ -138,22 +138,26 @@ impl ProjectBuilder {
     }
 
     /// Add a texture node with defaults (16x16)
-    pub fn texture_basic(&mut self) -> LpPath {
+    pub fn texture_basic(&mut self) -> LpPathBuf {
         self.texture().add(self)
     }
 
     /// Add a shader node with defaults (time-based sawtooth shader)
-    pub fn shader_basic(&mut self, texture_path: &LpPath) -> LpPath {
+    pub fn shader_basic(&mut self, texture_path: &LpPathBuf) -> LpPathBuf {
         self.shader(texture_path).add(self)
     }
 
     /// Add an output node with defaults (GPIO pin 0)
-    pub fn output_basic(&mut self) -> LpPath {
+    pub fn output_basic(&mut self) -> LpPathBuf {
         self.output().add(self)
     }
 
     /// Add a fixture node with defaults
-    pub fn fixture_basic(&mut self, output_path: &LpPath, texture_path: &LpPath) -> LpPath {
+    pub fn fixture_basic(
+        &mut self,
+        output_path: &LpPathBuf,
+        texture_path: &LpPathBuf,
+    ) -> LpPathBuf {
         self.fixture(output_path, texture_path).add(self)
     }
 
@@ -169,7 +173,7 @@ impl ProjectBuilder {
 
 impl TextureBuilder {
     /// Add the texture node to the project
-    pub fn add(self, builder: &mut ProjectBuilder) -> LpPath {
+    pub fn add(self, builder: &mut ProjectBuilder) -> LpPathBuf {
         let id = builder.texture_id;
         builder.texture_id += 1;
 
@@ -187,7 +191,7 @@ impl TextureBuilder {
             .write_file_helper(&node_path, json.as_bytes())
             .expect("Failed to write texture node.json");
 
-        LpPath::from(path_str)
+        LpPathBuf::from(path_str)
     }
 }
 
@@ -205,7 +209,7 @@ impl ShaderBuilder {
     }
 
     /// Add the shader node to the project
-    pub fn add(self, builder: &mut ProjectBuilder) -> LpPath {
+    pub fn add(self, builder: &mut ProjectBuilder) -> LpPathBuf {
         let id = builder.shader_id;
         builder.shader_id += 1;
 
@@ -229,7 +233,7 @@ impl ShaderBuilder {
             .write_file_helper(&glsl_path, self.glsl_source.as_bytes())
             .expect("Failed to write shader GLSL file");
 
-        LpPath::from(path_str)
+        LpPathBuf::from(path_str)
     }
 }
 
@@ -241,7 +245,7 @@ impl OutputBuilder {
     }
 
     /// Add the output node to the project
-    pub fn add(self, builder: &mut ProjectBuilder) -> LpPath {
+    pub fn add(self, builder: &mut ProjectBuilder) -> LpPathBuf {
         let id = builder.output_id;
         builder.output_id += 1;
 
@@ -256,7 +260,7 @@ impl OutputBuilder {
             .write_file_helper(&node_path, json.as_bytes())
             .expect("Failed to write output node.json");
 
-        LpPath::from(path_str)
+        LpPathBuf::from(path_str)
     }
 }
 
@@ -286,7 +290,7 @@ impl FixtureBuilder {
     }
 
     /// Add the fixture node to the project
-    pub fn add(self, builder: &mut ProjectBuilder) -> LpPath {
+    pub fn add(self, builder: &mut ProjectBuilder) -> LpPathBuf {
         let id = builder.fixture_id;
         builder.fixture_id += 1;
 
@@ -308,6 +312,6 @@ impl FixtureBuilder {
             .write_file_helper(&node_path, json.as_bytes())
             .expect("Failed to write fixture node.json");
 
-        LpPath::from(path_str)
+        LpPathBuf::from(path_str)
     }
 }

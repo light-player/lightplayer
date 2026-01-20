@@ -3,12 +3,12 @@ use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use lp_model::{LpPath, NodeConfig, NodeKind, ProjectConfig};
+use lp_model::{LpPathBuf, NodeConfig, NodeKind, ProjectConfig};
 use lp_shared::fs::LpFs;
 use serde_json;
 
 /// Determine node kind from path suffix
-pub(crate) fn node_kind_from_path(path: &LpPath) -> Result<NodeKind, Error> {
+pub(crate) fn node_kind_from_path(path: &LpPathBuf) -> Result<NodeKind, Error> {
     let path_str = path.as_str();
 
     // Find the last dot after the last slash
@@ -64,7 +64,7 @@ pub fn load_from_filesystem(fs: &dyn LpFs) -> Result<ProjectConfig, Error> {
 }
 
 /// Discover all node directories in /src/
-pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<LpPath>, Error> {
+pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<LpPathBuf>, Error> {
     let path = "/src";
     let entries = fs.list_dir(path, false).map_err(|e| Error::Io {
         path: path.to_string(),
@@ -74,7 +74,7 @@ pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<LpPath>, Error> {
     let mut nodes = Vec::new();
     for entry in entries {
         if is_node_directory(&entry) {
-            nodes.push(LpPath::from(entry));
+            nodes.push(LpPathBuf::from(entry));
         }
     }
 
@@ -82,7 +82,10 @@ pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<LpPath>, Error> {
 }
 
 /// Load a node's config from filesystem
-pub fn load_node(fs: &dyn LpFs, path: &LpPath) -> Result<(LpPath, Box<dyn NodeConfig>), Error> {
+pub fn load_node(
+    fs: &dyn LpFs,
+    path: &LpPathBuf,
+) -> Result<(LpPathBuf, Box<dyn NodeConfig>), Error> {
     let node_json_path = format!("{}/node.json", path.as_str());
 
     let data = fs.read_file(&node_json_path).map_err(|e| Error::Io {

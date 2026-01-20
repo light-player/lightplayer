@@ -2,7 +2,7 @@ extern crate alloc;
 
 use alloc::collections::BTreeMap;
 use lp_engine_client::ClientProjectView;
-use lp_model::{FrameId, NodeHandle, project::api::ProjectResponse};
+use lp_model::{project::api::ProjectResponse, FrameId, NodeHandle};
 
 #[test]
 fn test_client_view_creation() {
@@ -61,7 +61,7 @@ fn test_sync_with_changes() {
         node_handles: vec![handle],
         node_changes: vec![lp_model::project::api::NodeChange::Created {
             handle,
-            path: lp_model::LpPath::from("/src/test.texture"),
+            path: lp_model::LpPathBuf::from("/src/test.texture"),
             kind: lp_model::NodeKind::Texture,
         }],
         node_details: BTreeMap::new(),

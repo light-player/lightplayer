@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 /// Supports both absolute (starting with `/`) and relative paths.
 /// Paths are automatically normalized on construction.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct LpPath(String);
+pub struct LpPathBuf(String);
 
-impl LpPath {
+impl LpPathBuf {
     /// Create a new LpPath, normalizing the path
     pub fn new(path: String) -> Self {
         Self(normalize(&path))
@@ -34,7 +34,7 @@ impl LpPath {
     /// Get the parent directory path
     ///
     /// Returns `None` if the path is root (`/`) or empty, or if there's no parent component.
-    pub fn parent(&self) -> Option<LpPath> {
+    pub fn parent(&self) -> Option<LpPathBuf> {
         if self.0 == "/" || self.0.is_empty() {
             return None;
         }
@@ -43,10 +43,10 @@ impl LpPath {
         if let Some(last_slash) = self.0.rfind('/') {
             if last_slash == 0 {
                 // Only root `/` remains
-                Some(LpPath("/".to_string()))
+                Some(LpPathBuf("/".to_string()))
             } else {
                 // Return path up to (but not including) last `/`
-                Some(LpPath(self.0[..last_slash].to_string()))
+                Some(LpPathBuf(self.0[..last_slash].to_string()))
             }
         } else {
             // No `/` found, check if there's a parent component
@@ -56,9 +56,9 @@ impl LpPath {
                 // This shouldn't happen after normalization, but handle it
                 if let Some(last_slash) = self.0.rfind('/') {
                     if last_slash == 0 {
-                        Some(LpPath("/".to_string()))
+                        Some(LpPathBuf("/".to_string()))
                     } else {
-                        Some(LpPath(self.0[..last_slash].to_string()))
+                        Some(LpPathBuf(self.0[..last_slash].to_string()))
                     }
                 } else {
                     None
@@ -143,17 +143,17 @@ impl LpPath {
     /// - If `path` is absolute, replace base path
     /// - If `path` is relative, append to base (does NOT resolve `..` components)
     /// - Normalizes result
-    pub fn join<P: AsRef<str>>(&self, path: P) -> LpPath {
+    pub fn join<P: AsRef<str>>(&self, path: P) -> LpPathBuf {
         let path_str = path.as_ref();
         if path_str.starts_with('/') {
             // Absolute path, replace base
-            LpPath::from(path_str)
+            LpPathBuf::from(path_str)
         } else {
             // Relative path, append to base
             if self.0 == "/" {
-                LpPath::from(format!("/{}", path_str))
+                LpPathBuf::from(format!("/{}", path_str))
             } else {
-                LpPath::from(format!("{}/{}", self.0, path_str))
+                LpPathBuf::from(format!("{}/{}", self.0, path_str))
             }
         }
     }
@@ -163,11 +163,11 @@ impl LpPath {
     /// Convenience method beyond PathBuf API:
     /// - Similar to `join()` but resolves `.` and `..` components
     /// - Returns `None` if result would be invalid (e.g., goes above root for absolute paths)
-    pub fn join_relative<P: AsRef<str>>(&self, path: P) -> Option<LpPath> {
+    pub fn join_relative<P: AsRef<str>>(&self, path: P) -> Option<LpPathBuf> {
         let path_str = path.as_ref();
         if path_str.starts_with('/') {
             // Absolute path, just normalize
-            return Some(LpPath::from(path_str));
+            return Some(LpPathBuf::from(path_str));
         }
 
         // Split into components
@@ -220,15 +220,15 @@ impl LpPath {
             components.join("/")
         };
 
-        Some(LpPath::from(resolved_path))
+        Some(LpPathBuf::from(resolved_path))
     }
 
     /// Strip a prefix from this path
     ///
     /// Returns `None` if the prefix doesn't match.
-    pub fn strip_prefix<P: AsRef<str>>(&self, prefix: P) -> Option<LpPath> {
+    pub fn strip_prefix<P: AsRef<str>>(&self, prefix: P) -> Option<LpPathBuf> {
         let prefix_str = prefix.as_ref();
-        let prefix_path = LpPath::from(prefix_str);
+        let prefix_path = LpPathBuf::from(prefix_str);
 
         if self.starts_with(prefix_str) {
             // Get components after prefix
@@ -242,11 +242,11 @@ impl LpPath {
             let remaining: Vec<&str> = self_components[prefix_components.len()..].to_vec();
 
             if remaining.is_empty() {
-                Some(LpPath::from(if self.is_absolute() { "/" } else { "." }))
+                Some(LpPathBuf::from(if self.is_absolute() { "/" } else { "." }))
             } else if self.is_absolute() {
-                Some(LpPath::from(format!("/{}", remaining.join("/"))))
+                Some(LpPathBuf::from(format!("/{}", remaining.join("/"))))
             } else {
-                Some(LpPath::from(remaining.join("/")))
+                Some(LpPathBuf::from(remaining.join("/")))
             }
         } else {
             None
@@ -258,7 +258,7 @@ impl LpPath {
     /// Only considers whole path components to match.
     pub fn starts_with<P: AsRef<str>>(&self, base: P) -> bool {
         let base_str = base.as_ref();
-        let base_path = LpPath::from(base_str);
+        let base_path = LpPathBuf::from(base_str);
 
         let self_components: Vec<&str> = self.components().collect();
         let base_components: Vec<&str> = base_path.components().collect();
@@ -275,7 +275,7 @@ impl LpPath {
     /// Only considers whole path components to match.
     pub fn ends_with<P: AsRef<str>>(&self, child: P) -> bool {
         let child_str = child.as_ref();
-        let child_path = LpPath::from(child_str);
+        let child_path = LpPathBuf::from(child_str);
 
         let self_components: Vec<&str> = self.components().collect();
         let child_components: Vec<&str> = child_path.components().collect();
@@ -299,13 +299,13 @@ impl LpPath {
     }
 }
 
-impl From<String> for LpPath {
+impl From<String> for LpPathBuf {
     fn from(s: String) -> Self {
         Self(normalize(&s))
     }
 }
 
-impl From<&str> for LpPath {
+impl From<&str> for LpPathBuf {
     fn from(s: &str) -> Self {
         Self(normalize(s))
     }
@@ -392,161 +392,170 @@ mod tests {
 
     #[test]
     fn test_lp_path_creation() {
-        let path = LpPath::new("/src/test.texture".to_string());
+        let path = LpPathBuf::new("/src/test.texture".to_string());
         assert_eq!(path.as_str(), "/src/test.texture");
     }
 
     #[test]
     fn test_lp_path_from_string() {
-        let path = LpPath::from("/src/test.shader".to_string());
+        let path = LpPathBuf::from("/src/test.shader".to_string());
         assert_eq!(path.as_str(), "/src/test.shader");
     }
 
     #[test]
     fn test_lp_path_from_str() {
-        let path = LpPath::from("/src/test.output");
+        let path = LpPathBuf::from("/src/test.output");
         assert_eq!(path.as_str(), "/src/test.output");
     }
 
     #[test]
     fn test_normalization_absolute() {
-        assert_eq!(LpPath::from("//src//test//").as_str(), "/src/test");
-        assert_eq!(LpPath::from("/src/test/").as_str(), "/src/test");
-        assert_eq!(LpPath::from("  /src/test  ").as_str(), "/src/test");
+        assert_eq!(LpPathBuf::from("//src//test//").as_str(), "/src/test");
+        assert_eq!(LpPathBuf::from("/src/test/").as_str(), "/src/test");
+        assert_eq!(LpPathBuf::from("  /src/test  ").as_str(), "/src/test");
     }
 
     #[test]
     fn test_normalization_relative() {
-        assert_eq!(LpPath::from("src/test").as_str(), "src/test");
-        assert_eq!(LpPath::from("./src/test").as_str(), "src/test");
-        assert_eq!(LpPath::from(".").as_str(), "/");
-        assert_eq!(LpPath::from("").as_str(), "/");
+        assert_eq!(LpPathBuf::from("src/test").as_str(), "src/test");
+        assert_eq!(LpPathBuf::from("./src/test").as_str(), "src/test");
+        assert_eq!(LpPathBuf::from(".").as_str(), "/");
+        assert_eq!(LpPathBuf::from("").as_str(), "/");
     }
 
     #[test]
     fn test_is_absolute() {
-        assert!(LpPath::from("/src/test").is_absolute());
-        assert!(!LpPath::from("src/test").is_absolute());
-        assert!(LpPath::from("/").is_absolute());
+        assert!(LpPathBuf::from("/src/test").is_absolute());
+        assert!(!LpPathBuf::from("src/test").is_absolute());
+        assert!(LpPathBuf::from("/").is_absolute());
     }
 
     #[test]
     fn test_is_relative() {
-        assert!(!LpPath::from("/src/test").is_relative());
-        assert!(LpPath::from("src/test").is_relative());
-        assert!(!LpPath::from("/").is_relative());
+        assert!(!LpPathBuf::from("/src/test").is_relative());
+        assert!(LpPathBuf::from("src/test").is_relative());
+        assert!(!LpPathBuf::from("/").is_relative());
     }
 
     #[test]
     fn test_parent() {
         assert_eq!(
-            LpPath::from("/src/test").parent(),
-            Some(LpPath::from("/src"))
+            LpPathBuf::from("/src/test").parent(),
+            Some(LpPathBuf::from("/src"))
         );
-        assert_eq!(LpPath::from("/src").parent(), Some(LpPath::from("/")));
-        assert_eq!(LpPath::from("/").parent(), None);
-        assert_eq!(LpPath::from("src/test").parent(), Some(LpPath::from("src")));
-        assert_eq!(LpPath::from("test").parent(), None);
+        assert_eq!(LpPathBuf::from("/src").parent(), Some(LpPathBuf::from("/")));
+        assert_eq!(LpPathBuf::from("/").parent(), None);
+        assert_eq!(
+            LpPathBuf::from("src/test").parent(),
+            Some(LpPathBuf::from("src"))
+        );
+        assert_eq!(LpPathBuf::from("test").parent(), None);
     }
 
     #[test]
     fn test_file_name() {
-        assert_eq!(LpPath::from("/src/test.txt").file_name(), Some("test.txt"));
-        assert_eq!(LpPath::from("/src/test").file_name(), Some("test"));
-        assert_eq!(LpPath::from("/").file_name(), None);
-        assert_eq!(LpPath::from("test.txt").file_name(), Some("test.txt"));
+        assert_eq!(
+            LpPathBuf::from("/src/test.txt").file_name(),
+            Some("test.txt")
+        );
+        assert_eq!(LpPathBuf::from("/src/test").file_name(), Some("test"));
+        assert_eq!(LpPathBuf::from("/").file_name(), None);
+        assert_eq!(LpPathBuf::from("test.txt").file_name(), Some("test.txt"));
     }
 
     #[test]
     fn test_file_stem() {
-        assert_eq!(LpPath::from("/src/test.txt").file_stem(), Some("test"));
+        assert_eq!(LpPathBuf::from("/src/test.txt").file_stem(), Some("test"));
         assert_eq!(
-            LpPath::from("/src/test.tar.gz").file_stem(),
+            LpPathBuf::from("/src/test.tar.gz").file_stem(),
             Some("test.tar")
         );
-        assert_eq!(LpPath::from("/src/test").file_stem(), Some("test"));
-        assert_eq!(LpPath::from("/src/.hidden").file_stem(), None);
-        assert_eq!(LpPath::from("/").file_stem(), None);
+        assert_eq!(LpPathBuf::from("/src/test").file_stem(), Some("test"));
+        assert_eq!(LpPathBuf::from("/src/.hidden").file_stem(), None);
+        assert_eq!(LpPathBuf::from("/").file_stem(), None);
     }
 
     #[test]
     fn test_extension() {
-        assert_eq!(LpPath::from("/src/test.txt").extension(), Some("txt"));
-        assert_eq!(LpPath::from("/src/test.tar.gz").extension(), Some("gz"));
-        assert_eq!(LpPath::from("/src/test").extension(), None);
-        assert_eq!(LpPath::from("/src/test.").extension(), None);
-        assert_eq!(LpPath::from("/").extension(), None);
+        assert_eq!(LpPathBuf::from("/src/test.txt").extension(), Some("txt"));
+        assert_eq!(LpPathBuf::from("/src/test.tar.gz").extension(), Some("gz"));
+        assert_eq!(LpPathBuf::from("/src/test").extension(), None);
+        assert_eq!(LpPathBuf::from("/src/test.").extension(), None);
+        assert_eq!(LpPathBuf::from("/").extension(), None);
     }
 
     #[test]
     fn test_join() {
-        assert_eq!(LpPath::from("/src").join("test").as_str(), "/src/test");
-        assert_eq!(LpPath::from("/src").join("/test").as_str(), "/test");
-        assert_eq!(LpPath::from("/src/a").join("../b").as_str(), "/src/a/../b");
-        assert_eq!(LpPath::from("/").join("test").as_str(), "/test");
-        assert_eq!(LpPath::from("src").join("test").as_str(), "src/test");
+        assert_eq!(LpPathBuf::from("/src").join("test").as_str(), "/src/test");
+        assert_eq!(LpPathBuf::from("/src").join("/test").as_str(), "/test");
+        assert_eq!(
+            LpPathBuf::from("/src/a").join("../b").as_str(),
+            "/src/a/../b"
+        );
+        assert_eq!(LpPathBuf::from("/").join("test").as_str(), "/test");
+        assert_eq!(LpPathBuf::from("src").join("test").as_str(), "src/test");
     }
 
     #[test]
     fn test_join_relative() {
         assert_eq!(
-            LpPath::from("/src/a").join_relative("../b"),
-            Some(LpPath::from("/src/b"))
+            LpPathBuf::from("/src/a").join_relative("../b"),
+            Some(LpPathBuf::from("/src/b"))
         );
-        assert_eq!(LpPath::from("/src").join_relative("../../root"), None);
+        assert_eq!(LpPathBuf::from("/src").join_relative("../../root"), None);
         assert_eq!(
-            LpPath::from("/src").join_relative("./test"),
-            Some(LpPath::from("/src/test"))
+            LpPathBuf::from("/src").join_relative("./test"),
+            Some(LpPathBuf::from("/src/test"))
         );
         assert_eq!(
-            LpPath::from("src/a").join_relative("../b"),
-            Some(LpPath::from("src/b"))
+            LpPathBuf::from("src/a").join_relative("../b"),
+            Some(LpPathBuf::from("src/b"))
         );
     }
 
     #[test]
     fn test_strip_prefix() {
         assert_eq!(
-            LpPath::from("/projects/my-project/src").strip_prefix("/projects/my-project"),
-            Some(LpPath::from("/src"))
+            LpPathBuf::from("/projects/my-project/src").strip_prefix("/projects/my-project"),
+            Some(LpPathBuf::from("/src"))
         );
-        assert_eq!(LpPath::from("/src").strip_prefix("/projects"), None);
+        assert_eq!(LpPathBuf::from("/src").strip_prefix("/projects"), None);
         assert_eq!(
-            LpPath::from("/projects/my-project").strip_prefix("/projects/my-project"),
-            Some(LpPath::from("/"))
+            LpPathBuf::from("/projects/my-project").strip_prefix("/projects/my-project"),
+            Some(LpPathBuf::from("/"))
         );
     }
 
     #[test]
     fn test_starts_with() {
-        assert!(LpPath::from("/etc/passwd").starts_with("/etc"));
-        assert!(LpPath::from("/etc/passwd").starts_with("/etc/"));
-        assert!(!LpPath::from("/etc/passwd").starts_with("/usr"));
-        assert!(!LpPath::from("/etc/foo.rs").starts_with("/etc/foo"));
+        assert!(LpPathBuf::from("/etc/passwd").starts_with("/etc"));
+        assert!(LpPathBuf::from("/etc/passwd").starts_with("/etc/"));
+        assert!(!LpPathBuf::from("/etc/passwd").starts_with("/usr"));
+        assert!(!LpPathBuf::from("/etc/foo.rs").starts_with("/etc/foo"));
     }
 
     #[test]
     fn test_ends_with() {
-        assert!(LpPath::from("/etc/resolv.conf").ends_with("resolv.conf"));
-        assert!(LpPath::from("/etc/resolv.conf").ends_with("etc/resolv.conf"));
-        assert!(LpPath::from("/etc/resolv.conf").ends_with("/etc/resolv.conf"));
+        assert!(LpPathBuf::from("/etc/resolv.conf").ends_with("resolv.conf"));
+        assert!(LpPathBuf::from("/etc/resolv.conf").ends_with("etc/resolv.conf"));
+        assert!(LpPathBuf::from("/etc/resolv.conf").ends_with("/etc/resolv.conf"));
         // /resolv.conf normalized is absolute, but we compare components
         // So /etc/resolv.conf ends with resolv.conf component
-        assert!(LpPath::from("/etc/resolv.conf").ends_with("/resolv.conf"));
-        assert!(!LpPath::from("/etc/resolv.conf").ends_with("conf"));
+        assert!(LpPathBuf::from("/etc/resolv.conf").ends_with("/resolv.conf"));
+        assert!(!LpPathBuf::from("/etc/resolv.conf").ends_with("conf"));
     }
 
     #[test]
     fn test_components() {
-        let path1 = LpPath::from("/src/test");
+        let path1 = LpPathBuf::from("/src/test");
         let components: Vec<&str> = path1.components().collect();
         assert_eq!(components, Vec::from(["src", "test"]));
 
-        let path2 = LpPath::from("src/test");
+        let path2 = LpPathBuf::from("src/test");
         let components: Vec<&str> = path2.components().collect();
         assert_eq!(components, Vec::from(["src", "test"]));
 
-        let path3 = LpPath::from("/");
+        let path3 = LpPathBuf::from("/");
         let components: Vec<&str> = path3.components().collect();
         assert_eq!(components, Vec::<&str>::new());
     }

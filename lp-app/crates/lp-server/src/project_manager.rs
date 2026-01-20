@@ -133,7 +133,7 @@ impl ProjectManager {
         }
 
         // Extract last component using LpPath::file_name()
-        let project_path = lp_model::LpPath::from(normalized_path);
+        let project_path = lp_model::LpPathBuf::from(normalized_path);
         let name = project_path.file_name().ok_or_else(|| {
             ServerError::Core(format!(
                 "Invalid project path: cannot extract name from '{}'",
