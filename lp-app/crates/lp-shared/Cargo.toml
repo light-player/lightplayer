@@ -1,0 +1,24 @@
+[package]
+name = "lp-shared"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["std"]
+std = []
+
+[dependencies]
+log = { version = "0.4", default-features = false }
+hashbrown = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+lp-model = { path = "../lp-model", default-features = false }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

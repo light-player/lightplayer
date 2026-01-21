@@ -1,0 +1,28 @@
+[package]
+name = "lp-server"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["std"]
+std = [
+    "lp-shared/std"
+]
+
+[dependencies]
+lp-engine = { path = "../lp-engine", default-features = false }
+lp-model = { path = "../lp-model", default-features = false }
+lp-shared = { path = "../lp-shared", default-features = false }
+serde_json = { workspace = true, default-features = false, features = ["alloc"] }
+hashbrown = { workspace = true }
+
+[dev-dependencies]
+lp-engine = { path = "../lp-engine", default-features = false, features = ["std"] }
+lp-engine-client = { path = "../lp-engine-client", default-features = false, features = ["std"] }
+lp-shared = { path = "../lp-shared", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true
