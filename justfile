@@ -93,3 +93,4 @@ clean-all: clean
     rm -rf {{lp_glsl_dir}}/target
 
 check: fmt-check clippy
+validate: check test

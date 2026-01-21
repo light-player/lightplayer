@@ -18,7 +18,6 @@ members = [
     "lp-glsl/apps/lp-builtin-gen",
     "lp-glsl/apps/lp-builtins-app",
     "lp-glsl/apps/lp-test",
-    "lp-glsl/apps/test-structreturn",
 ]
 resolver = "2"
 
@@ -47,7 +46,6 @@ default-members = [
     "lp-glsl/crates/lp-riscv-tools",
     "lp-glsl/apps/lp-builtin-gen",
     "lp-glsl/apps/lp-test",
-    "lp-glsl/apps/test-structreturn",
 ]
 
 [workspace.package]

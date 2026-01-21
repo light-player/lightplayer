@@ -297,9 +297,9 @@ mod tests {
 
     // Mock SourceSpan for testing (since we can't import glsl-parser in tests easily)
     struct MockSourceSpan {
-        #[allow(dead_code)]
+        #[allow(dead_code, reason = "Mock struct fields for testing")]
         pub line: usize,
-        #[allow(dead_code)]
+        #[allow(dead_code, reason = "Mock struct fields for testing")]
         pub column: usize,
     }
 

@@ -45,7 +45,10 @@ pub struct GlslEmulatorModule {
     // Source map for managing file locations
     pub(crate) source_map: GlSourceMap,
     // Track next buffer allocation address (allocated from start of RAM, growing upward)
-    #[allow(dead_code)] // Reserved for future use when manual buffer allocation is needed
+    #[allow(
+        dead_code,
+        reason = "Reserved for future use when manual buffer allocation is needed"
+    )]
     pub(crate) next_buffer_addr: u32,
 }
 
@@ -476,7 +479,10 @@ impl GlslEmulatorModule {
     /// Allocate a buffer in the emulator's RAM and return its address.
     /// Buffers are allocated from the start of RAM (growing upward), leaving space
     /// for the stack at the end (growing downward).
-    #[allow(dead_code)] // Reserved for future use when manual buffer allocation is needed
+    #[allow(
+        dead_code,
+        reason = "Reserved for future use when manual buffer allocation is needed"
+    )]
     fn allocate_buffer_in_ram(&mut self, size: usize) -> Result<u32, GlslError> {
         // DEFAULT_RAM_START is 0x80000000 (from lp-riscv-tools/src/emu/memory.rs)
         const DEFAULT_RAM_START: u32 = 0x80000000;
@@ -732,7 +738,7 @@ impl GlslEmulatorModule {
     }
 
     /// Safely format a function, avoiding panics from Display
-    #[allow(dead_code)] // Reserved for future use in error reporting
+    #[allow(dead_code, reason = "Reserved for future use in error reporting")]
     fn format_function_safely(&self, func: &cranelift_codegen::ir::Function) -> String {
         #[cfg(feature = "std")]
         {
@@ -915,7 +921,7 @@ impl GlslEmulatorModule {
     }
 
     /// Find the source location (line number) of a function definition in the GLSL source
-    #[allow(dead_code)] // Reserved for future use in error reporting
+    #[allow(dead_code, reason = "Reserved for future use in error reporting")]
     fn find_function_source_location(
         &self,
         func_name: &str,
@@ -948,7 +954,7 @@ impl GlslEmulatorModule {
     }
 
     /// Extract source lines around a given line number for display
-    #[allow(dead_code)] // Reserved for future use in error reporting
+    #[allow(dead_code, reason = "Reserved for future use in error reporting")]
     fn extract_source_lines(
         &self,
         file_id: crate::frontend::src_loc::GlFileId,

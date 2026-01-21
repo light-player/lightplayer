@@ -12,9 +12,9 @@ pub mod src_loc;
 pub mod src_loc_manager;
 
 // Re-exports used by crate root; suppress unused warnings within this module.
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "Re-exports for crate root")]
 pub use glsl_compiler::GlslCompiler;
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "Re-exports for crate root")]
 pub use pipeline::{
     Backend, CompilationPipeline, CompiledShader, ParseResult, SemanticResult, TransformationPass,
     parse_program_with_registry,

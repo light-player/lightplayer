@@ -12,7 +12,7 @@ pub struct MemoryLayout {
     /// Size of RAM buffer needed (in bytes)
     pub ram_size: usize,
     /// Entry point address
-    #[allow(unused)]
+    #[allow(unused, reason = "Reserved for future use in entry point handling")]
     pub entry_point: u32,
 }
 

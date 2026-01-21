@@ -466,7 +466,7 @@ impl<M: Module> GlModule<M> {
 impl GlModule<JITModule> {
     /// Build executable from JIT module
     /// Returns a boxed GlslExecutable trait object for generic code
-    #[allow(unused)]
+    #[allow(unused, reason = "Method used via trait object")]
     pub fn build_executable(
         self,
     ) -> Result<alloc::boxed::Box<dyn crate::exec::executable::GlslExecutable>, GlslError> {
@@ -512,7 +512,7 @@ impl GlModule<JITModule> {
 impl GlModule<ObjectModule> {
     /// Build executable from Object module (for emulator)
     /// Returns a boxed GlslExecutable trait object for generic code
-    #[allow(unused)]
+    #[allow(unused, reason = "Method used via trait object")]
     pub fn build_executable(
         self,
         options: &crate::backend::codegen::emu::EmulatorOptions,

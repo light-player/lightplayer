@@ -97,7 +97,10 @@ impl LocalServerTransport {
     ///
     /// * `Ok(())` if the server was stopped successfully (or already closed)
     /// * `Err` if waiting for the thread failed
-    #[allow(dead_code)] // Will be used in future cleanup/shutdown scenarios
+    #[allow(
+        dead_code,
+        reason = "Will be used in future cleanup/shutdown scenarios"
+    )]
     pub fn close(&mut self) -> Result<()> {
         // Check if already closed
         if self.closed.load(Ordering::Relaxed) {

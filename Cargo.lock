@@ -3808,18 +3808,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "test-structreturn"
-version = "0.1.0"
-dependencies = [
- "cranelift-codegen",
- "cranelift-frontend",
- "cranelift-jit",
- "cranelift-module",
- "lp-jit-util",
- "target-lexicon",
-]
-
-[[package]]
 name = "thiserror"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"

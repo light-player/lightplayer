@@ -11,7 +11,10 @@ use alloc::vec::Vec;
 use alloc::format;
 #[cfg(feature = "std")]
 use std::format;
-#[allow(non_snake_case)]
+#[allow(
+    non_snake_case,
+    reason = "Matrix function names follow GLSL naming convention"
+)]
 impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
     /// Component-wise matrix multiply: result[i][j] = x[i][j] * y[i][j]
     pub fn builtin_matrixCompMult(

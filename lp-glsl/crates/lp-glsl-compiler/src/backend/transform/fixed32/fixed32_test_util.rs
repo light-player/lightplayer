@@ -1,13 +1,13 @@
 use crate::backend::transform::fixed32::types::float_to_fixed16x16;
 
 /// Convert float to 16.16 fixed-point for comparison
-#[allow(dead_code)]
+#[allow(dead_code, reason = "Test utility function")]
 fn float_to_fixed32(f: f32) -> i32 {
     float_to_fixed16x16(f)
 }
 
 /// Convert fixed-point back to float
-#[allow(dead_code)]
+#[allow(dead_code, reason = "Test utility function")]
 fn fixed32_to_float(fixed: i32) -> f32 {
     fixed as f32 / 65536.0
 }

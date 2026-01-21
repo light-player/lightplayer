@@ -70,19 +70,19 @@ impl HostSpecifier {
     }
 
     /// Check if this is a websocket specifier
-    #[allow(dead_code)] // Useful helper method for future use
+    #[allow(dead_code, reason = "Useful helper method for future use")]
     pub fn is_websocket(&self) -> bool {
         matches!(self, HostSpecifier::WebSocket { .. })
     }
 
     /// Check if this is a serial specifier
-    #[allow(dead_code)] // Useful helper method for future use
+    #[allow(dead_code, reason = "Useful helper method for future use")]
     pub fn is_serial(&self) -> bool {
         matches!(self, HostSpecifier::Serial { .. })
     }
 
     /// Check if this is a local specifier
-    #[allow(dead_code)] // Useful helper method for future use
+    #[allow(dead_code, reason = "Useful helper method for future use")]
     pub fn is_local(&self) -> bool {
         matches!(self, HostSpecifier::Local)
     }

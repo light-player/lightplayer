@@ -3,7 +3,10 @@
 //! This module provides structured error types with source locations,
 //! error codes, and helpful diagnostics inspired by Rust's error reporting.
 
-#![allow(dead_code)] // Allow during development
+#![allow(
+    dead_code,
+    reason = "Allow during development - error types may not all be used yet"
+)]
 
 use alloc::{format, string::String, vec::Vec};
 

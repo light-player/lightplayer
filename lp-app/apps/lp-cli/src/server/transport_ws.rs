@@ -24,7 +24,7 @@ struct Connection {
     /// Channel receiver for receiving messages from this connection
     /// Note: Currently unused as messages are received via the async task,
     /// but kept for potential future use or debugging
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "Reserved for future use or debugging")]
     receiver: mpsc::UnboundedReceiver<ClientMessage>,
 }
 
@@ -45,13 +45,13 @@ struct SharedState {
 pub struct WebSocketServerTransport {
     /// TCP listener for accepting new connections
     /// Note: Kept to maintain ownership of the listener, even though not directly accessed
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "Maintains ownership of listener")]
     listener: TcpListener,
     /// Shared state for connection management
     shared_state: Arc<Mutex<SharedState>>,
     /// Tokio runtime for async operations
     /// Note: Kept to ensure runtime stays alive for async tasks
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "Ensures runtime stays alive for async tasks")]
     runtime: Arc<Runtime>,
 }
 

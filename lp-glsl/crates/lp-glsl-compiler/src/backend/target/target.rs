@@ -19,7 +19,7 @@ pub enum Target {
     /// Host JIT target (runs on current machine)
     HostJit {
         /// Optional architecture override (if None, detect from host)
-        #[allow(unused)]
+        #[allow(unused, reason = "Architecture override for future use")]
         arch: Option<Architecture>,
         flags: Flags,
         /// Cached ISA (created lazily)
@@ -47,7 +47,7 @@ impl Target {
     }
 
     /// Create host JIT with specific architecture
-    #[allow(unused)]
+    #[allow(unused, reason = "Method for architecture-specific JIT creation")]
     pub fn host_jit_with_arch(arch: Architecture) -> Result<Self, GlslError> {
         Ok(Self::HostJit {
             arch: Some(arch),
@@ -59,7 +59,10 @@ impl Target {
     /// Create or get cached ISA for this target
     pub fn create_isa(&mut self) -> Result<&OwnedTargetIsa, GlslError> {
         match self {
-            #[allow(unused_variables)]
+            #[allow(
+                unused_variables,
+                reason = "Flags may be used in future ISA configuration"
+            )]
             Target::Rv32Emu { flags, isa } => {
                 if isa.is_none() {
                     #[cfg(feature = "emulator")]
@@ -199,7 +202,7 @@ fn riscv32_triple() -> target_lexicon::Triple {
 }
 
 /// Helper: Convert Architecture to Triple
-#[allow(unused)]
+#[allow(unused, reason = "Utility function for architecture conversion")]
 fn triple_for_arch(arch: Architecture) -> target_lexicon::Triple {
     use target_lexicon::{BinaryFormat, Environment, OperatingSystem, Triple, Vendor};
 
@@ -214,7 +217,7 @@ fn triple_for_arch(arch: Architecture) -> target_lexicon::Triple {
 
 /// Helper: Detect host triple
 #[cfg(feature = "std")]
-#[allow(unused)]
+#[allow(unused, reason = "Utility function for host detection")]
 fn detect_host_triple() -> target_lexicon::Triple {
     target_lexicon::Triple::host()
 }
