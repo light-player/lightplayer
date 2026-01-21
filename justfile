@@ -73,7 +73,7 @@ fmt-check:
 
 # Run clippy checks
 clippy:
-    cargo clippy -- -D warnings
+    cargo clippy --workspace --all-targets -- --no-deps -D warnings
 
 # Build ESP32 app (excluded from workspace, must be built from its directory)
 esp32-build:
