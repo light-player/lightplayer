@@ -47,6 +47,10 @@ pub fn build_object_symbol_map(
             if name.is_empty() {
                 continue; // Skip unnamed symbols
             }
+            // Skip compiler-internal symbols (start with $)
+            if name.starts_with('$') {
+                continue;
+            }
 
             let symbol_addr = symbol.address();
             let symbol_section = symbol.section();

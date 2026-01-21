@@ -113,35 +113,39 @@ pub fn load_object_file(
     let init_address = obj_symbol_map.get("_init").copied();
 
     if let Some(init_addr) = init_address {
-        // Update __USER_MAIN_PTR in ROM LMA (not RAM) so init code copies the correct value
-        // The .data section is loaded into ROM at LMA and copied to RAM by init code
+        // Update __USER_MAIN_PTR in both RAM and ROM LMA
+        // RAM update: needed because init code may have already run when base executable was loaded
+        // LMA update: needed for future init runs
         if let Some(&user_init_ptr_vma) = merged_symbol_map.get("__USER_MAIN_PTR") {
             if user_init_ptr_vma >= RAM_START {
-                // Find the .data section LMA by looking for __data_source_start symbol
-                // or by finding the .data section in the object file we parsed earlier
-                // Actually, we need to parse the base executable to find .data LMA
-                // For now, try to find __data_source_start in merged symbol map
+                let ram_offset = (user_init_ptr_vma - RAM_START) as usize;
+                
+                // Always update RAM directly (init code may have already run)
+                if ram_offset + 4 <= ram.len() {
+                    ram[ram_offset..ram_offset + 4].copy_from_slice(&init_addr.to_le_bytes());
+                }
+                
+                // Also update LMA if __data_source_start is available (for future init runs)
+                // Calculate offset within .data section, not from RAM_START
                 if let Some(&data_source_start) = merged_symbol_map.get("__data_source_start") {
-                    // __USER_MAIN_PTR is at RAM offset 0x0 (VMA 0x80000000)
-                    // Calculate its offset within .data section
-                    let ram_offset = (user_init_ptr_vma - RAM_START) as usize;
-                    // The LMA is data_source_start + offset within section
-                    let lma_offset = data_source_start as usize + ram_offset;
+                    // Find __data_target_start to calculate offset within .data section
+                    let data_offset = if let Some(&data_target_start) = merged_symbol_map.get("__data_target_start") {
+                        // __USER_MAIN_PTR is at user_init_ptr_vma
+                        // __data_target_start is the start of .data section
+                        // Offset within .data = user_init_ptr_vma - data_target_start
+                        (user_init_ptr_vma - data_target_start) as usize
+                    } else {
+                        // Fallback: assume __USER_MAIN_PTR is at start of .data (offset 0)
+                        // This matches the linker script where __USER_MAIN_PTR is first in .data
+                        0
+                    };
+                    
+                    // The LMA is data_source_start + offset within .data section
+                    let lma_offset = data_source_start as usize + data_offset;
 
-                    if lma_offset + 4 > code.len() {
-                        return Err(format!(
-                            "__USER_MAIN_PTR LMA 0x{:x} is out of code buffer bounds (len={})",
-                            lma_offset,
-                            code.len()
-                        ));
-                    }
-                    // Write init address as little-endian u32 to ROM LMA
-                    code[lma_offset..lma_offset + 4].copy_from_slice(&init_addr.to_le_bytes());
-                } else {
-                    // Fallback: update RAM directly (will be overwritten by init code, but might work if init already ran)
-                    let ram_offset = (user_init_ptr_vma - RAM_START) as usize;
-                    if ram_offset + 4 <= ram.len() {
-                        ram[ram_offset..ram_offset + 4].copy_from_slice(&init_addr.to_le_bytes());
+                    if lma_offset + 4 <= code.len() {
+                        // Write init address as little-endian u32 to ROM LMA
+                        code[lma_offset..lma_offset + 4].copy_from_slice(&init_addr.to_le_bytes());
                     }
                 }
             }

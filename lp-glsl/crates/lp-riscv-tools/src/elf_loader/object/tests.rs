@@ -554,7 +554,8 @@ mod tests {
                     last_a0 = emu.get_register(Gpr::A0);
 
                     // Check if we've jumped into __lp_fixed32_sqrt (function was called)
-                    if pc_after >= *sqrt_addr && pc_after < *sqrt_addr + 100 {
+                    // Use a wider range to catch the call (functions can be larger than 100 bytes)
+                    if pc_after >= *sqrt_addr && pc_after < *sqrt_addr + 1000 {
                         called_sqrt = true;
                     }
 
