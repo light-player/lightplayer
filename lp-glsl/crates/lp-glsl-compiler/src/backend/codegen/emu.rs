@@ -57,7 +57,10 @@ pub fn build_emu_executable(
 
     // 1. Define all functions (compile them)
     // Collect function data first to avoid borrowing conflicts
-    let funcs: Vec<(
+    // IMPORTANT: Sort by name to ensure consistent FuncId-to-symbol mapping.
+    // Cranelift's ObjectModule maps FuncIds to symbol names based on definition order,
+    // so we must define functions in the same order they were declared (which should be sorted).
+    let mut funcs: Vec<(
         String,
         cranelift_codegen::ir::Function,
         cranelift_module::FuncId,
@@ -66,6 +69,7 @@ pub fn build_emu_executable(
         .iter()
         .map(|(name, gl_func)| (name.clone(), gl_func.function.clone(), gl_func.func_id))
         .collect();
+    funcs.sort_by_key(|(name, _, _)| name.clone());
 
     // Collect V-Code and disassembly for all functions
     #[cfg(feature = "std")]

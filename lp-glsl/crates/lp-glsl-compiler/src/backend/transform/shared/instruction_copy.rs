@@ -324,6 +324,8 @@ pub fn copy_instruction(
                             )
                         })?;
                     // Declare the imported user function in the new function
+                    // Note: FuncId remapping for transforms is handled at the transform level
+                    // (e.g., in identity/transform.rs and fixed32/converters/calls.rs)
                     let new_user_ref = builder
                         .func
                         .declare_imported_user_function(user_name.clone());
