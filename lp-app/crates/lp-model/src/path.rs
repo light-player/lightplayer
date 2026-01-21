@@ -424,6 +424,48 @@ impl Deref for LpPathBuf {
     }
 }
 
+/// Trait for ergonomic conversion to `&LpPath`
+///
+/// Provides `.as_path()` method for common path-like types, making it easier
+/// to convert strings to `&LpPath` for use with `LpFs` trait methods.
+///
+/// # Examples
+///
+/// ```
+/// use lp_model::path::AsLpPath;
+///
+/// let path_str = "/test.txt";
+/// let path = path_str.as_path();
+/// ```
+pub trait AsLpPath {
+    /// Convert this value to `&LpPath`
+    fn as_path(&self) -> &LpPath;
+}
+
+impl AsLpPath for &str {
+    fn as_path(&self) -> &LpPath {
+        LpPath::new(self)
+    }
+}
+
+impl AsLpPath for String {
+    fn as_path(&self) -> &LpPath {
+        LpPath::new(self.as_str())
+    }
+}
+
+impl AsLpPath for LpPathBuf {
+    fn as_path(&self) -> &LpPath {
+        self.deref()
+    }
+}
+
+impl AsLpPath for &LpPath {
+    fn as_path(&self) -> &LpPath {
+        self
+    }
+}
+
 /// Iterator over path components
 pub struct Components<'a> {
     path: &'a str,
