@@ -416,8 +416,6 @@ pub fn build_emu_executable(
         init_address
     );
 
-
-
     loop {
         if init_steps >= max_init_steps {
             return Err(GlslError::new(
