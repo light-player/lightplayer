@@ -2,9 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+    branches: ["feature/*"]
 
 env:
   RUST_BACKTRACE: 1
@@ -59,4 +57,4 @@ jobs:
 
       - name: Build ESP32 app
         run: just esp32-build
-        continue-on-error: true  # ESP32 build may fail in CI if toolchain differs
+        continue-on-error: true # ESP32 build may fail in CI if toolchain differs
