@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
     branches: ["feature/*"]
+  push:
+    branches: ["feature/*"]
 
 env:
   RUST_BACKTRACE: 1
