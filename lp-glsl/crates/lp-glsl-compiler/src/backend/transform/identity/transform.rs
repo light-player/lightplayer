@@ -39,15 +39,12 @@ impl Transform for IdentityTransform {
                     let new_args: Vec<_> = old_args
                         .iter()
                         .map(|&v| {
-                            value_map
-                                .get(&v)
-                                .copied()
-                                .ok_or_else(|| {
-                                    GlslError::new(
-                                        crate::error::ErrorCode::E0301,
-                                        format!("Value {v:?} not found in value_map"),
-                                    )
-                                })
+                            value_map.get(&v).copied().ok_or_else(|| {
+                                GlslError::new(
+                                    crate::error::ErrorCode::E0301,
+                                    format!("Value {v:?} not found in value_map"),
+                                )
+                            })
                         })
                         .collect::<Result<Vec<_>, _>>()?;
 
@@ -62,8 +59,8 @@ impl Transform for IdentityTransform {
                         ExternalName::TestCase(testcase_name) => {
                             // Convert TestCase name to User name for ObjectModule compatibility
                             // ObjectModule doesn't support TestCase names in relocations (unimplemented!)
-                            let func_name_str = core::str::from_utf8(testcase_name.raw())
-                                .map_err(|e| {
+                            let func_name_str =
+                                core::str::from_utf8(testcase_name.raw()).map_err(|e| {
                                     GlslError::new(
                                         crate::error::ErrorCode::E0301,
                                         format!("Invalid TestCase name encoding: {e}"),
@@ -81,9 +78,8 @@ impl Transform for IdentityTransform {
                                 namespace: 0,
                                 index: new_func_id.as_u32(),
                             };
-                            let new_user_ref = builder
-                                .func
-                                .declare_imported_user_function(new_user_name);
+                            let new_user_ref =
+                                builder.func.declare_imported_user_function(new_user_name);
                             ExternalName::User(new_user_ref)
                         }
                         ExternalName::User(old_user_ref) => {
@@ -107,9 +103,8 @@ impl Transform for IdentityTransform {
                                         namespace: user_name.namespace,
                                         index: new_func_id.as_u32(),
                                     };
-                                    let new_user_ref = builder
-                                        .func
-                                        .declare_imported_user_function(new_user_name);
+                                    let new_user_ref =
+                                        builder.func.declare_imported_user_function(new_user_name);
                                     ExternalName::User(new_user_ref)
                                 } else {
                                     // Fallback: use original if mapping not found

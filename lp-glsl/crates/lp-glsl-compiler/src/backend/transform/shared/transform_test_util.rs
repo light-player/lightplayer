@@ -27,13 +27,13 @@ fn format_module<M: cranelift_module::Module>(
 ) -> String {
     use crate::backend::util::clif_format::format_function;
     use hashbrown::HashMap;
-    
+
     // Build mapping from func_id string to function name for updating external references
     let mut name_mapping: HashMap<String, String> = HashMap::new();
     for (name, gl_func) in &module.fns {
         name_mapping.insert(gl_func.func_id.as_u32().to_string(), name.clone());
     }
-    
+
     let mut result = String::new();
     // Sort functions by name for deterministic output
     let mut funcs: Vec<_> = module.fns.iter().collect();

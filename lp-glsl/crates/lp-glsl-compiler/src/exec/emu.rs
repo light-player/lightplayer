@@ -1091,7 +1091,7 @@ impl GlslExecutable for GlslEmulatorModule {
             Some(cranelift_codegen::data_value::DataValue::I32(v)) => Ok(*v),
             _ => Err(GlslError::new(
                 ErrorCode::E0400,
-                format!("Expected i32 return value, got: {:?}", results),
+                format!("Expected i32 return value, got: {results:?}"),
             )),
         }
     }

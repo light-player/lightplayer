@@ -39,7 +39,7 @@ pub async fn sync_file_change(
     } else {
         path_str
     };
-    let server_path = format!("/projects/{}/{}", project_uid, relative_path);
+    let server_path = format!("/projects/{project_uid}/{relative_path}");
 
     match change.change_type {
         ChangeType::Create | ChangeType::Modify => {
@@ -58,14 +58,14 @@ pub async fn sync_file_change(
             client
                 .fs_write(server_path.as_path(), data)
                 .await
-                .with_context(|| format!("Failed to write file to server: {}", server_path))?;
+                .with_context(|| format!("Failed to write file to server: {server_path}"))?;
         }
         ChangeType::Delete => {
             // Delete file from server
             client
                 .fs_delete_file(server_path.as_path())
                 .await
-                .with_context(|| format!("Failed to delete file on server: {}", server_path))?;
+                .with_context(|| format!("Failed to delete file on server: {server_path}"))?;
         }
     }
 

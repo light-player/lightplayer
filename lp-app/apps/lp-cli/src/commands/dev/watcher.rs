@@ -69,7 +69,7 @@ impl FileWatcher {
                             let normalized_path = match Self::normalize_path_sync(&path, &root) {
                                 Ok(p) => p,
                                 Err(e) => {
-                                    eprintln!("Error normalizing path {:?}: {}", path, e);
+                                    eprintln!("Error normalizing path {path:?}: {e}");
                                     continue;
                                 }
                             };
@@ -104,7 +104,7 @@ impl FileWatcher {
                         }
                     }
                     Err(e) => {
-                        eprintln!("File watcher error: {}", e);
+                        eprintln!("File watcher error: {e}");
                     }
                 }
             },
@@ -179,10 +179,7 @@ impl FileWatcher {
         let relative = canonical_absolute
             .strip_prefix(&canonical_root)
             .with_context(|| {
-                format!(
-                    "Path {:?} is not within root {:?}",
-                    canonical_absolute, canonical_root
-                )
+                format!("Path {canonical_absolute:?} is not within root {canonical_root:?}")
             })?;
 
         // Convert to string with leading /
@@ -190,7 +187,7 @@ impl FileWatcher {
         if path_str.starts_with('/') {
             Ok(path_str)
         } else {
-            Ok(format!("/{}", path_str))
+            Ok(format!("/{path_str}"))
         }
     }
 

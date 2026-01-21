@@ -65,8 +65,7 @@ impl HostSpecifier {
         }
 
         bail!(
-            "Invalid host specifier: '{}'. Supported formats: ws://host:port/, wss://host:port/, serial:auto, serial:/dev/ttyUSB1, local",
-            s
+            "Invalid host specifier: '{s}'. Supported formats: ws://host:port/, wss://host:port/, serial:auto, serial:/dev/ttyUSB1, local"
         )
     }
 
@@ -92,9 +91,9 @@ impl HostSpecifier {
 impl fmt::Display for HostSpecifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            HostSpecifier::WebSocket { url } => write!(f, "{}", url),
+            HostSpecifier::WebSocket { url } => write!(f, "{url}"),
             HostSpecifier::Serial { port: None } => write!(f, "serial:auto"),
-            HostSpecifier::Serial { port: Some(port) } => write!(f, "serial:{}", port),
+            HostSpecifier::Serial { port: Some(port) } => write!(f, "serial:{port}"),
             HostSpecifier::Local => write!(f, "local"),
         }
     }

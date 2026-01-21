@@ -25,7 +25,7 @@ pub extern "C" fn __lp_fixed32_round(x: i32) -> i32 {
         // For negative: add 0.5, then truncate
         let added = x.wrapping_add(half);
         let result = (added >> 16) << 16;
-        
+
         // Special case: if we're at exactly halfway (-1.5, -2.5, etc.),
         // adding 0.5 gives us exactly an integer, but we need to round away from zero
         // (more negative). Check if original was at halfway point.

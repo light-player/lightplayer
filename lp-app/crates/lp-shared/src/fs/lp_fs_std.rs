@@ -177,9 +177,8 @@ impl LpFsStd {
         })?;
 
         for entry in entries {
-            let entry = entry.map_err(|e| {
-                FsError::Filesystem(format!("Failed to read directory entry: {e}"))
-            })?;
+            let entry = entry
+                .map_err(|e| FsError::Filesystem(format!("Failed to read directory entry: {e}")))?;
 
             let entry_path = entry.path();
 
@@ -229,9 +228,8 @@ impl LpFs for LpFsStd {
                 )));
             }
         }
-        fs::write(&full_path, data).map_err(|e| {
-            FsError::Filesystem(format!("Failed to write file {full_path:?}: {e}"))
-        })
+        fs::write(&full_path, data)
+            .map_err(|e| FsError::Filesystem(format!("Failed to write file {full_path:?}: {e}")))
     }
 
     fn file_exists(&self, path: &LpPath) -> Result<bool, FsError> {
@@ -334,9 +332,8 @@ impl LpFs for LpFsStd {
             )));
         }
 
-        fs::remove_file(&full_path).map_err(|e| {
-            FsError::Filesystem(format!("Failed to delete file {full_path:?}: {e}"))
-        })
+        fs::remove_file(&full_path)
+            .map_err(|e| FsError::Filesystem(format!("Failed to delete file {full_path:?}: {e}")))
     }
 
     fn delete_dir(&self, path: &LpPath) -> Result<(), FsError> {

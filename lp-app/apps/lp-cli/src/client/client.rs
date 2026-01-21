@@ -74,13 +74,13 @@ impl LpClient {
         transport
             .send(msg)
             .await
-            .map_err(|e| Error::msg(format!("Transport error: {}", e)))?;
+            .map_err(|e| Error::msg(format!("Transport error: {e}")))?;
 
         // Wait for response
         transport
             .receive()
             .await
-            .map_err(|e| Error::msg(format!("Transport error: {}", e)))
+            .map_err(|e| Error::msg(format!("Transport error: {e}")))
     }
 
     /// Read a file from the server filesystem
@@ -103,7 +103,7 @@ impl LpClient {
         match response.msg {
             ServerMsgBody::Filesystem(FsResponse::Read { data, error, .. }) => {
                 if let Some(err) = error {
-                    return Err(Error::msg(format!("Server error: {}", err)));
+                    return Err(Error::msg(format!("Server error: {err}")));
                 }
                 data.ok_or_else(|| Error::msg("No data in read response"))
             }
@@ -136,7 +136,7 @@ impl LpClient {
         match response.msg {
             ServerMsgBody::Filesystem(FsResponse::Write { error, .. }) => {
                 if let Some(err) = error {
-                    return Err(Error::msg(format!("Server error: {}", err)));
+                    return Err(Error::msg(format!("Server error: {err}")));
                 }
                 Ok(())
             }
@@ -167,7 +167,7 @@ impl LpClient {
         match response.msg {
             ServerMsgBody::Filesystem(FsResponse::DeleteFile { error, .. }) => {
                 if let Some(err) = error {
-                    return Err(Error::msg(format!("Server error: {}", err)));
+                    return Err(Error::msg(format!("Server error: {err}")));
                 }
                 Ok(())
             }
@@ -200,7 +200,7 @@ impl LpClient {
         match response.msg {
             ServerMsgBody::Filesystem(FsResponse::ListDir { entries, error, .. }) => {
                 if let Some(err) = error {
-                    return Err(Error::msg(format!("Server error: {}", err)));
+                    return Err(Error::msg(format!("Server error: {err}")));
                 }
                 Ok(entries)
             }

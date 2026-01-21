@@ -16,7 +16,6 @@ pub extern "C" fn __lp_fixed32_sqrt(x: i32) -> i32 {
 
     let x_scaled = (x as u64) << 16;
     let sqrt_scaled = x_scaled.isqrt();
-    
 
     sqrt_scaled as i32
 }

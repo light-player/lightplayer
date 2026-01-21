@@ -148,7 +148,9 @@ pub fn load_object_sections(
 
         debug!(
             "Loaded section '{}' at offset 0x{:x} ({} bytes)",
-            section_name, current_text_offset, data.len()
+            section_name,
+            current_text_offset,
+            data.len()
         );
 
         current_text_offset += data.len();
@@ -172,7 +174,9 @@ pub fn load_object_sections(
 
         debug!(
             "Loaded section '{}' at RAM offset 0x{:x} ({} bytes)",
-            section_name, current_data_offset, data.len()
+            section_name,
+            current_data_offset,
+            data.len()
         );
 
         current_data_offset += data.len();
@@ -197,7 +201,9 @@ pub fn load_object_sections(
 
         debug!(
             "Loaded section '{}' at offset 0x{:x} ({} bytes)",
-            section_name, rodata_start_aligned, data.len()
+            section_name,
+            rodata_start_aligned,
+            data.len()
         );
     }
 

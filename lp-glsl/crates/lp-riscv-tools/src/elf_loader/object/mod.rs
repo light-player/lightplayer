@@ -119,17 +119,19 @@ pub fn load_object_file(
         if let Some(&user_init_ptr_vma) = merged_symbol_map.get("__USER_MAIN_PTR") {
             if user_init_ptr_vma >= RAM_START {
                 let ram_offset = (user_init_ptr_vma - RAM_START) as usize;
-                
+
                 // Always update RAM directly (init code may have already run)
                 if ram_offset + 4 <= ram.len() {
                     ram[ram_offset..ram_offset + 4].copy_from_slice(&init_addr.to_le_bytes());
                 }
-                
+
                 // Also update LMA if __data_source_start is available (for future init runs)
                 // Calculate offset within .data section, not from RAM_START
                 if let Some(&data_source_start) = merged_symbol_map.get("__data_source_start") {
                     // Find __data_target_start to calculate offset within .data section
-                    let data_offset = if let Some(&data_target_start) = merged_symbol_map.get("__data_target_start") {
+                    let data_offset = if let Some(&data_target_start) =
+                        merged_symbol_map.get("__data_target_start")
+                    {
                         // __USER_MAIN_PTR is at user_init_ptr_vma
                         // __data_target_start is the start of .data section
                         // Offset within .data = user_init_ptr_vma - data_target_start
@@ -139,7 +141,7 @@ pub fn load_object_file(
                         // This matches the linker script where __USER_MAIN_PTR is first in .data
                         0
                     };
-                    
+
                     // The LMA is data_source_start + offset within .data section
                     let lma_offset = data_source_start as usize + data_offset;
 

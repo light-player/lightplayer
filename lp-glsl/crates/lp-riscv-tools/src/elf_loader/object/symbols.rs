@@ -218,8 +218,7 @@ pub fn merge_symbol_maps(
             // Undefined symbols (0x0) in object file should resolve to base executable
             if base_addr != *obj_addr && *obj_addr != 0 {
                 conflicts.push(format!(
-                    "Symbol '{}' conflict: base executable has 0x{:08x}, object file has 0x{:08x}",
-                    name, base_addr, obj_addr
+                    "Symbol '{name}' conflict: base executable has 0x{base_addr:08x}, object file has 0x{obj_addr:08x}"
                 ));
             }
             // Keep base version (already in merged)

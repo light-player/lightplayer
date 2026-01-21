@@ -333,8 +333,8 @@ pub(crate) fn convert_call(
                         // Convert TestCase name to User name for ObjectModule compatibility
                         // ObjectModule doesn't support TestCase names in relocations (unimplemented!)
                         // Extract function name from TestCase format (%name -> name)
-                        let func_name_str = core::str::from_utf8(testcase_name.raw())
-                            .map_err(|e| {
+                        let func_name_str =
+                            core::str::from_utf8(testcase_name.raw()).map_err(|e| {
                                 GlslError::new(
                                     ErrorCode::E0400,
                                     format!("Invalid TestCase name encoding: {e}"),

@@ -82,9 +82,10 @@ fn discover_builtins(dir: &Path) -> Result<Vec<BuiltinInfo>, Box<dyn std::error:
 
         for item in ast.items {
             if let Item::Fn(func) = item
-                && let Some(builtin) = extract_builtin(&func, file_name) {
-                    builtins.push(builtin);
-                }
+                && let Some(builtin) = extract_builtin(&func, file_name)
+            {
+                builtins.push(builtin);
+            }
         }
     }
 

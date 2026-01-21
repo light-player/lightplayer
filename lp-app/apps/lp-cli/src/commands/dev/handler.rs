@@ -94,7 +94,7 @@ async fn handle_dev_async(
     host_spec: HostSpecifier,
 ) -> Result<()> {
     // Format host specifier for error messages before it's moved
-    let host_spec_str = format!("{:?}", host_spec);
+    let host_spec_str = format!("{host_spec:?}");
 
     // Connect to server
     let transport = client_connect(host_spec).context("Failed to connect to server")?;
@@ -112,10 +112,10 @@ async fn handle_dev_async(
     // This ensures the project exists on the server before we try to load it
     push_project_async(&client, &*local_fs, &project_uid)
         .await
-        .with_context(|| format!("Failed to push project to server (host: {})", host_spec_str))?;
+        .with_context(|| format!("Failed to push project to server (host: {host_spec_str})"))?;
 
     // Load project on server
-    let project_path = format!("projects/{}", project_uid);
+    let project_path = format!("projects/{project_uid}");
     let project_handle = client
         .project_load(&project_path)
         .await
@@ -131,7 +131,7 @@ async fn handle_dev_async(
             Arc::new(LpFsStd::new(args.dir.clone()));
         tokio::spawn(async move {
             if let Err(e) = fs_loop(transport, project_dir, project_uid, local_fs_for_loop).await {
-                eprintln!("fs_loop error: {}", e);
+                eprintln!("fs_loop error: {e}");
             }
         })
     };
@@ -165,7 +165,7 @@ async fn handle_dev_async(
             options,
             Box::new(|_cc| Box::new(ui_state)),
         ) {
-            eprintln!("UI error: {}", e);
+            eprintln!("UI error: {e}");
         }
     }
 

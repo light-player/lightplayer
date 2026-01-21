@@ -26,7 +26,6 @@ pub extern "C" fn __lp_fixed32_mul(a: i32, b: i32) -> i32 {
 
     // Saturate to fixed-point range BEFORE truncation
     // Clamp to [MIN_FIXED, MAX_FIXED]
-    
 
     if shifted_wide > MAX_FIXED as i64 {
         MAX_FIXED

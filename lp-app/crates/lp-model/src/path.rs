@@ -367,7 +367,8 @@ impl LpPathBuf {
         let mut components: Vec<&str> = self
             .components()
             .collect::<Vec<_>>()
-            .iter().copied()
+            .iter()
+            .copied()
             .collect();
 
         // Add relative path components

@@ -190,9 +190,7 @@ fn parse_specifier(specifier: &str) -> Result<Vec<TestSpec>> {
                     );
                 }
             } else {
-                bail!(
-                    "Invalid specifier: {specifier}. Expected format: vec/vec4/fn-equal"
-                );
+                bail!("Invalid specifier: {specifier}. Expected format: vec/vec4/fn-equal");
             }
         }
         3 => {
@@ -240,8 +238,8 @@ fn parse_type_and_dimension(s: &str) -> Result<(VecType, Dimension)> {
         bail!("Invalid vector type prefix in: {s}");
     };
 
-    let dimension = parse_dimension(s)
-        .ok_or_else(|| anyhow::anyhow!("Could not parse dimension from: {s}"))?;
+    let dimension =
+        parse_dimension(s).ok_or_else(|| anyhow::anyhow!("Could not parse dimension from: {s}"))?;
 
     Ok((vec_type, dimension))
 }

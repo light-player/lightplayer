@@ -126,9 +126,8 @@ impl Riscv32Emulator {
                     let zero_count = idx - zero_start;
                     if zero_count > MAX_ZERO_RUN {
                         // Summarize long zero runs
-                        result.push_str(&format!(
-                            "  ... ({zero_count} zero instructions skipped)\n"
-                        ));
+                        result
+                            .push_str(&format!("  ... ({zero_count} zero instructions skipped)\n"));
                     } else {
                         // Show short zero runs
                         for i in 0..zero_count {
@@ -155,9 +154,7 @@ impl Riscv32Emulator {
         if let Some(zero_start) = zero_run_start {
             let zero_count = instructions.len() - zero_start;
             if zero_count > MAX_ZERO_RUN {
-                result.push_str(&format!(
-                    "  ... ({zero_count} zero instructions skipped)\n"
-                ));
+                result.push_str(&format!("  ... ({zero_count} zero instructions skipped)\n"));
             } else {
                 for i in 0..zero_count {
                     let zero_pc = instructions[zero_start + i].0;
@@ -217,9 +214,7 @@ impl Riscv32Emulator {
                 for (idx, (pc, _inst_word, disasm)) in instructions[start..end].iter().enumerate() {
                     let actual_idx = start + idx;
                     let marker = if *pc == error_pc { ">>> " } else { "    " };
-                    result.push_str(&format!(
-                        "{marker}{actual_idx:3}: 0x{pc:08x}: {disasm}\n"
-                    ));
+                    result.push_str(&format!("{marker}{actual_idx:3}: 0x{pc:08x}: {disasm}\n"));
                 }
 
                 if end < instructions.len() {
@@ -328,18 +323,12 @@ impl Riscv32Emulator {
                                 )
                                 .unwrap();
                             } else {
-                                write!(
-                                    result,
-                                    " ; branch taken (rs1={rs1_val}, rs2={rs2_val})"
-                                )
-                                .unwrap();
+                                write!(result, " ; branch taken (rs1={rs1_val}, rs2={rs2_val})")
+                                    .unwrap();
                             }
                         } else {
-                            write!(
-                                result,
-                                " ; branch not taken (rs1={rs1_val}, rs2={rs2_val})"
-                            )
-                            .unwrap();
+                            write!(result, " ; branch not taken (rs1={rs1_val}, rs2={rs2_val})")
+                                .unwrap();
                         }
                     }
                     InstLog::Jump {

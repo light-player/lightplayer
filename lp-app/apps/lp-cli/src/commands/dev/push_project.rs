@@ -31,7 +31,7 @@ pub async fn push_project_async(
     // List all files recursively in the project directory
     let entries = local_fs
         .list_dir("/".as_path(), true)
-        .map_err(|e| anyhow::anyhow!("Failed to list project files: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Failed to list project files: {e}"))?;
 
     // Push each file to the server (skip directories)
     for entry_path in entries {
@@ -60,7 +60,7 @@ pub async fn push_project_async(
                 {
                     continue;
                 }
-                return Err(anyhow::anyhow!("Failed to read file {}: {}", entry_str, e));
+                return Err(anyhow::anyhow!("Failed to read file {entry_str}: {e}"));
             }
         };
 
@@ -71,13 +71,13 @@ pub async fn push_project_async(
         } else {
             entry_str
         };
-        let server_path = format!("/projects/{}/{}", project_uid, relative_path);
+        let server_path = format!("/projects/{project_uid}/{relative_path}");
 
         // Write file to server
         client
             .fs_write(server_path.as_path(), data)
             .await
-            .with_context(|| format!("Failed to write file to server: {}", server_path))?;
+            .with_context(|| format!("Failed to write file to server: {server_path}"))?;
     }
 
     Ok(())
