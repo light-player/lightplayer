@@ -66,7 +66,9 @@ pub async fn pull_project_async(
             } else {
                 format!("/{}", relative)
             }
-        } else if file_path_str == format!("/projects/{}", project_uid) || file_path_str == format!("projects/{}", project_uid) {
+        } else if file_path_str == format!("/projects/{}", project_uid)
+            || file_path_str == format!("projects/{}", project_uid)
+        {
             // This is the project directory itself, skip
             continue;
         } else {

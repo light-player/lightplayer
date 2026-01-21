@@ -69,8 +69,8 @@ pub enum ClientRequest {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::server::FsResponse;
     use crate::AsLpPathBuf;
+    use crate::server::FsResponse;
     use alloc::string::ToString;
 
     #[test]
