@@ -58,7 +58,7 @@ test-filetests: build-builtins
 
 # Format code
 fmt:
-    cargo fmt
+    cargo fmt --all
 
 # Run clippy and auto-fix issues
 clippy-fix:
@@ -69,7 +69,7 @@ fix: fmt clippy-fix
 
 # Check formatting without modifying files
 fmt-check:
-    cargo fmt -- --check
+    cargo fmt --all -- --check
 
 # Run clippy checks
 clippy:
@@ -91,3 +91,5 @@ clean:
 # Clean everything including target directories
 clean-all: clean
     rm -rf {{lp_glsl_dir}}/target
+
+check: fmt-check clippy
