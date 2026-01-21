@@ -17,9 +17,8 @@ WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Directory is relative to WORKSPACE_ROOT
 # ============================================================================
 declare -a COMMANDS=(
-    "lightplayer tests|lightplayer|cargo test -p lp-glsl-filetests --test filetests"
-    "32-bit filetests|.|cargo run -p cranelift-tools --bin clif-util -- test cranelift/filetests/filetests/32bit/"
-    "ESP32 build|lightplayer|cargo build --target riscv32imac-unknown-none-elf -p esp32-glsl-jit --release"
+    "GLSL filetests|lp-glsl|cargo test -p lp-glsl-filetests --test filetests"
+    "ESP32 build|lp-glsl|cargo build --target riscv32imac-unknown-none-elf -p esp32-glsl-jit --release"
 )
 
 # ============================================================================

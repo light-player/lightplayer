@@ -5,11 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Try to find workspace root if script is run from elsewhere
-# Look for Cargo.toml or cranelift directory
+# Look for Cargo.toml and lp-glsl directory
 find_workspace_root() {
     local dir="$1"
     while [ "$dir" != "/" ]; do
-        if [ -f "$dir/Cargo.toml" ] && [ -d "$dir/cranelift" ]; then
+        if [ -f "$dir/Cargo.toml" ] && [ -d "$dir/lp-glsl" ]; then
             echo "$dir"
             return 0
         fi
@@ -19,7 +19,7 @@ find_workspace_root() {
 }
 
 # If workspace root detection from script location fails, try current directory
-if [ ! -f "$WORKSPACE_ROOT/Cargo.toml" ] || [ ! -d "$WORKSPACE_ROOT/cranelift" ]; then
+if [ ! -f "$WORKSPACE_ROOT/Cargo.toml" ] || [ ! -d "$WORKSPACE_ROOT/lp-glsl" ]; then
     WORKSPACE_ROOT="$(find_workspace_root "$(pwd)")" || {
         echo "Error: Could not find workspace root. Please run from the workspace root directory." >&2
         exit 1
