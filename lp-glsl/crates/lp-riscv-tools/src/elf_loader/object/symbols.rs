@@ -69,8 +69,8 @@ pub fn build_object_symbol_map(
                 };
 
                 match section_name {
-                    Some(".text") => {
-                        // .text section symbol: adjust by text_placement
+                    Some(name) if name == ".text" || name.starts_with(".text.") => {
+                        // .text section or subsection symbol: adjust by text_placement
                         // Get section VMA to determine if symbol_addr is absolute or relative
                         let section_vma = symbol_section
                             .index()
@@ -78,20 +78,59 @@ pub fn build_object_symbol_map(
                             .map(|s| s.address())
                             .unwrap_or(0);
 
+                        // Calculate offset of this subsection within combined .text region
+                        // We need to sum sizes of all .text sections before this one
+                        let mut subsection_offset = 0u32;
+                        if name != ".text" {
+                            // This is a subsection - find its position
+                            for section in obj.sections() {
+                                if let Ok(sec_name) = section.name() {
+                                    if sec_name == ".text" || sec_name.starts_with(".text.") {
+                                        if sec_name == name {
+                                            break; // Found our subsection
+                                        }
+                                        // Add size of this section (aligned)
+                                        let sec_size = section.size() as usize;
+                                        subsection_offset = (subsection_offset + sec_size as u32 + 3) & !3;
+                                    }
+                                }
+                            }
+                        }
+
                         if section_vma == 0 {
                             // Section starts at 0, so symbol_addr is section-relative offset
-                            text_placement.wrapping_add(symbol_addr as u32)
+                            text_placement
+                                .wrapping_add(subsection_offset)
+                                .wrapping_add(symbol_addr as u32)
                         } else {
                             // Section has non-zero VMA - symbol_addr is absolute, need to subtract VMA first
                             let offset = (symbol_addr - section_vma) as u32;
-                            text_placement.wrapping_add(offset)
+                            text_placement.wrapping_add(subsection_offset).wrapping_add(offset)
                         }
                     }
-                    Some(".data") => {
-                        // .data section symbol: adjust by RAM_START + data_placement
+                    Some(name) if name == ".data" || name.starts_with(".data.") => {
+                        // .data section or subsection symbol: adjust by RAM_START + data_placement
+                        // Calculate offset of this subsection within combined .data region
+                        let mut subsection_offset = 0u32;
+                        if name != ".data" {
+                            // This is a subsection - find its position
+                            for section in obj.sections() {
+                                if let Ok(sec_name) = section.name() {
+                                    if sec_name == ".data" || sec_name.starts_with(".data.") {
+                                        if sec_name == name {
+                                            break; // Found our subsection
+                                        }
+                                        // Add size of this section (aligned)
+                                        let sec_size = section.size() as usize;
+                                        subsection_offset = (subsection_offset + sec_size as u32 + 3) & !3;
+                                    }
+                                }
+                            }
+                        }
                         // symbol_addr is section-relative offset
                         RAM_START
                             .wrapping_add(data_placement)
+                            .wrapping_add(subsection_offset)
                             .wrapping_add(symbol_addr as u32)
                     }
                     Some(".rodata") => {
