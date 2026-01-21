@@ -42,20 +42,8 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v3
 
-      - name: Check formatting
-        run: just fmt-check
-
-      - name: Run clippy
-        run: just clippy
-
-      - name: Build workspace
-        run: just build
-
-      - name: Build builtins-app (required for emulator tests)
-        run: just build-builtins
-
-      - name: Run tests
-        run: just test
+      - name: Validate
+        run: just validate
 
       - name: Build ESP32 app
         run: just esp32-build

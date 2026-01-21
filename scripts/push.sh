@@ -265,101 +265,55 @@ wait_for_workflow_start() {
   return 1
 }
 
-# Watch workflow until completion
+# Watch workflow until completion using gh run watch for live output
 # Returns 0 (success) if successful, 1 (failure) if failed
 watch_workflow() {
   local run_id="$1"
   local run_url="$2"
   local pr_url="$3"
-  local max_wait=1800  # 30 minutes
-  local elapsed=0
-  local interval=5     # Check every 5 seconds
-  local consecutive_failures=0
-  local max_consecutive_failures=5
-
-  while [[ $elapsed -lt $max_wait ]]; do
-    # Get both status and conclusion in one call for efficiency
-    local run_info
-    run_info="$(gh run view "$run_id" --json status,conclusion 2>/dev/null || echo "")"
-    
-    if [[ -z "$run_info" ]]; then
-      consecutive_failures=$((consecutive_failures + 1))
-      if [[ $consecutive_failures -ge $max_consecutive_failures ]]; then
-        echo
-        printf "%sError: Could not fetch workflow status after %s attempts%s\n" "${RED}" "$max_consecutive_failures" "${NC}"
-        if [[ -n "$run_url" ]]; then
-          printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
-        else
-          printf "Run ID: %s\n" "$run_id"
-        fi
-        return 1
-      fi
-      echo
-      printf "%sWarning: Could not fetch workflow status. Retrying... (attempt %s/%s)%s\n" "${YELLOW}" "$consecutive_failures" "$max_consecutive_failures" "${NC}"
-      sleep "$interval"
-      elapsed=$((elapsed + interval))
-      continue
-    fi
-    
-    # Reset failure counter on success
-    consecutive_failures=0
-
-    local status conclusion
-    status="$(echo "$run_info" | jq -r '.status // "unknown"')"
-    conclusion="$(echo "$run_info" | jq -r '.conclusion // "none"')"
-
-    # Check if workflow is completed
-    if [[ "$status" == "completed" ]]; then
-      if [[ "$conclusion" == "success" ]]; then
-        printf "\r%s%s Build checks passed\n" "${SUCCESS}" "${NC}"
-        if [[ -n "$run_url" ]]; then
-          printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
-        fi
-        return 0
-      else
-        printf "\r%s%s Build checks failed\n" "${FAIL}" "${NC}"
-        if [[ -n "$run_url" ]]; then
-          printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
-        fi
-        handle_workflow_failure "$run_id" "$run_url" "$pr_url"
-        return 1
-      fi
-    fi
-
-    # Also check conclusion even if status isn't "completed" yet
-    # Sometimes conclusion is set before status becomes "completed"
-    if [[ "$conclusion" != "none" ]] && [[ "$conclusion" != "null" ]]; then
-      if [[ "$conclusion" == "success" ]]; then
-        printf "\r%s%s Build checks passed\n" "${SUCCESS}" "${NC}"
-        if [[ -n "$run_url" ]]; then
-          printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
-        fi
-        return 0
-      elif [[ "$conclusion" == "failure" ]] || [[ "$conclusion" == "cancelled" ]]; then
-        printf "\r%s%s Build checks failed\n" "${FAIL}" "${NC}"
-        if [[ -n "$run_url" ]]; then
-          printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
-        fi
-        handle_workflow_failure "$run_id" "$run_url" "$pr_url"
-        return 1
-      fi
-    fi
-
-    # Show progress (only every 30 seconds to keep it quiet)
-    if [[ $((elapsed % 30)) -eq 0 ]] && [[ $elapsed -gt 0 ]]; then
-      echo -n "."
-    fi
-
-    sleep "$interval"
-    elapsed=$((elapsed + interval))
-  done
 
   echo
-  printf "%sTimeout waiting for workflow to complete%s\n" "${YELLOW}" "${NC}"
+  printf "%s%s Watching workflow run (live output)...%s\n" "${SPINNER}" "${NC}" "${NC}"
   if [[ -n "$run_url" ]]; then
     printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
   fi
-  return 1
+  echo
+
+  # Use gh run watch to show live output
+  # This will stream the workflow logs and exit when the run completes
+  # --exit-status makes it exit with the same status as the workflow
+  if gh run watch "$run_id" --exit-status; then
+    printf "\r%s%s Build checks passed\n" "${SUCCESS}" "${NC}"
+    if [[ -n "$run_url" ]]; then
+      printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
+    fi
+    return 0
+  else
+    # Check the actual conclusion to see if it failed or was cancelled
+    local run_info
+    run_info="$(gh run view "$run_id" --json status,conclusion 2>/dev/null || echo "")"
+    
+    if [[ -n "$run_info" ]]; then
+      local status conclusion
+      status="$(echo "$run_info" | jq -r '.status // "unknown"')"
+      conclusion="$(echo "$run_info" | jq -r '.conclusion // "none"')"
+      
+      if [[ "$status" == "completed" ]] && [[ "$conclusion" == "success" ]]; then
+        printf "\r%s%s Build checks passed\n" "${SUCCESS}" "${NC}"
+        if [[ -n "$run_url" ]]; then
+          printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
+        fi
+        return 0
+      fi
+    fi
+    
+    printf "\r%s%s Build checks failed\n" "${FAIL}" "${NC}"
+    if [[ -n "$run_url" ]]; then
+      printf "Run: %s%s%s\n" "${GRAY}" "$run_url" "${NC}"
+    fi
+    handle_workflow_failure "$run_id" "$run_url" "$pr_url"
+    return 1
+  fi
 }
 
 # Handle workflow failure - download logs and analyze
