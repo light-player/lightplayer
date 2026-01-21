@@ -50,9 +50,9 @@ pub async fn sync_file_change(
             }
 
             // Read file from local filesystem
-            let data = local_fs
-                .read_file(change.path.as_path())
-                .map_err(|e| anyhow::anyhow!("Failed to read file {}: {}", change.path.as_str(), e))?;
+            let data = local_fs.read_file(change.path.as_path()).map_err(|e| {
+                anyhow::anyhow!("Failed to read file {}: {}", change.path.as_str(), e)
+            })?;
 
             // Write file to server
             client

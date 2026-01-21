@@ -145,8 +145,7 @@ fn apply_single_relocation(
             let offset = reloc.offset as usize;
             if offset + 4 > buffer_slice.len() {
                 return Err(format!(
-                    "R_RISCV_32 relocation at offset {} requires 4 bytes",
-                    offset
+                    "R_RISCV_32 relocation at offset {offset} requires 4 bytes"
                 ));
             }
 

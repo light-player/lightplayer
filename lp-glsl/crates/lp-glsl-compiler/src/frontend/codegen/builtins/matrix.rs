@@ -64,8 +64,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
                 return Err(GlslError::new(
                     ErrorCode::E0104,
                     format!(
-                        "outerProduct() requires matching vector sizes (got {} and {})",
-                        vec1_size, vec2_size
+                        "outerProduct() requires matching vector sizes (got {vec1_size} and {vec2_size})"
                     ),
                 ));
             }
@@ -306,10 +305,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
             _ => {
                 return Err(GlslError::new(
                     ErrorCode::E0104,
-                    format!(
-                        "determinant() not supported for {}-dimensional matrices",
-                        rows
-                    ),
+                    format!("determinant() not supported for {rows}-dimensional matrices"),
                 ));
             }
         };
@@ -588,7 +584,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
             _ => {
                 return Err(GlslError::new(
                     ErrorCode::E0104,
-                    format!("inverse() not supported for {}-dimensional matrices", rows),
+                    format!("inverse() not supported for {rows}-dimensional matrices"),
                 ));
             }
         }

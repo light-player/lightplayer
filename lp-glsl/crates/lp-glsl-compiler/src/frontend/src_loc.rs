@@ -273,12 +273,12 @@ impl GlSourceMap {
         for (idx, line) in source_lines.iter().enumerate() {
             let line_num = start_line + idx;
             if line_num == span.start_line {
-                source_display.push_str(&format!("{:>4} | {}\n", line_num, line));
+                source_display.push_str(&format!("{line_num:>4} | {line}\n"));
                 // Point to the column if it's valid
                 let col_pos = span.start_column.saturating_sub(1).min(line.len()).min(200);
                 source_display.push_str(&format!("     | {}^ here\n", " ".repeat(col_pos)));
             } else {
-                source_display.push_str(&format!("{:>4} | {}\n", line_num, line));
+                source_display.push_str(&format!("{line_num:>4} | {line}\n"));
             }
         }
         Some(String::from(source_display.trim_end()))

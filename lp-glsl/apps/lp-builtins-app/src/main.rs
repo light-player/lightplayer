@@ -74,9 +74,7 @@ fn panic_syscall(
 /// Exit the interpreter
 #[inline(always)]
 fn ebreak() -> ! {
-    unsafe {
-        asm!("ebreak", options(nostack, noreturn))
-    }
+    unsafe { asm!("ebreak", options(nostack, noreturn)) }
 }
 
 /// Panic handler

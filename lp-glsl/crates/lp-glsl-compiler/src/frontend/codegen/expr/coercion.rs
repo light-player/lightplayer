@@ -104,7 +104,7 @@ pub fn coerce_to_type_with_location<M: cranelift_module::Module>(
             Ok(ctx.builder.ins().fcvt_from_uint(types::F32, val))
         }
         _ => {
-            let error_msg = format!("cannot implicitly convert {:?} to {:?}", from_ty, to_ty);
+            let error_msg = format!("cannot implicitly convert {from_ty:?} to {to_ty:?}");
             let mut error = GlslError::new(ErrorCode::E0103, error_msg);
             if let Some(s) = span {
                 error = error.with_location(source_span_to_location(&s));

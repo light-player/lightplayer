@@ -88,8 +88,7 @@ pub fn handle_got_hi20(ctx: &mut RelocationContext, reloc: &RelocationInfo) -> R
     let offset = reloc.offset as usize;
     if offset + 4 > ctx.buffer.len() {
         return Err(format!(
-            "GOT_HI20 relocation at offset {} requires 4 bytes",
-            offset
+            "GOT_HI20 relocation at offset {offset} requires 4 bytes"
         ));
     }
 
@@ -190,8 +189,7 @@ pub fn handle_pcrel_hi20(
     let offset = reloc.offset as usize;
     if offset + 4 > ctx.buffer.len() {
         return Err(format!(
-            "PCREL_HI20 relocation at offset {} requires 4 bytes",
-            offset
+            "PCREL_HI20 relocation at offset {offset} requires 4 bytes"
         ));
     }
 
@@ -258,8 +256,7 @@ pub fn handle_pcrel_lo12_i(
     let offset = reloc.offset as usize;
     if offset + 4 > ctx.buffer.len() {
         return Err(format!(
-            "PCREL_LO12_I relocation at offset {} requires 4 bytes",
-            offset
+            "PCREL_LO12_I relocation at offset {offset} requires 4 bytes"
         ));
     }
 
@@ -325,8 +322,7 @@ pub fn handle_pcrel_lo12_i(
 
         if auipc_buffer_offset >= ctx.buffer.len() || auipc_buffer_offset + 4 > ctx.buffer.len() {
             return Err(format!(
-                "Cannot read auipc instruction for PCREL_LO12_I: auipc would be at buffer offset {}",
-                auipc_buffer_offset
+                "Cannot read auipc instruction for PCREL_LO12_I: auipc would be at buffer offset {auipc_buffer_offset}"
             ));
         }
 
@@ -444,8 +440,7 @@ pub fn handle_abs32(
     let offset = reloc.offset as usize;
     if offset + 4 > ctx.buffer.len() {
         return Err(format!(
-            "R_RISCV_32 relocation at offset {} requires 4 bytes",
-            offset
+            "R_RISCV_32 relocation at offset {offset} requires 4 bytes"
         ));
     }
 

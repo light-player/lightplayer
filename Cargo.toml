@@ -15,13 +15,40 @@ members = [
     "lp-glsl/crates/lp-jit-util",
     "lp-glsl/crates/lp-riscv-shared",
     "lp-glsl/crates/lp-riscv-tools",
-    "lp-glsl/apps/esp32-glsl-jit",
     "lp-glsl/apps/lp-builtin-gen",
     "lp-glsl/apps/lp-builtins-app",
     "lp-glsl/apps/lp-test",
     "lp-glsl/apps/test-structreturn",
 ]
 resolver = "2"
+
+# Exclude ESP32 app from workspace (it requires riscv32imac-unknown-none-elf target)
+# Build it explicitly with: just esp32-build
+exclude = ["lp-glsl/apps/esp32-glsl-jit"]
+
+# Exclude lp-builtins-app from default workspace builds (it's no_std, only builds for RISC-V)
+# It's still in workspace members so it can use workspace dependencies
+# Build it explicitly with: just build-builtins
+default-members = [
+    # lp-app workspace members
+    "lp-app/crates/lp-engine",
+    "lp-app/crates/lp-engine-client",
+    "lp-app/crates/lp-shared",
+    "lp-app/crates/lp-server",
+    "lp-app/apps/lp-cli",
+    "lp-app/crates/lp-model",
+    # lp-glsl workspace members (excluding lp-builtins-app)
+    "lp-glsl/crates/lp-builtins",
+    "lp-glsl/crates/lp-filetests-gen",
+    "lp-glsl/crates/lp-glsl-compiler",
+    "lp-glsl/crates/lp-glsl-filetests",
+    "lp-glsl/crates/lp-jit-util",
+    "lp-glsl/crates/lp-riscv-shared",
+    "lp-glsl/crates/lp-riscv-tools",
+    "lp-glsl/apps/lp-builtin-gen",
+    "lp-glsl/apps/lp-test",
+    "lp-glsl/apps/test-structreturn",
+]
 
 [workspace.package]
 version = "40.0.0"
@@ -82,12 +109,3 @@ serde_json = { version = "1.0.80", default-features = false, features = ["alloc"
 # Link-time optimization for all release builds - saves ~100-300 KB
 # This applies to all packages in the workspace
 lto = true
-
-[profile.release.package.esp32-glsl-jit]
-# Size optimizations for embedded target (ESP32-C3)
-# Strip debuginfo but keep symbols (needed for defmt/probe-rs) - saves ~1-1.5 MB
-strip = "debuginfo"
-# Optimize for size instead of speed - saves ~200-500 KB
-opt-level = "z"
-# Single codegen unit for better dead code elimination - saves ~50-100 KB
-codegen-units = 1

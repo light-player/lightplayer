@@ -51,7 +51,7 @@ pub fn resolve_component_lvalue<M: cranelift_module::Module>(
         let span = extract_span_from_expr(base_expr);
         return Err(GlslError::new(
             ErrorCode::E0112,
-            format!("component access on non-vector type: {:?}", base_ty),
+            format!("component access on non-vector type: {base_ty:?}"),
         )
         .with_location(source_span_to_location(&span)));
     }

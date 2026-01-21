@@ -105,8 +105,7 @@ pub fn check_assignment_with_span(
     if !can_implicitly_convert(rhs_ty, lhs_ty) {
         let mut error = GlslError::new(ErrorCode::E0102, "type mismatch in assignment")
             .with_note(format!(
-                "cannot assign value of type `{:?}` to variable of type `{:?}`",
-                rhs_ty, lhs_ty
+                "cannot assign value of type `{rhs_ty:?}` to variable of type `{lhs_ty:?}`"
             ))
             .with_note("help: consider using an explicit type conversion");
 

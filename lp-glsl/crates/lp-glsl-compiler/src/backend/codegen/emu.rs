@@ -101,7 +101,7 @@ pub fn build_emu_executable(
                 // TODO: This is a hacky way to get the verifier error and it should be improved
                 // Check if this is a verifier error by checking the error message
                 // If it is, verify the function again to get detailed error messages
-                let error_str = format!("{}", e);
+                let error_str = format!("{e}");
                 let error_msg = if error_str.contains("Verifier errors") {
                     // It's a verifier error - verify the function again to get detailed errors
                     use cranelift_codegen::verifier::verify_function;
@@ -128,10 +128,10 @@ pub fn build_emu_executable(
                         }
                     } else {
                         // Fallback if verification somehow succeeds
-                        format!("Failed to define function '{}': {}", name, e)
+                        format!("Failed to define function '{name}': {e}")
                     }
                 } else {
-                    format!("Failed to define function '{}': {}", name, e)
+                    format!("Failed to define function '{name}': {e}")
                 };
 
                 let mut error = GlslError::new(ErrorCode::E0400, error_msg);
@@ -141,23 +141,21 @@ pub fn build_emu_executable(
                 match (&original_clif, &transformed_clif) {
                     (Some(original), Some(transformed)) if original != transformed => {
                         error = error.with_note(format!(
-                            "=== CLIF IR (BEFORE transformation) ===\n{}",
-                            original
+                            "=== CLIF IR (BEFORE transformation) ===\n{original}"
                         ));
                         error = error.with_note(format!(
-                            "=== CLIF IR (AFTER transformation) ===\n{}",
-                            transformed
+                            "=== CLIF IR (AFTER transformation) ===\n{transformed}"
                         ));
                     }
                     (Some(ir), Some(_)) => {
                         // They're the same, just show one
-                        error = error.with_note(format!("=== CLIF IR ===\n{}", ir));
+                        error = error.with_note(format!("=== CLIF IR ===\n{ir}"));
                     }
                     (Some(ir), None) => {
-                        error = error.with_note(format!("=== CLIF IR ===\n{}", ir));
+                        error = error.with_note(format!("=== CLIF IR ===\n{ir}"));
                     }
                     (None, Some(ir)) => {
-                        error = error.with_note(format!("=== CLIF IR ===\n{}", ir));
+                        error = error.with_note(format!("=== CLIF IR ===\n{ir}"));
                     }
                     (None, None) => {
                         // No CLIF IR available
@@ -213,12 +211,12 @@ pub fn build_emu_executable(
 
                 // Store actual disassembly (RISC-V assembly)
                 if let Some(ref disasm_str) = disasm {
-                    all_disasm_parts.push(format!("// function {}:\n{}", name, disasm_str));
+                    all_disasm_parts.push(format!("// function {name}:\n{disasm_str}"));
                 }
 
                 // Store VCode separately (intermediate representation)
                 if let Some(ref vcode_str) = vcode {
-                    all_vcode_parts.push(format!("// function {}:\n{}", name, vcode_str));
+                    all_vcode_parts.push(format!("// function {name}:\n{vcode_str}"));
                 }
             }
         }
@@ -274,7 +272,7 @@ pub fn build_emu_executable(
     let product = gl_module.into_module().finish();
     let elf_bytes = product
         .emit()
-        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("Failed to emit ELF: {}", e)))?;
+        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("Failed to emit ELF: {e}")))?;
 
     // Debug: Check symbols BEFORE linking
     crate::debug!("=== Symbols BEFORE linking ===");

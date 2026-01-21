@@ -67,7 +67,7 @@ impl Target {
                         let triple = riscv32_triple();
                         use cranelift_codegen::isa::riscv32::isa_builder;
                         *isa = Some(isa_builder(triple).finish(flags.clone()).map_err(|e| {
-                            GlslError::new(ErrorCode::E0400, format!("ISA creation failed: {}", e))
+                            GlslError::new(ErrorCode::E0400, format!("ISA creation failed: {e}"))
                         })?);
                     }
                     #[cfg(not(feature = "emulator"))]
@@ -92,11 +92,11 @@ impl Target {
                         let isa_builder = cranelift_native::builder().map_err(|e| {
                             GlslError::new(
                                 ErrorCode::E0400,
-                                format!("host machine is not supported: {}", e),
+                                format!("host machine is not supported: {e}"),
                             )
                         })?;
                         *isa = Some(isa_builder.finish(flags.clone()).map_err(|e| {
-                            GlslError::new(ErrorCode::E0400, format!("ISA creation failed: {}", e))
+                            GlslError::new(ErrorCode::E0400, format!("ISA creation failed: {e}"))
                         })?);
                     }
                     #[cfg(not(feature = "std"))]
@@ -132,13 +132,13 @@ fn default_riscv32_flags() -> Result<Flags, GlslError> {
         // Enable PIC for emulator target to generate GOT-based relocations for external symbols
         // This matches how test_load_object_file_with_actual_builtins compiles code
         .set("is_pic", "true")
-        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("failed to set is_pic: {}", e)))?;
+        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("failed to set is_pic: {e}")))?;
     flag_builder
         .set("use_colocated_libcalls", "false")
         .map_err(|e| {
             GlslError::new(
                 ErrorCode::E0400,
-                format!("failed to set use_colocated_libcalls: {}", e),
+                format!("failed to set use_colocated_libcalls: {e}"),
             )
         })?;
     flag_builder
@@ -146,7 +146,7 @@ fn default_riscv32_flags() -> Result<Flags, GlslError> {
         .map_err(|e| {
             GlslError::new(
                 ErrorCode::E0400,
-                format!("failed to set enable_multi_ret_implicit_sret: {}", e),
+                format!("failed to set enable_multi_ret_implicit_sret: {e}"),
             )
         })?;
 
@@ -160,13 +160,13 @@ fn default_host_flags() -> Result<Flags, GlslError> {
     flag_builder
         // Disable PIC for JIT target - cranelift-jit requires is_pic=false
         .set("is_pic", "false")
-        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("failed to set is_pic: {}", e)))?;
+        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("failed to set is_pic: {e}")))?;
     flag_builder
         .set("use_colocated_libcalls", "false")
         .map_err(|e| {
             GlslError::new(
                 ErrorCode::E0400,
-                format!("failed to set use_colocated_libcalls: {}", e),
+                format!("failed to set use_colocated_libcalls: {e}"),
             )
         })?;
     flag_builder
@@ -174,7 +174,7 @@ fn default_host_flags() -> Result<Flags, GlslError> {
         .map_err(|e| {
             GlslError::new(
                 ErrorCode::E0400,
-                format!("failed to set enable_multi_ret_implicit_sret: {}", e),
+                format!("failed to set enable_multi_ret_implicit_sret: {e}"),
             )
         })?;
 

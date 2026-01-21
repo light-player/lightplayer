@@ -44,7 +44,6 @@ pub fn run_fixed32_test(clif_input: &str, expected_float: f32) {
             .expect("Failed to add function to module");
     }
 
-    use crate::GlslExecutable;
     use crate::backend::codegen::emu::EmulatorOptions;
     use crate::backend::module::gl_module::GlModule;
     use crate::backend::target::Target;

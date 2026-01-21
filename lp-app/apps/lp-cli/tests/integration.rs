@@ -11,8 +11,8 @@ use core::cell::RefCell;
 // NOTE: These integration tests use the old synchronous lp-client API which no longer exists.
 // They need to be rewritten to use the new async LpClient API. Marked as #[ignore] for now.
 
-use lp_model::Message;
 use lp_model::AsLpPath;
+use lp_model::Message;
 use lp_server::LpServer;
 use lp_shared::fs::{LpFs, LpFsMemory};
 use lp_shared::output::MemoryOutputProvider;
@@ -27,7 +27,9 @@ type ClientError = ();
 /// Returns `(server, client, client_transport, server_transport)` for
 /// synchronous message processing in tests.
 #[allow(dead_code, unused_variables)]
-fn setup_server_and_client(_fs: LpFsMemory) -> (LpServer, LpClient, LocalTransport, LocalTransport) {
+fn setup_server_and_client(
+    _fs: LpFsMemory,
+) -> (LpServer, LpClient, LocalTransport, LocalTransport) {
     todo!("Rewrite for async LpClient")
 }
 

@@ -206,8 +206,7 @@ impl<M: Module> GlModule<M> {
                 GlslError::new(
                     crate::error::ErrorCode::E0400,
                     format!(
-                        "Builtin function '{}' not found in module declarations. Ensure declare_builtins() was called.",
-                        name
+                        "Builtin function '{name}' not found in module declarations. Ensure declare_builtins() was called."
                     ),
                 )
             })?;
@@ -251,7 +250,7 @@ impl<M: Module> GlModule<M> {
         if func.signature != sig {
             return Err(GlslError::new(
                 ErrorCode::E0400,
-                format!("Function signature mismatch for '{}'", name),
+                format!("Function signature mismatch for '{name}'"),
             ));
         }
 
@@ -262,7 +261,7 @@ impl<M: Module> GlModule<M> {
             .map_err(|e| {
                 GlslError::new(
                     ErrorCode::E0400,
-                    format!("Failed to declare function '{}': {}", name, e),
+                    format!("Failed to declare function '{name}': {e}"),
                 )
             })?;
 
@@ -297,7 +296,7 @@ impl<M: Module> GlModule<M> {
             .map_err(|e| {
                 GlslError::new(
                     ErrorCode::E0400,
-                    format!("Failed to declare function '{}': {}", name, e),
+                    format!("Failed to declare function '{name}': {e}"),
                 )
             })?;
 
@@ -376,10 +375,7 @@ impl<M: Module> GlModule<M> {
                 .map_err(|e| {
                     GlslError::new(
                         ErrorCode::E0400,
-                        format!(
-                            "Failed to declare function '{}' in transformed module: {}",
-                            name, e
-                        ),
+                        format!("Failed to declare function '{name}' in transformed module: {e}"),
                     )
                 })?;
             func_id_map.insert(name.clone(), func_id);

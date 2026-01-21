@@ -554,7 +554,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
                 _ => {
                     return Err(GlslError::new(
                         ErrorCode::E0105,
-                        format!("isinf() not supported for vector dimension {}", dim),
+                        format!("isinf() not supported for vector dimension {dim}"),
                     ));
                 }
             }
@@ -605,7 +605,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
                 _ => {
                     return Err(GlslError::new(
                         ErrorCode::E0105,
-                        format!("isnan() not supported for vector dimension {}", dim),
+                        format!("isnan() not supported for vector dimension {dim}"),
                     ));
                 }
             }

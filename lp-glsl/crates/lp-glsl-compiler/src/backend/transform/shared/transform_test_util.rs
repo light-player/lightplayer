@@ -116,7 +116,6 @@ fn build_and_run_module(
     gl_module: crate::backend::module::gl_module::GlModule<cranelift_object::ObjectModule>,
     transform_name: &str,
 ) -> i32 {
-    use crate::GlslExecutable;
     use crate::backend::codegen::emu::EmulatorOptions;
     use cranelift_codegen::write_function;
 
@@ -194,7 +193,7 @@ pub fn run_int32_test(glsl_source: &str, expected_int: i32) {
 
     // Compile GLSL for identity transform
     eprintln!("\n=== Compiling GLSL (identity transform) ===");
-    let mut identity_module = compiler
+    let identity_module = compiler
         .compile_to_gl_module_object(glsl_source, target.clone())
         .expect("Failed to compile GLSL");
     let identity_module = identity_module
@@ -204,7 +203,7 @@ pub fn run_int32_test(glsl_source: &str, expected_int: i32) {
 
     // Compile GLSL for fixed32 transform
     eprintln!("\n=== Compiling GLSL (fixed32 transform) ===");
-    let mut fixed32_module = compiler
+    let fixed32_module = compiler
         .compile_to_gl_module_object(glsl_source, target.clone())
         .expect("Failed to compile GLSL");
     let fixed32_transform = Fixed32Transform::new(FixedPointFormat::Fixed16x16);

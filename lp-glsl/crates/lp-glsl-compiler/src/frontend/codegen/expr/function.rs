@@ -210,8 +210,7 @@ fn validate_function_call<M: cranelift_module::Module>(
             let error = GlslError::new(
                 ErrorCode::E0400,
                 format!(
-                    "function parameter mismatch: expected {} block parameters, got 0",
-                    expected_count
+                    "function parameter mismatch: expected {expected_count} block parameters, got 0"
                 ),
             )
             .with_location(crate::error::source_span_to_location(call_span))
@@ -314,10 +313,7 @@ fn prepare_call_arguments<M: cranelift_module::Module>(
             if arg_val_idx >= arg_vals_flat.len() {
                 return Err(GlslError::new(
                     ErrorCode::E0400,
-                    format!(
-                        "Not enough argument values for parameter {}",
-                        glsl_param_idx
-                    ),
+                    format!("Not enough argument values for parameter {glsl_param_idx}"),
                 ));
             }
 

@@ -55,25 +55,25 @@ impl GlslValue {
         // Wrap the literal in a minimal function to parse it
         // We'll try different return types to determine the literal type
         let wrappers = [
-            format!("int main() {{ return {}; }}", literal_str),
-            format!("uint main() {{ return {}; }}", literal_str),
-            format!("float main() {{ return {}; }}", literal_str),
-            format!("bool main() {{ return {}; }}", literal_str),
-            format!("vec2 main() {{ return {}; }}", literal_str),
-            format!("vec3 main() {{ return {}; }}", literal_str),
-            format!("vec4 main() {{ return {}; }}", literal_str),
-            format!("ivec2 main() {{ return {}; }}", literal_str),
-            format!("ivec3 main() {{ return {}; }}", literal_str),
-            format!("ivec4 main() {{ return {}; }}", literal_str),
-            format!("uvec2 main() {{ return {}; }}", literal_str),
-            format!("uvec3 main() {{ return {}; }}", literal_str),
-            format!("uvec4 main() {{ return {}; }}", literal_str),
-            format!("bvec2 main() {{ return {}; }}", literal_str),
-            format!("bvec3 main() {{ return {}; }}", literal_str),
-            format!("bvec4 main() {{ return {}; }}", literal_str),
-            format!("mat2 main() {{ return {}; }}", literal_str),
-            format!("mat3 main() {{ return {}; }}", literal_str),
-            format!("mat4 main() {{ return {}; }}", literal_str),
+            format!("int main() {{ return {literal_str}; }}"),
+            format!("uint main() {{ return {literal_str}; }}"),
+            format!("float main() {{ return {literal_str}; }}"),
+            format!("bool main() {{ return {literal_str}; }}"),
+            format!("vec2 main() {{ return {literal_str}; }}"),
+            format!("vec3 main() {{ return {literal_str}; }}"),
+            format!("vec4 main() {{ return {literal_str}; }}"),
+            format!("ivec2 main() {{ return {literal_str}; }}"),
+            format!("ivec3 main() {{ return {literal_str}; }}"),
+            format!("ivec4 main() {{ return {literal_str}; }}"),
+            format!("uvec2 main() {{ return {literal_str}; }}"),
+            format!("uvec3 main() {{ return {literal_str}; }}"),
+            format!("uvec4 main() {{ return {literal_str}; }}"),
+            format!("bvec2 main() {{ return {literal_str}; }}"),
+            format!("bvec3 main() {{ return {literal_str}; }}"),
+            format!("bvec4 main() {{ return {literal_str}; }}"),
+            format!("mat2 main() {{ return {literal_str}; }}"),
+            format!("mat3 main() {{ return {literal_str}; }}"),
+            format!("mat4 main() {{ return {literal_str}; }}"),
         ];
 
         for wrapper in &wrappers {
@@ -227,8 +227,7 @@ impl GlslValue {
         Err(GlslError::new(
             ErrorCode::E0400,
             format!(
-                "invalid literal: `{}` (must be an integer, float, boolean, vector, or matrix literal)",
-                literal_str
+                "invalid literal: `{literal_str}` (must be an integer, float, boolean, vector, or matrix literal)"
             ),
         ))
     }
@@ -826,8 +825,7 @@ fn parse_matrix_constructor(args: &[Expr], dim: usize) -> Result<[[f32; 4]; 4], 
                             return Err(GlslError::new(
                                 ErrorCode::E0400,
                                 format!(
-                                    "matrix column vector dimension mismatch: expected vec{}, got {}",
-                                    dim, vec_dim
+                                    "matrix column vector dimension mismatch: expected vec{dim}, got {vec_dim}"
                                 ),
                             ));
                         }

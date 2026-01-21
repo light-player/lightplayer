@@ -275,10 +275,12 @@ impl ShaderRuntime {
         } else {
             LpPathBuf::from(format!("/{}", glsl_path.as_str()))
         };
-        let source_bytes = fs.read_file(glsl_path_abs.as_path()).map_err(|e| Error::Io {
-            path: glsl_path.as_str().to_string(),
-            details: format!("Failed to read GLSL file: {:?}", e),
-        })?;
+        let source_bytes = fs
+            .read_file(glsl_path_abs.as_path())
+            .map_err(|e| Error::Io {
+                path: glsl_path.as_str().to_string(),
+                details: format!("Failed to read GLSL file: {:?}", e),
+            })?;
 
         let glsl_source =
             alloc::string::String::from_utf8(source_bytes).map_err(|e| Error::Parse {

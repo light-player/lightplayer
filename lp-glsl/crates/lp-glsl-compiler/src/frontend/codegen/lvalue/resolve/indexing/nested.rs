@@ -144,8 +144,7 @@ pub fn resolve_nested_array_indexing<M: cranelift_module::Module>(
             return Err(GlslError::new(
                 ErrorCode::E0400,
                 format!(
-                    "cannot index into {:?} (only matrices and vectors can be indexed after array)",
-                    current_ty
+                    "cannot index into {current_ty:?} (only matrices and vectors can be indexed after array)"
                 ),
             )
             .with_location(source_span_to_location(span)));

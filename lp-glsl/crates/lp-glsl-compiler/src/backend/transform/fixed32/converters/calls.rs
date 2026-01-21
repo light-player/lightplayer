@@ -63,8 +63,7 @@ pub(crate) fn map_external_function(
                     GlslError::new(
                         ErrorCode::E0400,
                         alloc::format!(
-                            "UserExternalNameRef {} not found in old function's user_named_funcs",
-                            old_user_ref
+                            "UserExternalNameRef {old_user_ref} not found in old function's user_named_funcs"
                         ),
                     )
                 })?;
@@ -83,7 +82,7 @@ pub(crate) fn map_external_function(
             let new_func_id = func_id_map.get(func_name).ok_or_else(|| {
                 GlslError::new(
                     ErrorCode::E0400,
-                    alloc::format!("Function '{}' not found in func_id_map", func_name),
+                    alloc::format!("Function '{func_name}' not found in func_id_map"),
                 )
             })?;
 
@@ -275,10 +274,7 @@ pub(crate) fn convert_call(
                 let func_id = func_id_map.get(builtin_name).ok_or_else(|| {
                     GlslError::new(
                         ErrorCode::E0400,
-                        format!(
-                            "Builtin function '{}' not found in func_id_map",
-                            builtin_name
-                        ),
+                        format!("Builtin function '{builtin_name}' not found in func_id_map"),
                     )
                 })?;
 
@@ -347,8 +343,7 @@ pub(crate) fn convert_call(
                                 GlslError::new(
                                     ErrorCode::E0400,
                                     format!(
-                                        "UserExternalNameRef {} not found in old function's user_named_funcs",
-                                        old_user_ref
+                                        "UserExternalNameRef {old_user_ref} not found in old function's user_named_funcs"
                                     ),
                                 )
                             })?;
@@ -365,7 +360,7 @@ pub(crate) fn convert_call(
                         let new_func_id = func_id_map.get(func_name).ok_or_else(|| {
                             GlslError::new(
                                 ErrorCode::E0400,
-                                format!("Function '{}' not found in func_id_map", func_name),
+                                format!("Function '{func_name}' not found in func_id_map"),
                             )
                         })?;
                         let new_user_name = UserExternalName {
@@ -426,7 +421,7 @@ pub(crate) fn convert_call(
     } else {
         return Err(GlslError::new(
             ErrorCode::E0301,
-            alloc::format!("Call instruction has unexpected format: {:?}", inst_data),
+            alloc::format!("Call instruction has unexpected format: {inst_data:?}"),
         ));
     }
 
@@ -491,10 +486,7 @@ pub(crate) fn convert_call_indirect(
     } else {
         return Err(GlslError::new(
             ErrorCode::E0301,
-            alloc::format!(
-                "CallIndirect instruction has unexpected format: {:?}",
-                inst_data
-            ),
+            alloc::format!("CallIndirect instruction has unexpected format: {inst_data:?}"),
         ));
     }
 

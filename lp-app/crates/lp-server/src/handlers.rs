@@ -7,8 +7,8 @@ use crate::project_manager::ProjectManager;
 use alloc::{format, rc::Rc, vec::Vec};
 use core::cell::RefCell;
 use lp_model::{
-    server::{AvailableProject, FsRequest, FsResponse, ServerMsgBody as ServerMessagePayload}, AsLpPath, ClientMessage, LpPath, LpPathBuf,
-    ServerMessage,
+    AsLpPath, ClientMessage, LpPath, LpPathBuf, ServerMessage,
+    server::{AvailableProject, FsRequest, FsResponse, ServerMsgBody as ServerMessagePayload},
 };
 use lp_shared::fs::LpFs;
 use lp_shared::output::OutputProvider;
@@ -83,13 +83,11 @@ fn handle_fs_request(fs: &mut dyn LpFs, request: FsRequest) -> Result<FsResponse
             }),
         },
         FsRequest::ListDir { path, recursive } => match fs.list_dir(path.as_path(), recursive) {
-            Ok(entries) => {
-                Ok(FsResponse::ListDir {
-                    path,
-                    entries,
-                    error: None,
-                })
-            }
+            Ok(entries) => Ok(FsResponse::ListDir {
+                path,
+                entries,
+                error: None,
+            }),
             Err(e) => Ok(FsResponse::ListDir {
                 path,
                 entries: Vec::new(),

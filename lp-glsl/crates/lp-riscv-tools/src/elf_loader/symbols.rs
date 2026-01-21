@@ -117,5 +117,5 @@ pub fn find_symbol_address(
             }
         }
     }
-    Err(format!("Symbol '{}' not found", symbol_name))
+    Err(format!("Symbol '{symbol_name}' not found"))
 }

@@ -76,7 +76,7 @@ pub fn declare_host_functions<M: Module>(module: &mut M) -> Result<(), GlslError
             .map_err(|e| {
                 GlslError::new(
                     ErrorCode::E0400,
-                    format!("Failed to declare host function '{}': {}", name, e),
+                    format!("Failed to declare host function '{name}': {e}"),
                 )
             })?;
     }

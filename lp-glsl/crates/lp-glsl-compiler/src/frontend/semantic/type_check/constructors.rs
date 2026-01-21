@@ -22,7 +22,7 @@ pub fn check_vector_constructor_with_span(
     let component_count = result_type.component_count().ok_or_else(|| {
         GlslError::new(
             ErrorCode::E0112,
-            format!("`{}` is not a vector type", type_name),
+            format!("`{type_name}` is not a vector type"),
         )
     })?;
     let base_type = result_type.vector_base_type().unwrap();
@@ -64,8 +64,7 @@ pub fn check_vector_constructor_with_span(
                     format!("cannot construct `{}` from `{:?}`", type_name, args[0]),
                 )
                 .with_note(format!(
-                    "expected at least {} components, found {}",
-                    component_count, src_component_count
+                    "expected at least {component_count} components, found {src_component_count}"
                 )),
             ));
         }
@@ -89,11 +88,10 @@ pub fn check_vector_constructor_with_span(
         return Err(add_location(
             GlslError::new(
                 ErrorCode::E0115,
-                format!("`{}` constructor has wrong number of components", type_name),
+                format!("`{type_name}` constructor has wrong number of components"),
             )
             .with_note(format!(
-                "expected {} components, found {}",
-                component_count, total_components
+                "expected {component_count} components, found {total_components}"
             )),
         ));
     }
@@ -110,7 +108,7 @@ pub fn check_vector_constructor_with_span(
             return Err(add_location(
                 GlslError::new(
                     ErrorCode::E0103,
-                    format!("cannot use `{:?}` in `{}` constructor", arg, type_name),
+                    format!("cannot use `{arg:?}` in `{type_name}` constructor"),
                 )
                 .with_note("component type cannot be implicitly converted"),
             ));
@@ -148,7 +146,7 @@ fn count_total_components(args: &[Type]) -> Result<usize, GlslError> {
         } else {
             return Err(GlslError::new(
                 ErrorCode::E0112,
-                format!("invalid constructor argument: `{:?}`", arg),
+                format!("invalid constructor argument: `{arg:?}`"),
             ));
         }
     }
@@ -199,7 +197,7 @@ pub fn check_scalar_constructor_with_span(
     if args.len() != 1 {
         let mut error = GlslError::new(
             ErrorCode::E0115,
-            format!("`{}` constructor requires exactly one argument", type_name),
+            format!("`{type_name}` constructor requires exactly one argument"),
         );
         if let Some(ref s) = span {
             error = error.with_location(source_span_to_location(s));
@@ -219,7 +217,7 @@ pub fn check_scalar_constructor_with_span(
         _ => {
             let mut error = GlslError::new(
                 ErrorCode::E0112,
-                format!("`{}` is not a scalar type", type_name),
+                format!("`{type_name}` is not a scalar type"),
             );
             if let Some(ref s) = span {
                 error = error.with_location(source_span_to_location(s));
@@ -248,7 +246,7 @@ pub fn check_matrix_constructor(type_name: &str, args: &[Type]) -> Result<Type, 
     let (rows, cols) = result_type.matrix_dims().ok_or_else(|| {
         GlslError::new(
             ErrorCode::E0112,
-            format!("`{}` is not a matrix type", type_name),
+            format!("`{type_name}` is not a matrix type"),
         )
     })?;
     let element_count = rows * cols;
@@ -293,10 +291,7 @@ pub fn check_matrix_constructor(type_name: &str, args: &[Type]) -> Result<Type, 
                 if !can_implicitly_convert(&arg_base, &Type::Float) {
                     return Err(GlslError::new(
                         ErrorCode::E0103,
-                        format!(
-                            "matrix column {} has incompatible base type: `{:?}`",
-                            i, arg_base
-                        ),
+                        format!("matrix column {i} has incompatible base type: `{arg_base:?}`"),
                     ));
                 }
             }
@@ -328,10 +323,7 @@ pub fn check_matrix_constructor(type_name: &str, args: &[Type]) -> Result<Type, 
                 if !can_implicitly_convert(arg, &Type::Float) {
                     return Err(GlslError::new(
                         ErrorCode::E0103,
-                        format!(
-                            "matrix element {} cannot be converted to float: `{:?}`",
-                            i, arg
-                        ),
+                        format!("matrix element {i} cannot be converted to float: `{arg:?}`"),
                     ));
                 }
             }
@@ -353,8 +345,7 @@ pub fn check_matrix_constructor(type_name: &str, args: &[Type]) -> Result<Type, 
                 return Err(GlslError::new(
                     ErrorCode::E0103,
                     format!(
-                        "matrix constructor argument {} must be a scalar or vector, got `{:?}`",
-                        i, arg
+                        "matrix constructor argument {i} must be a scalar or vector, got `{arg:?}`"
                     ),
                 ));
             };
@@ -363,8 +354,7 @@ pub fn check_matrix_constructor(type_name: &str, args: &[Type]) -> Result<Type, 
                 return Err(GlslError::new(
                     ErrorCode::E0103,
                     format!(
-                        "matrix constructor argument {} cannot be converted to float: `{:?}`",
-                        i, arg_base
+                        "matrix constructor argument {i} cannot be converted to float: `{arg_base:?}`"
                     ),
                 ));
             }
@@ -375,7 +365,7 @@ pub fn check_matrix_constructor(type_name: &str, args: &[Type]) -> Result<Type, 
     // Wrong number of arguments
     Err(GlslError::new(
         ErrorCode::E0115,
-        format!("`{}` constructor has wrong number of arguments", type_name)
+        format!("`{type_name}` constructor has wrong number of arguments")
     )
     .with_note(format!("expected 1 (identity/matrix), {} (columns), {} (scalars), or {} total elements (mixed), found {}",
         cols, element_count, element_count, args.len())))

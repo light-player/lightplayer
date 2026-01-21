@@ -26,8 +26,7 @@ pub fn infer_matrix_binary_result_type(
                     )
                     .with_location(source_span_to_location(&span))
                     .with_note(format!(
-                        "left operand: `{:?}`, right operand: `{:?}`",
-                        lhs_ty, rhs_ty
+                        "left operand: `{lhs_ty:?}`, right operand: `{rhs_ty:?}`"
                     )));
                 }
                 return Ok(lhs_ty.clone());
@@ -49,8 +48,7 @@ pub fn infer_matrix_binary_result_type(
                     )
                     .with_location(source_span_to_location(&span))
                     .with_note(format!(
-                        "left operand: `{:?}`, right operand: `{:?}`",
-                        lhs_ty, rhs_ty
+                        "left operand: `{lhs_ty:?}`, right operand: `{rhs_ty:?}`"
                     )));
                 }
                 return Ok(lhs_ty.clone());
@@ -96,11 +94,10 @@ pub fn infer_matrix_binary_result_type(
                 if cols != vec_size {
                     return Err(GlslError::new(
                         ErrorCode::E0106,
-                        format!("matrix × vector dimension mismatch: {}×{} matrix requires {}-component vector", 
-                            rows, cols, cols)
+                        format!("matrix × vector dimension mismatch: {rows}×{cols} matrix requires {cols}-component vector")
                     )
                     .with_location(source_span_to_location(&span))
-                    .with_note(format!("got {}-component vector", vec_size)));
+                    .with_note(format!("got {vec_size}-component vector")));
                 }
                 // Result is a vector with same number of components as matrix rows
                 return Ok(lhs_ty.matrix_column_type().unwrap());
@@ -114,11 +111,10 @@ pub fn infer_matrix_binary_result_type(
                 if vec_size != rows {
                     return Err(GlslError::new(
                         ErrorCode::E0106,
-                        format!("vector × matrix dimension mismatch: {}-component vector requires {}×{} matrix", 
-                            vec_size, rows, cols)
+                        format!("vector × matrix dimension mismatch: {vec_size}-component vector requires {rows}×{cols} matrix")
                     )
                     .with_location(source_span_to_location(&span))
-                    .with_note(format!("got {}×{} matrix", rows, cols)));
+                    .with_note(format!("got {rows}×{cols} matrix")));
                 }
                 // Result is a vector with same number of components as matrix columns
                 // For vec3 × mat3, result is vec3 (but conceptually row vector)
@@ -135,8 +131,7 @@ pub fn infer_matrix_binary_result_type(
                     return Err(GlslError::new(
                         ErrorCode::E0106,
                         format!(
-                            "matrix × matrix dimension mismatch: {}×{} × {}×{} requires {} == {}",
-                            lhs_rows, lhs_cols, rhs_rows, rhs_cols, lhs_cols, rhs_rows
+                            "matrix × matrix dimension mismatch: {lhs_rows}×{lhs_cols} × {rhs_rows}×{rhs_cols} requires {lhs_cols} == {rhs_rows}"
                         ),
                     )
                     .with_location(source_span_to_location(&span)));
@@ -190,8 +185,7 @@ pub fn infer_matrix_binary_result_type(
                     )
                     .with_location(source_span_to_location(&span))
                     .with_note(format!(
-                        "left operand: `{:?}`, right operand: `{:?}`",
-                        lhs_ty, rhs_ty
+                        "left operand: `{lhs_ty:?}`, right operand: `{rhs_ty:?}`"
                     )));
                 }
                 return Ok(Type::Bool);
@@ -205,7 +199,7 @@ pub fn infer_matrix_binary_result_type(
 
         _ => Err(GlslError::new(
             ErrorCode::E0106,
-            format!("operator {:?} not supported for matrices", op),
+            format!("operator {op:?} not supported for matrices"),
         )
         .with_location(source_span_to_location(&span))),
     }

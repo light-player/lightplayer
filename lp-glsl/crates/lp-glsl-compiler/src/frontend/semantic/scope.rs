@@ -44,7 +44,7 @@ impl SymbolTable {
         if scope.variables.contains_key(&name) {
             return Err(GlslError::new(
                 ErrorCode::E0400,
-                format!("variable `{}` already declared", name),
+                format!("variable `{name}` already declared"),
             ));
         }
         scope.variables.insert(

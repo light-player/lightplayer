@@ -4,16 +4,16 @@
 
 use anyhow::{Error, Result};
 use lp_model::{
+    ClientMessage, ClientRequest, LpPath, LpPathBuf, ServerMessage,
     project::{
+        FrameId,
         api::{ApiNodeSpecifier, SerializableProjectResponse},
         handle::ProjectHandle,
-        FrameId,
-    }, server::{AvailableProject, FsResponse, LoadedProject, ServerMsgBody}, ClientMessage, ClientRequest,
-    LpPath, LpPathBuf,
-    ServerMessage,
+    },
+    server::{AvailableProject, FsResponse, LoadedProject, ServerMsgBody},
 };
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::client::transport::ClientTransport;
 

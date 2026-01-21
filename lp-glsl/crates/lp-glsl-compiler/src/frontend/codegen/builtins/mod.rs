@@ -96,7 +96,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
             _ => Err(GlslError::new(
                 ErrorCode::E0400,
-                format!("built-in function not implemented: {}", name),
+                format!("built-in function not implemented: {name}"),
             )),
         }
     }

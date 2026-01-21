@@ -285,7 +285,7 @@ pub fn write_lvalue<M: cranelift_module::Module>(
                 } else {
                     Err(GlslError::new(
                         ErrorCode::E0400,
-                        format!("unsupported array element type: {:?}", element_ty),
+                        format!("unsupported array element type: {element_ty:?}"),
                     ))
                 }
             }

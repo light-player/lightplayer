@@ -83,16 +83,15 @@ pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<LpPathBuf>, Error> {
 }
 
 /// Load a node's config from filesystem
-pub fn load_node(
-    fs: &dyn LpFs,
-    path: &LpPath,
-) -> Result<(LpPathBuf, Box<dyn NodeConfig>), Error> {
+pub fn load_node(fs: &dyn LpFs, path: &LpPath) -> Result<(LpPathBuf, Box<dyn NodeConfig>), Error> {
     let node_json_path = path.to_path_buf().join("node.json");
 
-    let data = fs.read_file(node_json_path.as_path()).map_err(|e| Error::Io {
-        path: node_json_path.as_str().to_string(),
-        details: format!("Failed to read: {:?}", e),
-    })?;
+    let data = fs
+        .read_file(node_json_path.as_path())
+        .map_err(|e| Error::Io {
+            path: node_json_path.as_str().to_string(),
+            details: format!("Failed to read: {:?}", e),
+        })?;
 
     // Determine node kind from path suffix
     let kind = node_kind_from_path(&path.to_path_buf())?;

@@ -69,8 +69,7 @@ fn main() {
         std::fs::write(
             &include_file,
             format!(
-                "pub const LP_BUILTINS_EXE_BYTES: &[u8] = include_bytes!(\"{}\");\n",
-                include_path
+                "pub const LP_BUILTINS_EXE_BYTES: &[u8] = include_bytes!(\"{include_path}\");\n"
             ),
         )
         .expect("Failed to write builtins exe include file");

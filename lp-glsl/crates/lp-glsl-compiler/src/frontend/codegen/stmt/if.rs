@@ -18,10 +18,7 @@ pub fn emit_if_stmt<M: cranelift_module::Module>(
     if cond_ty != crate::frontend::semantic::types::Type::Bool {
         let error = GlslError::new(ErrorCode::E0107, "condition must be bool type")
             .with_location(source_span_to_location(&cond_span))
-            .with_note(format!(
-                "condition has type `{:?}`, expected `Bool`",
-                cond_ty
-            ));
+            .with_note(format!("condition has type `{cond_ty:?}`, expected `Bool`"));
         return Err(ctx.add_span_to_error(error, &cond_span));
     }
     // Condition must be scalar, so we take the first (and only) value

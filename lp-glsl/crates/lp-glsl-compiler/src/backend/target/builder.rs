@@ -27,7 +27,7 @@ impl Target {
                     .map_err(|e| {
                         GlslError::new(
                             ErrorCode::E0400,
-                            format!("ObjectBuilder creation failed: {}", e),
+                            format!("ObjectBuilder creation failed: {e}"),
                         )
                     })
                     .map(|b| ModuleBuilder::Object(b))

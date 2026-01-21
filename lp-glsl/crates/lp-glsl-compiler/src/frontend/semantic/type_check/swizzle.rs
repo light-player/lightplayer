@@ -32,7 +32,7 @@ pub fn parse_swizzle_length(swizzle: &str, max_components: usize) -> Result<usiz
             _ => {
                 return Err(GlslError::new(
                     ErrorCode::E0113,
-                    format!("invalid swizzle character: '{}'", ch),
+                    format!("invalid swizzle character: '{ch}'"),
                 ));
             }
         }
@@ -42,10 +42,7 @@ pub fn parse_swizzle_length(swizzle: &str, max_components: usize) -> Result<usiz
     if sets_used > 1 {
         return Err(GlslError::new(
             ErrorCode::E0113,
-            format!(
-                "swizzle '{}' mixes component naming sets (xyzw/rgba/stpq)",
-                swizzle
-            ),
+            format!("swizzle '{swizzle}' mixes component naming sets (xyzw/rgba/stpq)"),
         ));
     }
 
@@ -67,7 +64,7 @@ pub fn parse_swizzle_length(swizzle: &str, max_components: usize) -> Result<usiz
             _ => {
                 return Err(GlslError::new(
                     ErrorCode::E0113,
-                    format!("invalid component '{}'", ch),
+                    format!("invalid component '{ch}'"),
                 ));
             }
         };
@@ -75,10 +72,7 @@ pub fn parse_swizzle_length(swizzle: &str, max_components: usize) -> Result<usiz
         if idx >= max_components {
             return Err(GlslError::new(
                 ErrorCode::E0111,
-                format!(
-                    "component '{}' not valid for vector with {} components",
-                    ch, max_components
-                ),
+                format!("component '{ch}' not valid for vector with {max_components} components"),
             ));
         }
     }

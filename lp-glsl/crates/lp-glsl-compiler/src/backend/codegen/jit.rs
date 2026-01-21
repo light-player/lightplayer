@@ -42,7 +42,7 @@ pub fn build_jit_executable(
             .map_err(|e| {
                 GlslError::new(
                     ErrorCode::E0400,
-                    format!("Failed to define function '{}': {}", name, e),
+                    format!("Failed to define function '{name}': {e}"),
                 )
             })?;
         // Clear context using immutable borrow
@@ -59,7 +59,7 @@ pub fn build_jit_executable(
         .map_err(|e| {
             GlslError::new(
                 ErrorCode::E0400,
-                format!("Failed to finalize definitions: {}", e),
+                format!("Failed to finalize definitions: {e}"),
             )
         })?;
 
@@ -83,12 +83,9 @@ pub fn build_jit_executable(
     let call_conv = gl_module
         .target
         .default_call_conv()
-        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("Failed to get call conv: {}", e)))?;
+        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("Failed to get call conv: {e}")))?;
     let pointer_type = gl_module.target.pointer_type().map_err(|e| {
-        GlslError::new(
-            ErrorCode::E0400,
-            format!("Failed to get pointer type: {}", e),
-        )
+        GlslError::new(ErrorCode::E0400, format!("Failed to get pointer type: {e}"))
     })?;
 
     // 5. Create GlslJitModule

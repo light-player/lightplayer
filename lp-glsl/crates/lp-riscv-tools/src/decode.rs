@@ -74,8 +74,7 @@ pub fn decode_instruction(inst: u32) -> Result<Inst, alloc::string::String> {
                 (0x4, 0x10) => Ok(Inst::Sh2add { rd, rs1, rs2 }),
                 (0x6, 0x10) => Ok(Inst::Sh3add { rd, rs1, rs2 }),
                 _ => Err(format!(
-                    "Unknown R-type instruction: funct3=0x{:x}, funct7=0x{:x}",
-                    funct3, funct7
+                    "Unknown R-type instruction: funct3=0x{funct3:x}, funct7=0x{funct7:x}"
                 )),
             }
         }
@@ -184,8 +183,7 @@ pub fn decode_instruction(inst: u32) -> Result<Inst, alloc::string::String> {
                                 0x604 => Ok(Inst::Sextb { rd, rs1 }),
                                 0x605 => Ok(Inst::Sexth { rd, rs1 }),
                                 _ => Err(format!(
-                                    "Unknown I-type instruction: funct3=0x{:x}, funct6=0x{:x}, funct12=0x{:x}",
-                                    funct3, funct6, funct12
+                                    "Unknown I-type instruction: funct3=0x{funct3:x}, funct6=0x{funct6:x}, funct12=0x{funct12:x}"
                                 )),
                             }
                         }
@@ -256,8 +254,7 @@ pub fn decode_instruction(inst: u32) -> Result<Inst, alloc::string::String> {
                                     0x287 => Ok(Inst::Orcb { rd, rs1 }),
                                     0x687 => Ok(Inst::Brev8 { rd, rs1 }),
                                     _ => Err(format!(
-                                        "Unknown I-type instruction: funct3=0x{:x}, funct7=0x{:x}, funct6=0x{:x}, funct12=0x{:x}",
-                                        funct3, funct7, funct6, funct12
+                                        "Unknown I-type instruction: funct3=0x{funct3:x}, funct7=0x{funct7:x}, funct6=0x{funct6:x}, funct12=0x{funct12:x}"
                                     )),
                                 }
                             }
@@ -265,8 +262,7 @@ pub fn decode_instruction(inst: u32) -> Result<Inst, alloc::string::String> {
                     }
                 }
                 _ => Err(format!(
-                    "Unknown I-type arithmetic instruction: funct3=0x{:x}",
-                    funct3
+                    "Unknown I-type arithmetic instruction: funct3=0x{funct3:x}"
                 )),
             }
         }
@@ -518,8 +514,7 @@ pub fn decode_instruction(inst: u32) -> Result<Inst, alloc::string::String> {
                         csr,
                     }),
                     _ => Err(format!(
-                        "Unknown CSR instruction: funct3=0x{:x}, inst=0x{:08x}",
-                        funct3, inst
+                        "Unknown CSR instruction: funct3=0x{funct3:x}, inst=0x{inst:08x}"
                     )),
                 }
             }
@@ -534,7 +529,7 @@ pub fn decode_instruction(inst: u32) -> Result<Inst, alloc::string::String> {
             let funct5 = ((inst >> 27) & 0x1f) as u8;
 
             if funct3 != 0x2 {
-                return Err(format!("Unsupported atomic width: funct3=0x{:x}", funct3));
+                return Err(format!("Unsupported atomic width: funct3=0x{funct3:x}"));
             }
 
             match funct5 {
@@ -545,10 +540,10 @@ pub fn decode_instruction(inst: u32) -> Result<Inst, alloc::string::String> {
                 0x04 => Ok(Inst::AmoxorW { rd, rs1, rs2 }),
                 0x0c => Ok(Inst::AmoandW { rd, rs1, rs2 }),
                 0x08 => Ok(Inst::AmoorW { rd, rs1, rs2 }),
-                _ => Err(format!("Unknown atomic instruction: funct5=0x{:x}", funct5)),
+                _ => Err(format!("Unknown atomic instruction: funct5=0x{funct5:x}")),
             }
         }
-        _ => Err(format!("Unknown opcode: 0x{:02x}", opcode)),
+        _ => Err(format!("Unknown opcode: 0x{opcode:02x}")),
     }
 }
 

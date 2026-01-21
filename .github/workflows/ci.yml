@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  RUST_BACKTRACE: 1
+  RISC_V_TARGET: riscv32imac-unknown-none-elf
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install RISC-V target
+        run: rustup target add ${{ env.RISC_V_TARGET }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Check formatting
+        run: just fmt-check
+
+      - name: Run clippy
+        run: just clippy
+
+      - name: Build workspace
+        run: just build
+
+      - name: Build builtins-app (required for emulator tests)
+        run: just build-builtins
+
+      - name: Run tests
+        run: just test
+
+      - name: Build ESP32 app
+        run: just esp32-build
+        continue-on-error: true  # ESP32 build may fail in CI if toolchain differs

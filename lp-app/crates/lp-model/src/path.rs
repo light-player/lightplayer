@@ -344,7 +344,7 @@ impl LpPathBuf {
         } else {
             // Relative path, append to base
             if self.0 == "/" {
-                LpPathBuf::from(format!("/{}", path_str))
+                LpPathBuf::from(format!("/{path_str}"))
             } else {
                 LpPathBuf::from(format!("{}/{}", self.0, path_str))
             }
@@ -367,8 +367,7 @@ impl LpPathBuf {
         let mut components: Vec<&str> = self
             .components()
             .collect::<Vec<_>>()
-            .iter()
-            .map(|s| *s)
+            .iter().copied()
             .collect();
 
         // Add relative path components

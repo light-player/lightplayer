@@ -112,7 +112,7 @@ pub fn load_sections(obj: &object::File, rom: &mut [u8], _ram: &mut [u8]) -> Res
         // Get section data
         let data = section
             .data()
-            .map_err(|e| format!("Failed to read section '{}' data: {}", section_name, e))?;
+            .map_err(|e| format!("Failed to read section '{section_name}' data: {e}"))?;
 
         if data.is_empty() {
             continue;

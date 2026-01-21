@@ -95,7 +95,7 @@ impl OutputProvider for MemoryOutputProvider {
         // Validate byte_count
         if byte_count == 0 {
             return Err(OutputError::InvalidConfig {
-                reason: format!("byte_count must be > 0, got {}", byte_count),
+                reason: format!("byte_count must be > 0, got {byte_count}"),
             });
         }
 

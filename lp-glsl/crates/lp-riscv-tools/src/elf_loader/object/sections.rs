@@ -75,7 +75,7 @@ pub fn load_object_sections(
                 // Load .text section into code buffer
                 let data = section
                     .data()
-                    .map_err(|e| format!("Failed to read .text section data: {}", e))?;
+                    .map_err(|e| format!("Failed to read .text section data: {e}"))?;
 
                 if !data.is_empty() {
                     // Ensure code buffer is large enough
@@ -95,7 +95,7 @@ pub fn load_object_sections(
                 // Load .data section into RAM buffer
                 let data = section
                     .data()
-                    .map_err(|e| format!("Failed to read .data section data: {}", e))?;
+                    .map_err(|e| format!("Failed to read .data section data: {e}"))?;
 
                 if !data.is_empty() {
                     // Ensure RAM buffer is large enough
@@ -115,7 +115,7 @@ pub fn load_object_sections(
                 // Load .rodata section into code buffer (after .text)
                 let data = section
                     .data()
-                    .map_err(|e| format!("Failed to read .rodata section data: {}", e))?;
+                    .map_err(|e| format!("Failed to read .rodata section data: {e}"))?;
 
                 if !data.is_empty() {
                     // Place .rodata after .text

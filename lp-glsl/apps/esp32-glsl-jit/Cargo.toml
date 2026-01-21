@@ -15,12 +15,13 @@ lp-glsl-compiler = { path = "../../crates/lp-glsl-compiler", default-features = 
 glsl = { git = "https://github.com/Yona-Appletree/glsl-parser.git", branch = "feature/spans", default-features = false }
 
 # Cranelift for JIT compilation on ESP32-C3/C6 (RISC-V32)
-cranelift-codegen = { workspace = true, features = ["riscv32"] }
-cranelift-frontend = { workspace = true, features = ["core"] }
-cranelift-module = { workspace = true, features = ["core"] }
-cranelift-control = { workspace = true }
-target-lexicon = { workspace = true }
-hashbrown = { workspace = true }
+# Note: Using explicit versions since this package is excluded from workspace
+cranelift-codegen = { git = "https://github.com/Yona-Appletree/lp-cranelift.git", branch = "feature/lp2025", version = "0.127.0", default-features = false, features = ["riscv32"] }
+cranelift-frontend = { git = "https://github.com/Yona-Appletree/lp-cranelift.git", branch = "feature/lp2025", version = "0.127.0", default-features = false, features = ["core"] }
+cranelift-module = { git = "https://github.com/Yona-Appletree/lp-cranelift.git", branch = "feature/lp2025", version = "0.127.0", default-features = false, features = ["core"] }
+cranelift-control = { git = "https://github.com/Yona-Appletree/lp-cranelift.git", branch = "feature/lp2025", version = "0.127.0", default-features = false }
+target-lexicon = "0.13.0"
+hashbrown = { version = "0.15", default-features = false, features = ["alloc", "default-hasher"] }
 
 # ESP32-C6 HAL and runtime
 esp-hal = { version = "=1.0.0-rc.0", features = ["defmt", "esp32c6", "unstable"] }
@@ -39,6 +40,14 @@ esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32c6"] }
 version = "1.11"
 default-features = false
 
-# Note: Release profile optimizations must be configured in lp-glsl/Cargo.toml
-# (workspace root) since package-level profiles are ignored
+# Release profile optimizations for embedded target (ESP32-C6)
+[profile.release]
+# Strip debuginfo but keep symbols (needed for defmt/probe-rs) - saves ~1-1.5 MB
+strip = "debuginfo"
+# Optimize for size instead of speed - saves ~200-500 KB
+opt-level = "z"
+# Single codegen unit for better dead code elimination - saves ~50-100 KB
+codegen-units = 1
+# Link-time optimization - saves ~100-300 KB
+lto = true
 

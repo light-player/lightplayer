@@ -218,7 +218,7 @@ impl Type {
             }
             _ => Err(crate::error::GlslError::new(
                 crate::error::ErrorCode::E0109,
-                format!("Type not yet supported for codegen: {:?}", self),
+                format!("Type not yet supported for codegen: {self:?}"),
             )),
         }
     }

@@ -55,7 +55,9 @@ pub async fn push_project_async(
             Ok(data) => data,
             Err(e) => {
                 // If read fails and it's because it's a directory, skip it
-                if entry_str.ends_with('/') || local_fs.is_dir(entry_path.as_path()).unwrap_or(false) {
+                if entry_str.ends_with('/')
+                    || local_fs.is_dir(entry_path.as_path()).unwrap_or(false)
+                {
                     continue;
                 }
                 return Err(anyhow::anyhow!("Failed to read file {}: {}", entry_str, e));

@@ -21,7 +21,7 @@ pub fn emit_jump_stmt<M: cranelift_module::Module>(
         ),
         _ => Err(GlslError::new(
             ErrorCode::E0400,
-            format!("jump statement not supported: {:?}", jump),
+            format!("jump statement not supported: {jump:?}"),
         )),
     }
 }

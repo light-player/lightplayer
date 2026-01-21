@@ -88,7 +88,7 @@ fn format_function(
     write_function(&mut buf, &func_clone).map_err(|e| {
         GlslError::new(
             crate::error::ErrorCode::E0400,
-            format!("failed to write function: {}", e),
+            format!("failed to write function: {e}"),
         )
     })?;
 
