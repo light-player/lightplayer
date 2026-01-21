@@ -3,6 +3,7 @@ extern crate alloc;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use lp_engine::MemoryOutputProvider;
+use lp_model::AsLpPath;
 use lp_server::LpServer;
 use lp_shared::fs::LpFsMemory;
 
@@ -21,7 +22,7 @@ fn test_fs_changes_not_repeated() {
     server
         .base_fs_mut()
         .write_file(
-            &format!("{}/project.json", project_path),
+            format!("{}/project.json", project_path).as_path(),
             b"{\"name\":\"test\",\"uid\":\"test\"}",
         )
         .unwrap();
@@ -48,7 +49,7 @@ fn test_fs_changes_not_repeated() {
     let file_path = format!("{}/src/test.glsl", project_path);
     server
         .base_fs_mut()
-        .write_file(&file_path, b"test content")
+        .write_file(file_path.as_path(), b"test content")
         .unwrap();
 
     // Get the current version after the write
@@ -89,7 +90,7 @@ fn test_fs_changes_not_repeated() {
     let file_path2 = format!("{}/src/test2.glsl", project_path);
     server
         .base_fs_mut()
-        .write_file(&file_path2, b"test content 2")
+        .write_file(file_path2.as_path(), b"test content 2")
         .unwrap();
 
     // Third tick - should process the new change

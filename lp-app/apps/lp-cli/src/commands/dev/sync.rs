@@ -3,6 +3,7 @@
 //! Provides functions for syncing individual file changes to the server.
 
 use anyhow::{Context, Result};
+use lp_model::AsLpPath;
 use lp_shared::fs::{LpFs, fs_event::ChangeType, fs_event::FsChange};
 use std::sync::Arc;
 
@@ -41,14 +42,14 @@ pub async fn sync_file_change(
     match change.change_type {
         ChangeType::Create | ChangeType::Modify => {
             // Check if file still exists (it might have been deleted by the time we sync)
-            if !local_fs.file_exists(&change.path).unwrap_or(false) {
+            if !local_fs.file_exists(change.path.as_path()).unwrap_or(false) {
                 // File doesn't exist anymore, skip sync (likely a temporary file)
                 return Ok(());
             }
 
             // Read file from local filesystem
             let data = local_fs
-                .read_file(&change.path)
+                .read_file(change.path.as_path())
                 .map_err(|e| anyhow::anyhow!("Failed to read file {}: {}", change.path, e))?;
 
             // Write file to server

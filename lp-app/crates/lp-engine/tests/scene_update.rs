@@ -3,6 +3,7 @@ extern crate alloc;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use lp_engine::{MemoryOutputProvider, ProjectRuntime};
+use lp_model::AsLpPath;
 use lp_shared::ProjectBuilder;
 use lp_shared::fs::LpFsMemory;
 
@@ -44,7 +45,7 @@ fn test_node_json_modification() {
         "render_order": 10
     }"#;
     fs.borrow_mut()
-        .write_file_mut(shader_config_path, new_config.as_bytes())
+        .write_file_mut(shader_config_path.as_path(), new_config.as_bytes())
         .unwrap();
 
     // Get filesystem changes
@@ -119,7 +120,7 @@ fn test_main_glsl_modification() {
     // Modify shader GLSL (change the color)
     fs.borrow_mut()
         .write_file_mut(
-            "/src/shader-1.shader/main.glsl",
+            "/src/shader-1.shader/main.glsl".as_path(),
             r#"
                 vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
                     return vec4(0.0, mod(time, 1.0), 0.0, 1.0);  // Green instead of red
@@ -189,7 +190,7 @@ fn test_node_deletion() {
 
     // Delete node.json
     let shader_config_path = "/src/shader-1.shader/node.json";
-    fs.borrow_mut().delete_file_mut(shader_config_path).unwrap();
+    fs.borrow_mut().delete_file_mut(shader_config_path.as_path()).unwrap();
 
     // Get filesystem changes
     let changes = fs.borrow().get_changes();

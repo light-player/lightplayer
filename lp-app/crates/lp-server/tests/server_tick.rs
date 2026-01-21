@@ -4,6 +4,7 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use lp_engine::MemoryOutputProvider;
 use lp_engine_client::ClientProjectView;
+use lp_model::AsLpPath;
 use lp_server::LpServer;
 use lp_shared::ProjectBuilder;
 use lp_shared::fs::{LpFs, LpFsMemory};
@@ -25,15 +26,15 @@ fn test_server_tick_propagates_to_projects() {
 
     // Copy project files to server filesystem under projects/test-project/
     let project_name = "test-project";
-    let project_prefix = format!("projects/{}/", project_name);
+    let project_prefix = format!("projects/{}", project_name);
 
     // Prepare base filesystem with project files
     let base_fs = Box::new(LpFsMemory::new());
 
     // Copy project.json
-    let project_json = temp_fs.borrow().read_file("/project.json").unwrap();
+    let project_json = temp_fs.borrow().read_file("/project.json".as_path()).unwrap();
     base_fs
-        .write_file(&format!("{}/project.json", project_prefix), &project_json)
+        .write_file(format!("{}/project.json", project_prefix).as_path(), &project_json)
         .unwrap();
 
     // Copy all node files
@@ -47,18 +48,18 @@ fn test_server_tick_propagates_to_projects() {
     for node_path in &node_paths {
         // Copy node.json
         let node_json_path = format!("{}/node.json", node_path);
-        if let Ok(data) = temp_fs.borrow().read_file(&node_json_path) {
+        if let Ok(data) = temp_fs.borrow().read_file(node_json_path.as_path()) {
             base_fs
-                .write_file(&format!("{}/{}", project_prefix, node_json_path), &data)
+                .write_file(format!("{}/{}", project_prefix, node_json_path).as_path(), &data)
                 .unwrap();
         }
 
         // Copy GLSL file if it's a shader
         if node_path.contains(".shader") {
             let glsl_path = format!("{}/main.glsl", node_path);
-            if let Ok(data) = temp_fs.borrow().read_file(&glsl_path) {
+            if let Ok(data) = temp_fs.borrow().read_file(glsl_path.as_path()) {
                 base_fs
-                    .write_file(&format!("{}/{}", project_prefix, glsl_path), &data)
+                    .write_file(format!("{}/{}", project_prefix, glsl_path).as_path(), &data)
                     .unwrap();
             }
         }

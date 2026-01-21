@@ -3,7 +3,7 @@ use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use lp_model::{LpPathBuf, NodeConfig, NodeKind, ProjectConfig};
+use lp_model::{AsLpPath, LpPathBuf, NodeConfig, NodeKind, ProjectConfig};
 use lp_shared::fs::LpFs;
 use serde_json;
 
@@ -50,7 +50,7 @@ pub(crate) fn is_node_directory(path: &str) -> bool {
 /// Load project config from filesystem
 pub fn load_from_filesystem(fs: &dyn LpFs) -> Result<ProjectConfig, Error> {
     let path = "/project.json";
-    let data = fs.read_file(path).map_err(|e| Error::Io {
+    let data = fs.read_file(path.as_path()).map_err(|e| Error::Io {
         path: path.to_string(),
         details: format!("Failed to read: {:?}", e),
     })?;
@@ -66,15 +66,15 @@ pub fn load_from_filesystem(fs: &dyn LpFs) -> Result<ProjectConfig, Error> {
 /// Discover all node directories in /src/
 pub fn discover_nodes(fs: &dyn LpFs) -> Result<Vec<LpPathBuf>, Error> {
     let path = "/src";
-    let entries = fs.list_dir(path, false).map_err(|e| Error::Io {
+    let entries = fs.list_dir(path.as_path(), false).map_err(|e| Error::Io {
         path: path.to_string(),
         details: format!("Failed to list directory: {:?}", e),
     })?;
 
     let mut nodes = Vec::new();
     for entry in entries {
-        if is_node_directory(&entry) {
-            nodes.push(LpPathBuf::from(entry));
+        if is_node_directory(entry.as_str()) {
+            nodes.push(entry);
         }
     }
 
@@ -88,7 +88,7 @@ pub fn load_node(
 ) -> Result<(LpPathBuf, Box<dyn NodeConfig>), Error> {
     let node_json_path = format!("{}/node.json", path.as_str());
 
-    let data = fs.read_file(&node_json_path).map_err(|e| Error::Io {
+    let data = fs.read_file(node_json_path.as_path()).map_err(|e| Error::Io {
         path: node_json_path.clone(),
         details: format!("Failed to read: {:?}", e),
     })?;

@@ -9,6 +9,7 @@ use lp_model::nodes::{
     NodeSpecifier,
 };
 use lp_model::path::LpPathBuf;
+use lp_model::AsLpPath;
 use serde_json;
 
 /// Builder for creating test projects
@@ -92,8 +93,7 @@ impl ProjectBuilder {
 
     /// Helper to write files
     fn write_file_helper(&self, path: &str, data: &[u8]) -> Result<(), crate::error::FsError> {
-        // LpFsMemory now uses interior mutability, so write_file() works with &self
-        self.fs.borrow().write_file(path, data)
+        self.fs.borrow().write_file(path.as_path(), data)
     }
 
     /// Start building a texture node (defaults to 16x16)

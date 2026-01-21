@@ -11,6 +11,7 @@ use lp_model::nodes::{
     texture::TextureConfig,
 };
 use lp_model::project::config::ProjectConfig;
+use lp_model::AsLpPath;
 use lp_shared::fs::LpFs;
 
 use crate::messages;
@@ -127,7 +128,7 @@ pub fn create_project_structure(dir: &Path, name: Option<&str>, uid: Option<&str
     };
     let project_json =
         serde_json::to_string_pretty(&config).context("Failed to serialize project.json")?;
-    fs.write_file("/project.json", project_json.as_bytes())
+    fs.write_file("/project.json".as_path(), project_json.as_bytes())
         .map_err(|e| anyhow::anyhow!("Failed to write project.json: {}", e))?;
 
     // Create default template
@@ -148,7 +149,7 @@ pub fn create_default_template(fs: &dyn LpFs) -> Result<()> {
     };
     let texture_json = serde_json::to_string_pretty(&texture_config)
         .context("Failed to serialize texture config")?;
-    fs.write_file("/src/main.texture/node.json", texture_json.as_bytes())
+    fs.write_file("/src/main.texture/node.json".as_path(), texture_json.as_bytes())
         .map_err(|e| anyhow::anyhow!("Failed to write texture node.json: {}", e))?;
 
     // Create shader node
@@ -159,12 +160,12 @@ pub fn create_default_template(fs: &dyn LpFs) -> Result<()> {
     };
     let shader_json = serde_json::to_string_pretty(&shader_config)
         .context("Failed to serialize shader config")?;
-    fs.write_file("/src/rainbow.shader/node.json", shader_json.as_bytes())
+    fs.write_file("/src/rainbow.shader/node.json".as_path(), shader_json.as_bytes())
         .map_err(|e| anyhow::anyhow!("Failed to write shader node.json: {}", e))?;
 
     // Create shader GLSL
     fs.write_file(
-        "/src/rainbow.shader/main.glsl",
+        "/src/rainbow.shader/main.glsl".as_path(),
         br#"// HSV to RGB conversion function
 vec3 hsv_to_rgb(float h, float s, float v) {
     // h in [0, 1], s in [0, 1], v in [0, 1]
@@ -231,7 +232,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     let output_config = OutputConfig::GpioStrip { pin: 4 };
     let output_json = serde_json::to_string_pretty(&output_config)
         .context("Failed to serialize output config")?;
-    fs.write_file("/src/strip.output/node.json", output_json.as_bytes())
+    fs.write_file("/src/strip.output/node.json".as_path(), output_json.as_bytes())
         .map_err(|e| anyhow::anyhow!("Failed to write output node.json: {}", e))?;
 
     // Create fixture node
@@ -250,7 +251,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     };
     let fixture_json = serde_json::to_string_pretty(&fixture_config)
         .context("Failed to serialize fixture config")?;
-    fs.write_file("/src/fixture.fixture/node.json", fixture_json.as_bytes())
+    fs.write_file("/src/fixture.fixture/node.json".as_path(), fixture_json.as_bytes())
         .map_err(|e| anyhow::anyhow!("Failed to write fixture node.json: {}", e))?;
 
     Ok(())
@@ -350,11 +351,11 @@ mod tests {
         create_default_template_mut(&mut fs).unwrap();
 
         // Verify all nodes exist
-        assert!(fs.file_exists("/src/main.texture/node.json").unwrap());
-        assert!(fs.file_exists("/src/rainbow.shader/node.json").unwrap());
-        assert!(fs.file_exists("/src/rainbow.shader/main.glsl").unwrap());
-        assert!(fs.file_exists("/src/strip.output/node.json").unwrap());
-        assert!(fs.file_exists("/src/strip.fixture/node.json").unwrap());
+        assert!(fs.file_exists("/src/main.texture/node.json".as_path()).unwrap());
+        assert!(fs.file_exists("/src/rainbow.shader/node.json".as_path()).unwrap());
+        assert!(fs.file_exists("/src/rainbow.shader/main.glsl".as_path()).unwrap());
+        assert!(fs.file_exists("/src/strip.output/node.json".as_path()).unwrap());
+        assert!(fs.file_exists("/src/strip.fixture/node.json".as_path()).unwrap());
     }
 
     #[test]
@@ -364,19 +365,19 @@ mod tests {
         create_default_template_mut(&mut fs).unwrap();
 
         // Verify texture node content
-        let texture_json = fs.read_file("/src/main.texture/node.json").unwrap();
+        let texture_json = fs.read_file("/src/main.texture/node.json".as_path()).unwrap();
         let texture_config: TextureConfig = serde_json::from_slice(&texture_json).unwrap();
         assert_eq!(texture_config.width, 64);
         assert_eq!(texture_config.height, 64);
 
         // Verify shader node content
-        let shader_json = fs.read_file("/src/rainbow.shader/node.json").unwrap();
+        let shader_json = fs.read_file("/src/rainbow.shader/node.json".as_path()).unwrap();
         let shader_config: ShaderConfig = serde_json::from_slice(&shader_json).unwrap();
         assert_eq!(shader_config.glsl_path, "main.glsl");
         assert_eq!(shader_config.texture_spec.as_str(), "/src/main.texture");
 
         // Verify GLSL exists
-        let glsl = fs.read_file("/src/rainbow.shader/main.glsl").unwrap();
+        let glsl = fs.read_file("/src/rainbow.shader/main.glsl".as_path()).unwrap();
         let glsl_str = std::str::from_utf8(&glsl).unwrap();
         assert!(glsl_str.contains("hsv_to_rgb"));
         assert!(glsl_str.contains("vec4 main"));
@@ -391,7 +392,7 @@ mod tests {
         };
         let texture_json = serde_json::to_string_pretty(&texture_config)
             .context("Failed to serialize texture config")?;
-        fs.write_file_mut("/src/main.texture/node.json", texture_json.as_bytes())
+        fs.write_file_mut("/src/main.texture/node.json".as_path(), texture_json.as_bytes())
             .map_err(|e| anyhow::anyhow!("Failed to write texture node.json: {}", e))?;
 
         // Create shader node
@@ -402,12 +403,12 @@ mod tests {
         };
         let shader_json = serde_json::to_string_pretty(&shader_config)
             .context("Failed to serialize shader config")?;
-        fs.write_file_mut("/src/rainbow.shader/node.json", shader_json.as_bytes())
+        fs.write_file_mut("/src/rainbow.shader/node.json".as_path(), shader_json.as_bytes())
             .map_err(|e| anyhow::anyhow!("Failed to write shader node.json: {}", e))?;
 
         // Create shader GLSL
         fs.write_file_mut(
-            "/src/rainbow.shader/main.glsl",
+            "/src/rainbow.shader/main.glsl".as_path(),
             br#"// HSV to RGB conversion function
 vec3 hsv_to_rgb(float h, float s, float v) {
     // h in [0, 1], s in [0, 1], v in [0, 1]
@@ -474,7 +475,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         let output_config = OutputConfig::GpioStrip { pin: 4 };
         let output_json = serde_json::to_string_pretty(&output_config)
             .context("Failed to serialize output config")?;
-        fs.write_file_mut("/src/strip.output/node.json", output_json.as_bytes())
+        fs.write_file_mut("/src/strip.output/node.json".as_path(), output_json.as_bytes())
             .map_err(|e| anyhow::anyhow!("Failed to write output node.json: {}", e))?;
 
         // Create fixture node
@@ -493,7 +494,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         };
         let fixture_json = serde_json::to_string_pretty(&fixture_config)
             .context("Failed to serialize fixture config")?;
-        fs.write_file_mut("/src/strip.fixture/node.json", fixture_json.as_bytes())
+        fs.write_file_mut("/src/strip.fixture/node.json".as_path(), fixture_json.as_bytes())
             .map_err(|e| anyhow::anyhow!("Failed to write fixture node.json: {}", e))?;
 
         Ok(())

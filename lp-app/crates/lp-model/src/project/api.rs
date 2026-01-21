@@ -1,7 +1,7 @@
+use crate::nodes::{NodeConfig, NodeHandle, NodeKind};
 use crate::nodes::{
     fixture::FixtureConfig, output::OutputConfig, shader::ShaderConfig, texture::TextureConfig,
 };
-use crate::nodes::{NodeConfig, NodeHandle, NodeKind};
 use crate::path::LpPathBuf;
 use crate::project::FrameId;
 use alloc::boxed::Box;

@@ -59,13 +59,14 @@ pub fn create_server(
 #[cfg(test)]
 mod tests {
     use crate::server::create_server;
+    use lp_model::AsLpPath;
     use tempfile::TempDir;
 
     #[test]
     fn test_create_server_memory() {
         let (server, fs) = create_server::create_server(None, true, None).unwrap();
         // Verify server and filesystem were created
-        assert!(fs.read_file("/test").is_err()); // File doesn't exist, which is expected
+        assert!(fs.read_file("/test".as_path()).is_err()); // File doesn't exist, which is expected
         // Server should be created successfully
         drop(server);
     }
@@ -79,7 +80,7 @@ mod tests {
         // Verify server.json was created
         assert!(crate::config::server::server_config_exists(dir));
         // Verify filesystem works
-        assert!(fs.read_file("/test").is_err()); // File doesn't exist, which is expected
+        assert!(fs.read_file("/test".as_path()).is_err()); // File doesn't exist, which is expected
         drop(server);
     }
 

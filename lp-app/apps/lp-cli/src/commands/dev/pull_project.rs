@@ -3,6 +3,7 @@
 //! Provides async function to pull project files from the server to local filesystem.
 
 use anyhow::{Context, Result};
+use lp_model::AsLpPath;
 use lp_shared::fs::LpFs;
 
 use crate::client::LpClient;
@@ -64,7 +65,7 @@ pub async fn pull_project_async(
         };
 
         // Write file to local filesystem
-        local_fs.write_file(&local_path, &data).map_err(|e| {
+        local_fs.write_file(local_path.as_path(), &data).map_err(|e| {
             anyhow::anyhow!(
                 "Failed to write file to local filesystem {}: {}",
                 local_path,

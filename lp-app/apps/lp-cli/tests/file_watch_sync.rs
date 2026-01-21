@@ -5,6 +5,7 @@
 //! - File change detection (via LpFsMemory)
 //! - Path formatting in sync_file_change
 
+use lp_model::AsLpPath;
 use lp_shared::fs::{
     LpFs, LpFsMemory,
     fs_event::{ChangeType, FsChange},
@@ -76,7 +77,7 @@ fn test_file_change_detection() {
     let mut fs = LpFsMemory::new();
 
     // Create a file
-    fs.write_file("/src/test.glsl", b"void main() { }").unwrap();
+    fs.write_file("/src/test.glsl".as_path(), b"void main() { }").unwrap();
 
     // Get changes
     let changes = fs.get_changes();
@@ -87,7 +88,7 @@ fn test_file_change_detection() {
     // Modify the file
     fs.reset_changes();
     fs.write_file(
-        "/src/test.glsl",
+        "/src/test.glsl".as_path(),
         b"void main() { gl_FragColor = vec4(1.0); }",
     )
     .unwrap();
@@ -98,7 +99,7 @@ fn test_file_change_detection() {
 
     // Delete the file
     fs.reset_changes();
-    fs.delete_file("/src/test.glsl").unwrap();
+    fs.delete_file("/src/test.glsl".as_path()).unwrap();
 
     let changes = fs.get_changes();
     assert_eq!(changes.len(), 1);
@@ -111,9 +112,9 @@ fn test_multiple_file_changes() {
     let fs = LpFsMemory::new();
 
     // Create multiple files
-    fs.write_file("/src/file1.glsl", b"file1").unwrap();
-    fs.write_file("/src/file2.glsl", b"file2").unwrap();
-    fs.write_file("/src/file3.glsl", b"file3").unwrap();
+    fs.write_file("/src/file1.glsl".as_path(), b"file1").unwrap();
+    fs.write_file("/src/file2.glsl".as_path(), b"file2").unwrap();
+    fs.write_file("/src/file3.glsl".as_path(), b"file3").unwrap();
 
     let changes = fs.get_changes();
     assert_eq!(changes.len(), 3);

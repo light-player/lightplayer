@@ -12,6 +12,7 @@ use core::cell::RefCell;
 // They need to be rewritten to use the new async LpClient API. Marked as #[ignore] for now.
 
 use lp_model::Message;
+use lp_model::AsLpPath;
 use lp_server::LpServer;
 use lp_shared::fs::{LpFs, LpFsMemory};
 use lp_shared::output::MemoryOutputProvider;
@@ -63,11 +64,11 @@ fn create_test_project(fs: &mut LpFsMemory, name: &str, uid: &str) -> Result<(),
 }}"#,
         uid, name
     );
-    fs.write_file_mut("/project.json", project_json.as_bytes())
+    fs.write_file_mut("/project.json".as_path(), project_json.as_bytes())
         .map_err(|_| todo!())?;
 
     // Create src directory
-    fs.write_file_mut("/src/.gitkeep", b"")
+    fs.write_file_mut("/src/.gitkeep".as_path(), b"")
         .map_err(|_| todo!())?;
 
     Ok(())
@@ -114,11 +115,11 @@ fn test_create_command_structure() {
 }}"#,
         project_uid, project_name
     );
-    fs.write_file_mut("/project.json", project_json.as_bytes())
+    fs.write_file_mut("/project.json".as_path(), project_json.as_bytes())
         .unwrap();
 
     // Verify project.json exists and is valid
-    let content = fs.read_file("/project.json").unwrap();
+    let content = fs.read_file("/project.json".as_path()).unwrap();
     let config: lp_model::project::config::ProjectConfig =
         serde_json::from_slice(&content).unwrap();
     assert_eq!(config.uid, project_uid);

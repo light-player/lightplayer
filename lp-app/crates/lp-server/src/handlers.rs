@@ -9,6 +9,7 @@ use core::cell::RefCell;
 use lp_model::{
     ClientMessage, ServerMessage,
     server::{AvailableProject, FsRequest, FsResponse, ServerMsgBody as ServerMessagePayload},
+    AsLpPath,
 };
 use lp_shared::fs::LpFs;
 use lp_shared::output::OutputProvider;
@@ -49,7 +50,7 @@ pub fn handle_client_message(
 /// Handle a filesystem request
 fn handle_fs_request(fs: &mut dyn LpFs, request: FsRequest) -> Result<FsResponse, ServerError> {
     match request {
-        FsRequest::Read { path } => match fs.read_file(&path) {
+        FsRequest::Read { path } => match fs.read_file(path.as_path()) {
             Ok(data) => Ok(FsResponse::Read {
                 path,
                 data: Some(data),
@@ -61,33 +62,37 @@ fn handle_fs_request(fs: &mut dyn LpFs, request: FsRequest) -> Result<FsResponse
                 error: Some(format!("{}", e)),
             }),
         },
-        FsRequest::Write { path, data } => match fs.write_file(&path, &data) {
+        FsRequest::Write { path, data } => match fs.write_file(path.as_path(), &data) {
             Ok(()) => Ok(FsResponse::Write { path, error: None }),
             Err(e) => Ok(FsResponse::Write {
                 path,
                 error: Some(format!("{}", e)),
             }),
         },
-        FsRequest::DeleteFile { path } => match fs.delete_file(&path) {
+        FsRequest::DeleteFile { path } => match fs.delete_file(path.as_path()) {
             Ok(()) => Ok(FsResponse::DeleteFile { path, error: None }),
             Err(e) => Ok(FsResponse::DeleteFile {
                 path,
                 error: Some(format!("{}", e)),
             }),
         },
-        FsRequest::DeleteDir { path } => match fs.delete_dir(&path) {
+        FsRequest::DeleteDir { path } => match fs.delete_dir(path.as_path()) {
             Ok(()) => Ok(FsResponse::DeleteDir { path, error: None }),
             Err(e) => Ok(FsResponse::DeleteDir {
                 path,
                 error: Some(format!("{}", e)),
             }),
         },
-        FsRequest::ListDir { path, recursive } => match fs.list_dir(&path, recursive) {
-            Ok(entries) => Ok(FsResponse::ListDir {
-                path,
-                entries,
-                error: None,
-            }),
+        FsRequest::ListDir { path, recursive } => match fs.list_dir(path.as_path(), recursive) {
+            Ok(entries) => {
+                // Convert Vec<LpPathBuf> to Vec<String> for serialization
+                let entries_strings: Vec<String> = entries.iter().map(|e| String::from(e.as_str())).collect();
+                Ok(FsResponse::ListDir {
+                    path,
+                    entries: entries_strings,
+                    error: None,
+                })
+            }
             Err(e) => Ok(FsResponse::ListDir {
                 path,
                 entries: Vec::new(),

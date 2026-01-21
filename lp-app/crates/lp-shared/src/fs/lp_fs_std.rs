@@ -2,9 +2,9 @@
 
 use crate::error::FsError;
 use crate::fs::{
-    LpFs,
     fs_event::{ChangeType, FsChange, FsVersion},
     lp_fs_view::LpFsView,
+    LpFs,
 };
 use alloc::{
     format,
@@ -68,7 +68,9 @@ impl LpFsStd {
     ///
     /// Returns an error if the path would escape the root directory.
     fn resolve_and_validate(&self, path: &LpPath) -> Result<PathBuf, FsError> {
-        // Normalize the input path
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
         // Remove leading slash for joining with root_path
@@ -104,16 +106,25 @@ impl LpFsStd {
         Ok(canonical_path)
     }
 
+    /// Validate that a path is relative to project root (starts with /)
+    fn validate_path(&self, path: &LpPath) -> Result<(), FsError> {
+        if !path.is_absolute() {
+            return Err(FsError::InvalidPath(format!(
+                "Path must be relative to project root (start with /): {}",
+                path.as_str()
+            )));
+        }
+        Ok(())
+    }
+
     /// Validate that a path is safe to delete
     ///
     /// Returns an error if:
     /// - Path is "/" (root)
-    /// - Path would escape root directory
     ///
     /// This is a separate function so we can test it without attempting dangerous operations.
-    pub fn validate_path_for_deletion(path: &str) -> Result<(), FsError> {
-        let normalized = LpPathBuf::from(path);
-        if normalized.as_str() == "/" {
+    pub fn validate_path_for_deletion(path: &LpPath) -> Result<(), FsError> {
+        if path.as_str() == "/" {
             return Err(FsError::InvalidPath(
                 "Cannot delete root directory".to_string(),
             ));
@@ -126,7 +137,9 @@ impl LpFsStd {
     /// This is used when we need to create files that don't exist yet.
     /// Still validates that the path would be within root.
     fn get_path(&self, path: &LpPath) -> Result<PathBuf, FsError> {
-        // Normalize the input path
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
         // Remove leading slash for joining with root_path
@@ -236,6 +249,9 @@ impl LpFs for LpFsStd {
     }
 
     fn is_dir(&self, path: &LpPath) -> Result<bool, FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
         let full_path = self.get_path(path)?;
@@ -246,6 +262,9 @@ impl LpFs for LpFsStd {
     }
 
     fn list_dir(&self, path: &LpPath, recursive: bool) -> Result<Vec<LpPathBuf>, FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
         let full_path = self.resolve_and_validate(path)?;
@@ -310,10 +329,13 @@ impl LpFs for LpFsStd {
     }
 
     fn delete_file(&self, path: &LpPath) -> Result<(), FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
         // Validate path is safe to delete (explicitly reject "/")
+        Self::validate_path_for_deletion(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        Self::validate_path_for_deletion(normalized_str)?;
 
         let full_path = self.resolve_and_validate(path)?;
 
@@ -331,10 +353,13 @@ impl LpFs for LpFsStd {
     }
 
     fn delete_dir(&self, path: &LpPath) -> Result<(), FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
         // Validate path is safe to delete (explicitly reject "/")
+        Self::validate_path_for_deletion(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        Self::validate_path_for_deletion(normalized_str)?;
 
         let full_path = self.resolve_and_validate(path)?;
 
@@ -356,7 +381,9 @@ impl LpFs for LpFsStd {
         &self,
         subdir: &LpPath,
     ) -> Result<alloc::rc::Rc<core::cell::RefCell<dyn LpFs>>, FsError> {
-        // Normalize the subdirectory path
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(subdir)?;
+        // Normalize the subdirectory path for internal use
         let normalized = LpPathBuf::from(subdir.as_str());
         let normalized_str = normalized.as_str();
         // Remove leading slash for joining with root_path
@@ -450,6 +477,7 @@ impl LpFs for LpFsStd {
 #[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
+    use lp_model::AsLpPath;
     use std::fs;
     use tempfile::TempDir;
 
@@ -459,9 +487,10 @@ mod tests {
         let fs = LpFsStd::new(temp_dir.path().to_path_buf());
 
         // Valid paths should work
-        assert!(fs.get_path("/project.json").is_ok());
-        assert!(fs.get_path("/src/test.txt").is_ok());
-        assert!(fs.get_path("project.json").is_ok());
+        assert!(fs.get_path("/project.json".as_path()).is_ok());
+        assert!(fs.get_path("/src/test.txt".as_path()).is_ok());
+        // Relative paths must be converted to absolute before passing to LpFs
+        assert!(fs.get_path("/project.json".as_path()).is_ok());
     }
 
     #[test]
@@ -470,9 +499,12 @@ mod tests {
         let fs = LpFsStd::new(temp_dir.path().to_path_buf());
 
         // Paths with .. should be rejected
-        assert!(fs.get_path("/../outside.txt").is_err());
-        assert!(fs.get_path("/src/../../outside.txt").is_err());
-        assert!(fs.resolve_and_validate("/../outside.txt").is_err());
+        assert!(fs.get_path("/../outside.txt".as_path()).is_err());
+        assert!(fs.get_path("/src/../../outside.txt".as_path()).is_err());
+        assert!(
+            fs.resolve_and_validate("/../outside.txt".as_path())
+                .is_err()
+        );
     }
 
     #[test]
@@ -488,12 +520,12 @@ mod tests {
         fs::create_dir_all(root.join("src/subdir")).unwrap();
 
         let fs = LpFsStd::new(root.to_path_buf());
-        let entries = fs.list_dir("/src", false).unwrap();
+        let entries = fs.list_dir("/src".as_path(), false).unwrap();
 
         // Should contain the files and subdirectory
-        assert!(entries.iter().any(|e| e == "/src/file1.txt"));
-        assert!(entries.iter().any(|e| e == "/src/file2.txt"));
-        assert!(entries.iter().any(|e| e == "/src/subdir"));
+        assert!(entries.contains(&LpPathBuf::from("/src/file1.txt")));
+        assert!(entries.contains(&LpPathBuf::from("/src/file2.txt")));
+        assert!(entries.contains(&LpPathBuf::from("/src/subdir")));
     }
 
     #[test]
@@ -502,15 +534,16 @@ mod tests {
         let fs = LpFsStd::new(temp_dir.path().to_path_buf());
 
         // Should not be able to list outside root
-        assert!(fs.list_dir("/../", false).is_err());
+        assert!(fs.list_dir("/../".as_path(), false).is_err());
     }
 
     #[test]
     fn test_validate_path_for_deletion() {
         // Test the validation helper function (without attempting deletion)
-        assert!(LpFsStd::validate_path_for_deletion("/").is_err());
-        assert!(LpFsStd::validate_path_for_deletion("/file.txt").is_ok());
-        assert!(LpFsStd::validate_path_for_deletion("/dir").is_ok());
+        use lp_model::AsLpPath;
+        assert!(LpFsStd::validate_path_for_deletion("/".as_path()).is_err());
+        assert!(LpFsStd::validate_path_for_deletion("/file.txt".as_path()).is_ok());
+        assert!(LpFsStd::validate_path_for_deletion("/dir".as_path()).is_ok());
     }
 
     #[test]
@@ -521,11 +554,11 @@ mod tests {
 
         // Create a file
         fs::write(root.join("test.txt"), b"content").unwrap();
-        assert!(fs.file_exists("/test.txt").unwrap());
+        assert!(fs.file_exists("/test.txt".as_path()).unwrap());
 
         // Delete it
-        fs.delete_file("/test.txt").unwrap();
-        assert!(!fs.file_exists("/test.txt").unwrap());
+        fs.delete_file("/test.txt".as_path()).unwrap();
+        assert!(!fs.file_exists("/test.txt".as_path()).unwrap());
     }
 
     #[test]
@@ -540,7 +573,7 @@ mod tests {
         fs::write(root.join("dir/nested/file2.txt"), b"content2").unwrap();
 
         // Delete directory (recursive)
-        fs.delete_dir("/dir").unwrap();
+        fs.delete_dir("/dir".as_path()).unwrap();
         assert!(!root.join("dir").exists());
     }
 
@@ -550,8 +583,8 @@ mod tests {
         let fs = LpFsStd::new(temp_dir.path().to_path_buf());
 
         // Should reject deleting root
-        assert!(fs.delete_file("/").is_err());
-        assert!(fs.delete_dir("/").is_err());
+        assert!(fs.delete_file("/".as_path()).is_err());
+        assert!(fs.delete_dir("/".as_path()).is_err());
     }
 
     #[test]
@@ -566,14 +599,14 @@ mod tests {
         fs::write(root.join("src/nested/file2.txt"), b"content2").unwrap();
 
         // List non-recursive
-        let entries = fs.list_dir("/src", false).unwrap();
-        assert!(entries.iter().any(|e| e == "/src/file1.txt"));
-        assert!(entries.iter().any(|e| e == "/src/nested"));
-        assert!(!entries.iter().any(|e| e == "/src/nested/file2.txt"));
+        let entries = fs.list_dir("/src".as_path(), false).unwrap();
+        assert!(entries.contains(&LpPathBuf::from("/src/file1.txt")));
+        assert!(entries.contains(&LpPathBuf::from("/src/nested")));
+        assert!(!entries.contains(&LpPathBuf::from("/src/nested/file2.txt")));
 
         // List recursive
-        let entries = fs.list_dir("/src", true).unwrap();
-        assert!(entries.iter().any(|e| e == "/src/file1.txt"));
-        assert!(entries.iter().any(|e| e == "/src/nested/file2.txt"));
+        let entries = fs.list_dir("/src".as_path(), true).unwrap();
+        assert!(entries.contains(&LpPathBuf::from("/src/file1.txt")));
+        assert!(entries.contains(&LpPathBuf::from("/src/nested/file2.txt")));
     }
 }

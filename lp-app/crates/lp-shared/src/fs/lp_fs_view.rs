@@ -4,8 +4,8 @@
 //! all operations between chrooted-relative paths and parent-absolute paths.
 
 use crate::error::FsError;
-use crate::fs::LpFs;
 use crate::fs::fs_event::{FsChange, FsVersion};
+use crate::fs::LpFs;
 use alloc::{
     format,
     rc::Rc,
@@ -42,7 +42,8 @@ impl LpFsView {
     /// - `/src/file.txt` with prefix `/projects/my-project/` → `/projects/my-project/src/file.txt`
     /// - `/` with prefix `/projects/my-project/` → `/projects/my-project`
     fn parent_path(&self, chrooted_path: &str) -> String {
-        let normalized = chrooted_path; // TODO: Phase 6 - convert to LpPathBuf::from()
+        // chrooted_path is already normalized (comes from normalized LpPathBuf)
+        let normalized = chrooted_path;
         if normalized == "/" {
             // Root path - use prefix without trailing /
             self.prefix.trim_end_matches('/').to_string()
@@ -75,12 +76,11 @@ impl LpFsView {
     /// Validate that a path is valid for this view
     ///
     /// Paths must start with `/` (absolute from chroot root).
-    fn validate_path(&self, path: &str) -> Result<(), FsError> {
-        let normalized = LpPathBuf::from(path);
-        if !normalized.is_absolute() {
+    fn validate_path(&self, path: &LpPath) -> Result<(), FsError> {
+        if !path.is_absolute() {
             return Err(FsError::InvalidPath(format!(
                 "Path must be relative to view root (start with /): {}",
-                path
+                path.as_str()
             )));
         }
         Ok(())
@@ -89,45 +89,55 @@ impl LpFsView {
 
 impl LpFs for LpFsView {
     fn read_file(&self, path: &LpPath) -> Result<Vec<u8>, FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        self.validate_path(normalized_str)?;
         let parent_path = self.parent_path(normalized_str);
         let parent_lp_path = LpPath::new(parent_path.as_str());
         self.parent.borrow().read_file(parent_lp_path)
     }
 
     fn write_file(&self, path: &LpPath, data: &[u8]) -> Result<(), FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        self.validate_path(normalized_str)?;
         let parent_path = self.parent_path(normalized_str);
         let parent_lp_path = LpPath::new(parent_path.as_str());
         self.parent.borrow().write_file(parent_lp_path, data)
     }
 
     fn file_exists(&self, path: &LpPath) -> Result<bool, FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        self.validate_path(normalized_str)?;
         let parent_path = self.parent_path(normalized_str);
         let parent_lp_path = LpPath::new(parent_path.as_str());
         self.parent.borrow().file_exists(parent_lp_path)
     }
 
     fn is_dir(&self, path: &LpPath) -> Result<bool, FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        self.validate_path(normalized_str)?;
         let parent_path = self.parent_path(normalized_str);
         let parent_lp_path = LpPath::new(parent_path.as_str());
         self.parent.borrow().is_dir(parent_lp_path)
     }
 
     fn list_dir(&self, path: &LpPath, recursive: bool) -> Result<Vec<LpPathBuf>, FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        self.validate_path(normalized_str)?;
         let parent_path = self.parent_path(normalized_str);
         let parent_lp_path = LpPath::new(parent_path.as_str());
         let parent_entries = self.parent.borrow().list_dir(parent_lp_path, recursive)?;
@@ -144,9 +154,11 @@ impl LpFs for LpFsView {
     }
 
     fn delete_file(&self, path: &LpPath) -> Result<(), FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        self.validate_path(normalized_str)?;
 
         if normalized_str == "/" {
             return Err(FsError::InvalidPath(
@@ -160,9 +172,11 @@ impl LpFs for LpFsView {
     }
 
     fn delete_dir(&self, path: &LpPath) -> Result<(), FsError> {
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(path)?;
+        // Normalize for internal use
         let normalized = LpPathBuf::from(path.as_str());
         let normalized_str = normalized.as_str();
-        self.validate_path(normalized_str)?;
 
         if normalized_str == "/" {
             return Err(FsError::InvalidPath(
@@ -176,7 +190,9 @@ impl LpFs for LpFsView {
     }
 
     fn chroot(&self, subdir: &LpPath) -> Result<Rc<RefCell<dyn LpFs>>, FsError> {
-        // Normalize the subdirectory path
+        // Validate input is absolute (contract: LpFs only accepts absolute paths)
+        self.validate_path(subdir)?;
+        // Normalize the subdirectory path for internal use
         let normalized = LpPathBuf::from(subdir.as_str());
         let normalized_subdir = normalized.as_str();
 
@@ -242,86 +258,90 @@ impl LpFs for LpFsView {
 mod tests {
     use super::*;
     use crate::fs::LpFsMemory;
+    use lp_model::AsLpPath;
 
     #[test]
     fn test_lp_fs_view_basic() {
         let mut fs = LpFsMemory::new();
-        fs.write_file_mut("/projects/test/src/file.txt", b"content")
+        fs.write_file_mut("/projects/test/src/file.txt".as_path(), b"content")
             .unwrap();
 
         let parent_rc: Rc<RefCell<dyn LpFs>> = Rc::new(RefCell::new(fs));
         let view = LpFsView::new(Rc::clone(&parent_rc), "/projects/test/".to_string());
 
-        assert!(view.file_exists("/src/file.txt").unwrap());
-        let content = view.read_file("/src/file.txt").unwrap();
+        assert!(view.file_exists("/src/file.txt".as_path()).unwrap());
+        let content = view.read_file("/src/file.txt".as_path()).unwrap();
         assert_eq!(content, b"content");
     }
 
     #[test]
     fn test_lp_fs_view_sees_parent_changes() {
         let mut fs = LpFsMemory::new();
-        fs.write_file_mut("/projects/test/src/file.txt", b"initial")
+        fs.write_file_mut("/projects/test/src/file.txt".as_path(), b"initial")
             .unwrap();
 
         let parent_rc: Rc<RefCell<dyn LpFs>> = Rc::new(RefCell::new(fs));
         let view = LpFsView::new(Rc::clone(&parent_rc), "/projects/test/".to_string());
 
         // Verify initial content
-        let content = view.read_file("/src/file.txt").unwrap();
+        let content = view.read_file("/src/file.txt".as_path()).unwrap();
         assert_eq!(content, b"initial");
 
         // Modify file in parent filesystem
         parent_rc
             .borrow_mut()
-            .write_file("/projects/test/src/file.txt", b"updated")
+            .write_file("/projects/test/src/file.txt".as_path(), b"updated")
             .unwrap();
 
         // View should see the updated content
-        let updated_content = view.read_file("/src/file.txt").unwrap();
+        let updated_content = view.read_file("/src/file.txt".as_path()).unwrap();
         assert_eq!(updated_content, b"updated");
 
         // Create a new file in parent
         parent_rc
             .borrow_mut()
-            .write_file("/projects/test/src/newfile.txt", b"new")
+            .write_file("/projects/test/src/newfile.txt".as_path(), b"new")
             .unwrap();
 
         // View should see the new file
-        assert!(view.file_exists("/src/newfile.txt").unwrap());
-        let new_content = view.read_file("/src/newfile.txt").unwrap();
+        assert!(view.file_exists("/src/newfile.txt".as_path()).unwrap());
+        let new_content = view.read_file("/src/newfile.txt".as_path()).unwrap();
         assert_eq!(new_content, b"new");
     }
 
     #[test]
     fn test_lp_fs_view_nested() {
         let mut fs = LpFsMemory::new();
-        fs.write_file_mut("/a/b/c/file.txt", b"content").unwrap();
+        fs.write_file_mut("/a/b/c/file.txt".as_path(), b"content")
+            .unwrap();
 
         let parent_rc: Rc<RefCell<dyn LpFs>> = Rc::new(RefCell::new(fs));
         let view1 = LpFsView::new(Rc::clone(&parent_rc), "/a/".to_string());
-        let view2 = view1.chroot("b").unwrap();
+        // Caller must convert relative paths to absolute before passing to chroot
+        let chroot_path = LpPathBuf::from("/b");
+        let view2 = view1.chroot(chroot_path.as_path()).unwrap();
 
-        assert!(view2.borrow().file_exists("/c/file.txt").unwrap());
-        let content = view2.borrow().read_file("/c/file.txt").unwrap();
+        assert!(view2.borrow().file_exists("/c/file.txt".as_path()).unwrap());
+        let content = view2.borrow().read_file("/c/file.txt".as_path()).unwrap();
         assert_eq!(content, b"content");
     }
 
     #[test]
     fn test_lp_fs_view_list_dir() {
         let mut fs = LpFsMemory::new();
-        fs.write_file_mut("/projects/test/src/file1.txt", b"1")
+        fs.write_file_mut("/projects/test/src/file1.txt".as_path(), b"1")
             .unwrap();
-        fs.write_file_mut("/projects/test/src/file2.txt", b"2")
+        fs.write_file_mut("/projects/test/src/file2.txt".as_path(), b"2")
             .unwrap();
-        fs.write_file_mut("/projects/test/other.txt", b"other")
+        fs.write_file_mut("/projects/test/other.txt".as_path(), b"other")
             .unwrap();
 
         let parent_rc: Rc<RefCell<dyn LpFs>> = Rc::new(RefCell::new(fs));
         let view = LpFsView::new(Rc::clone(&parent_rc), "/projects/test/".to_string());
 
-        let entries = view.list_dir("/src", false).unwrap();
-        assert!(entries.contains(&"/src/file1.txt".to_string()));
-        assert!(entries.contains(&"/src/file2.txt".to_string()));
-        assert!(!entries.contains(&"/projects/test/src/file1.txt".to_string()));
+        let entries = view.list_dir("/src".as_path(), false).unwrap();
+        assert!(entries.contains(&LpPathBuf::from("/src/file1.txt")));
+        assert!(entries.contains(&LpPathBuf::from("/src/file2.txt")));
+        assert!(!entries.contains(&LpPathBuf::from("/projects/test/src/file1.txt")));
     }
 }

@@ -14,6 +14,7 @@ use alloc::{
 use core::cell::RefCell;
 use hashbrown::HashMap;
 use lp_model::project::ProjectHandle;
+use lp_model::AsLpPath;
 use lp_shared::fs::LpFs;
 use lp_shared::output::OutputProvider;
 
@@ -82,7 +83,7 @@ impl ProjectManager {
 
         // Create project-scoped filesystem using chroot
         let project_fs = base_fs
-            .chroot(&project_path)
+            .chroot(project_path.as_path())
             .map_err(|e| ServerError::Filesystem(format!("Failed to chroot to project: {}", e)))?;
 
         // Create a new project instance
@@ -200,22 +201,23 @@ impl ProjectManager {
     /// Requires a filesystem to query.
     pub fn list_available_projects(&self, fs: &dyn LpFs) -> Result<Vec<String>, ServerError> {
         // List entries in the base directory
-        let entries = fs.list_dir(&self.projects_base_dir, false).map_err(|e| {
+        let entries = fs.list_dir(self.projects_base_dir.as_path(), false).map_err(|e| {
             ServerError::Filesystem(format!("Failed to read projects directory: {}", e))
         })?;
 
         let mut projects = Vec::new();
         for entry in entries {
             // Check if this entry is a project directory (has project.json)
-            let project_json_path = format!("{}/project.json", entry);
-            if fs.file_exists(&project_json_path).unwrap_or(false) {
+            let project_json_path = format!("{}/project.json", entry.as_str());
+            if fs.file_exists(project_json_path.as_path()).unwrap_or(false) {
                 // Extract project name from path
                 // Entry format: "/base/project-name" or "/base/project-name/"
-                let name = entry
+                let entry_str = entry.as_str();
+                let name = entry_str
                     .trim_end_matches('/')
                     .rsplit('/')
                     .next()
-                    .unwrap_or(&entry)
+                    .unwrap_or(entry_str)
                     .to_string();
                 if !name.is_empty() {
                     projects.push(name);

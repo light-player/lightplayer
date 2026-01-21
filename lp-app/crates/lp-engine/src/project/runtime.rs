@@ -13,7 +13,7 @@ use lp_model::{
     project::api::{
         ApiNodeSpecifier, NodeChange, NodeDetail, NodeState, NodeStatus as ApiNodeStatus,
         ProjectResponse,
-    }, FrameId, LpPathBuf, NodeConfig, NodeHandle,
+    }, AsLpPath, FrameId, LpPathBuf, NodeConfig, NodeHandle,
     NodeKind,
 };
 use lp_shared::fs::{fs_event::FsChange, LpFs};
@@ -221,7 +221,7 @@ impl ProjectRuntime {
                     let data =
                         self.fs
                             .borrow()
-                            .read_file(&node_json_path)
+                            .read_file(node_json_path.as_path())
                             .map_err(|e| Error::Io {
                                 path: node_json_path.clone(),
                                 details: format!("Failed to read: {:?}", e),
@@ -246,7 +246,7 @@ impl ProjectRuntime {
                     let data =
                         self.fs
                             .borrow()
-                            .read_file(&node_json_path)
+                            .read_file(node_json_path.as_path())
                             .map_err(|e| Error::Io {
                                 path: node_json_path.clone(),
                                 details: format!("Failed to read: {:?}", e),
@@ -271,7 +271,7 @@ impl ProjectRuntime {
                     let data =
                         self.fs
                             .borrow()
-                            .read_file(&node_json_path)
+                            .read_file(node_json_path.as_path())
                             .map_err(|e| Error::Io {
                                 path: node_json_path.clone(),
                                 details: format!("Failed to read: {:?}", e),
@@ -296,7 +296,7 @@ impl ProjectRuntime {
                     let data =
                         self.fs
                             .borrow()
-                            .read_file(&node_json_path)
+                            .read_file(node_json_path.as_path())
                             .map_err(|e| Error::Io {
                                 path: node_json_path.clone(),
                                 details: format!("Failed to read: {:?}", e),
@@ -1127,7 +1127,7 @@ impl<'a> InitContext<'a> {
         let node_fs = runtime
             .fs
             .borrow()
-            .chroot(node_dir)
+            .chroot(node_dir.as_path())
             .map_err(|e| Error::Io {
                 path: node_dir.to_string(),
                 details: format!("Failed to chroot: {:?}", e),
@@ -1151,7 +1151,7 @@ impl<'a> crate::runtime::contexts::NodeInitContext for InitContext<'a> {
             // Relative path - resolve from current node's directory
             // Current node path is self.node_path (e.g., "/src/texture.texture")
             // Relative spec is relative to the parent directory (e.g., "../output.output")
-            let parent_dir = self.node_path.parent().unwrap_or_else(|| {
+            let parent_dir = self.node_path.parent().map(|p| LpPathBuf::from(p.as_str())).unwrap_or_else(|| {
                 // No parent, use root
                 lp_model::LpPathBuf::from("/")
             });

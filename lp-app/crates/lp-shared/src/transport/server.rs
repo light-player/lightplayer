@@ -40,6 +40,11 @@ use lp_model::{ClientMessage, ServerMessage, TransportError};
 ///         // Receive message (transport handles deserialization)
 ///         Ok(None)
 ///     }
+///
+///     fn close(&mut self) -> Result<(), TransportError> {
+///         // Close the transport connection
+///         Ok(())
+///     }
 /// }
 /// ```
 pub trait ServerTransport {

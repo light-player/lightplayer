@@ -54,6 +54,7 @@ pub fn create_filesystem(dir: Option<&Path>, memory: bool) -> Result<Box<dyn LpF
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lp_model::AsLpPath;
     use tempfile::TempDir;
 
     #[test]
@@ -100,7 +101,7 @@ mod tests {
     fn test_create_filesystem_memory() {
         let fs = create_filesystem(None, true).unwrap();
         // Memory filesystem should work
-        assert!(fs.read_file("/test").is_err()); // File doesn't exist, which is expected
+        assert!(fs.read_file("/test".as_path()).is_err()); // File doesn't exist, which is expected
     }
 
     #[test]
@@ -110,13 +111,13 @@ mod tests {
 
         let fs = create_filesystem(Some(dir), false).unwrap();
         // Standard filesystem should work
-        assert!(fs.read_file("/test").is_err()); // File doesn't exist, which is expected
+        assert!(fs.read_file("/test".as_path()).is_err()); // File doesn't exist, which is expected
     }
 
     #[test]
     fn test_create_filesystem_std_default_dir() {
         let fs = create_filesystem(None, false).unwrap();
         // Should default to current directory
-        assert!(fs.read_file("/test").is_err()); // File doesn't exist, which is expected
+        assert!(fs.read_file("/test".as_path()).is_err()); // File doesn't exist, which is expected
     }
 }

@@ -4,6 +4,7 @@
 
 use anyhow::{Context, Result};
 use lp_model::project::ProjectConfig;
+use lp_model::AsLpPath;
 use lp_shared::fs::{LpFs, LpFsStd};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -30,7 +31,7 @@ fn validate_local_project(project_dir: &PathBuf) -> Result<(String, String)> {
     let fs = LpFsStd::new(project_dir.clone());
 
     // Read and parse project.json
-    let data = fs.read_file("/project.json").map_err(|e| {
+    let data = fs.read_file("/project.json".as_path()).map_err(|e| {
         anyhow::anyhow!(
             "Failed to read project.json from: {}\n\
              Error: {}\n\

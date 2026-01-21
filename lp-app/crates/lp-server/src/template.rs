@@ -6,6 +6,7 @@ extern crate alloc;
 
 use crate::error::ServerError;
 use alloc::format;
+use lp_model::AsLpPath;
 use lp_shared::fs::LpFs;
 
 /// Create a default project template
@@ -15,20 +16,20 @@ use lp_shared::fs::LpFs;
 pub fn create_default_project_template(fs: &dyn LpFs) -> Result<(), ServerError> {
     // Create texture node
     fs.write_file(
-        "/src/texture.texture/node.json",
+        "/src/texture.texture/node.json".as_path(),
         br#"{"$type":"Memory","size":[64,64],"format":"RGB8"}"#,
     )
     .map_err(|e| ServerError::Filesystem(format!("Failed to write texture node.json: {}", e)))?;
 
     // Create shader node
     fs.write_file(
-        "/src/shader.shader/node.json",
+        "/src/shader.shader/node.json".as_path(),
         br#"{"$type":"Single","texture_id":"/src/texture.texture"}"#,
     )
     .map_err(|e| ServerError::Filesystem(format!("Failed to write shader node.json: {}", e)))?;
 
     fs.write_file(
-        "/src/shader.shader/main.glsl",
+        "/src/shader.shader/main.glsl".as_path(),
         br#"// HSV to RGB conversion function
 vec3 hsv_to_rgb(float h, float s, float v) {
     // h in [0, 1], s in [0, 1], v in [0, 1]
@@ -93,14 +94,14 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 
     // Create output node
     fs.write_file(
-        "/src/output.output/node.json",
+        "/src/output.output/node.json".as_path(),
         br#"{"$type":"gpio_strip","chip":"ws2812","gpio_pin":4,"count":128}"#,
     )
     .map_err(|e| ServerError::Filesystem(format!("Failed to write output node.json: {}", e)))?;
 
     // Create fixture node
     fs.write_file(
-        "/src/fixture.fixture/node.json",
+        "/src/fixture.fixture/node.json".as_path(),
         br#"{"$type":"circle-list","output_id":"/src/output.output","texture_id":"/src/texture.texture","channel_order":"rgb","mapping":[{"channel":0,"center":[0.03125,0.0625],"radius":0.05},{"channel":1,"center":[0.09375,0.0625],"radius":0.05},{"channel":2,"center":[0.15625,0.0625],"radius":0.05},{"channel":3,"center":[0.21875,0.0625],"radius":0.05},{"channel":4,"center":[0.28125,0.0625],"radius":0.05},{"channel":5,"center":[0.34375,0.0625],"radius":0.05},{"channel":6,"center":[0.40625,0.0625],"radius":0.05},{"channel":7,"center":[0.46875,0.0625],"radius":0.05},{"channel":8,"center":[0.53125,0.0625],"radius":0.05},{"channel":9,"center":[0.59375,0.0625],"radius":0.05},{"channel":10,"center":[0.65625,0.0625],"radius":0.05},{"channel":11,"center":[0.71875,0.0625],"radius":0.05}]}"#,
     )
     .map_err(|e| ServerError::Filesystem(format!("Failed to write fixture node.json: {}", e)))?;
