@@ -24,7 +24,7 @@ jobs:
         run: |
           git config --global credential.helper store
           echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
-          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          chmod 600 ~/.git-credentials
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
