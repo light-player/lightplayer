@@ -50,5 +50,5 @@ core = [
 
 [dev-dependencies]
 cranelift-reader = { workspace = true }
-cranelift-interpreter = { path = "../../../cranelift/interpreter" }
+cranelift-interpreter = { workspace = true }
 

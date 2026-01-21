@@ -4,7 +4,7 @@
 //! providing detailed output about which tests pass or fail.
 
 use anyhow::Result;
-use lp_glsl_filetests::{filetest, run_filetest};
+use lp_glsl_filetests::{parse, run_filetest};
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
@@ -98,7 +98,7 @@ fn filetests() -> Result<()> {
             .to_string_lossy();
 
         // Parse the file to get test count
-        let test_file = match filetest::parse_test_file(path) {
+        let test_file = match parse::parse_test_file(path) {
             Ok(tf) => tf,
             Err(e) => {
                 print!("test {} ... ", relative_path);
