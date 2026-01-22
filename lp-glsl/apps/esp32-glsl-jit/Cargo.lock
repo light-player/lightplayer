@@ -821,6 +821,7 @@ dependencies = [
  "esp-hal-embassy",
  "glsl",
  "hashbrown 0.15.5",
+ "log",
  "lp-glsl-compiler",
  "panic-rtt-target",
  "portable-atomic",

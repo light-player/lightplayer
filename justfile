@@ -75,11 +75,10 @@ fmt-check:
 clippy:
     cargo clippy --workspace --exclude lp-builtins-app -- --no-deps -D warnings
 
-# Build ESP32 app (excluded from workspace, must be built from its directory)
+# Build ESP32 app (excluded from default-members, only builds for RISC-V)
 esp32-build:
-    @echo "Building ESP32 app (excluded from workspace)..."
-    cd {{esp32_app_dir}}
-    cargo build --target {{riscv_target}} --release
+    @echo "Building ESP32 app (riscv32imac-unknown-none-elf)..."
+    cargo build --target {{riscv_target}} -p esp32-glsl-jit --release
 
 # Full CI check: build, format check, clippy, and test
 ci: fmt-check clippy test
