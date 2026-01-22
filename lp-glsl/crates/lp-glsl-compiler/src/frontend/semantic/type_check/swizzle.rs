@@ -2,6 +2,8 @@
 
 use crate::error::{ErrorCode, GlslError};
 
+use alloc::format;
+
 /// Parse swizzle string and return the number of components
 /// Validates that the swizzle is valid for the given vector size
 pub fn parse_swizzle_length(swizzle: &str, max_components: usize) -> Result<usize, GlslError> {

@@ -9,7 +9,7 @@ use glsl::syntax::Expr;
 use super::coercion;
 use super::constructor;
 
-use alloc::{format, vec::Vec};
+use alloc::{format, vec, vec::Vec};
 
 /// Emit code to compute a function call as an RValue
 pub fn emit_function_call_rvalue<M: cranelift_module::Module>(

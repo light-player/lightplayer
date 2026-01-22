@@ -13,12 +13,7 @@ use crate::frontend::codegen::context::CodegenContext;
 use crate::semantic::types::Type;
 use cranelift_codegen::ir::Value;
 
-use alloc::vec::Vec;
-
-#[cfg(not(feature = "std"))]
-use alloc::format;
-#[cfg(feature = "std")]
-use std::format;
+use alloc::{format, vec::Vec};
 impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
     pub fn emit_builtin_call(
         &mut self,

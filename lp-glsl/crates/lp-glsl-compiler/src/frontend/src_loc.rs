@@ -3,7 +3,7 @@
 //! This module provides a comprehensive system for managing source locations
 //! that supports multiple files, intrinsics, and synthetic sources.
 
-use alloc::{collections::BTreeMap, string::String, vec::Vec};
+use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 
 #[cfg(feature = "std")]
 use std::path::PathBuf;

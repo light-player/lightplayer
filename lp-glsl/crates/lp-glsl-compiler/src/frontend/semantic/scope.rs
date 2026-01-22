@@ -2,8 +2,7 @@ use crate::error::{ErrorCode, GlslError};
 use crate::frontend::semantic::types::Type;
 use hashbrown::HashMap;
 
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{format, string::String, vec, vec::Vec};
 
 pub struct SymbolTable {
     scopes: Vec<Scope>,

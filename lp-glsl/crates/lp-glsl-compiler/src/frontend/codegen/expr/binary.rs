@@ -14,7 +14,7 @@ use super::coercion;
 use super::matrix;
 use super::vector;
 
-use alloc::{format, vec::Vec};
+use alloc::{format, vec, vec::Vec};
 
 /// Emit code to compute a binary expression as an RValue
 pub fn emit_binary_rvalue<M: cranelift_module::Module>(

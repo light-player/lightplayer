@@ -4,6 +4,8 @@ use crate::error::{ErrorCode, GlslError};
 use crate::frontend::codegen::context::CodegenContext;
 use cranelift_codegen::ir::{InstBuilder, Value};
 
+use alloc::format;
+
 use super::super::expr::component;
 use super::types::LValue;
 

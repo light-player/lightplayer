@@ -3,7 +3,7 @@
 use crate::backend::transform::pipeline::{Transform, TransformContext};
 use crate::backend::transform::shared::{copy_instruction, transform_function_body};
 use crate::error::GlslError;
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use cranelift_codegen::ir::{Function, InstBuilder, Signature};
 
 /// Identity transform - copies functions exactly without modification

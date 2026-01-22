@@ -10,6 +10,8 @@ use cranelift_codegen::ir::{Function, Inst, InstBuilder, condcodes::IntCC, types
 use cranelift_frontend::FunctionBuilder;
 use hashbrown::HashMap;
 
+use alloc::format;
+
 /// Convert Fadd to fixed-point addition with saturation
 pub(crate) fn convert_fadd(
     old_func: &Function,

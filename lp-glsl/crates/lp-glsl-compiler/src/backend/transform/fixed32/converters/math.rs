@@ -10,6 +10,8 @@ use cranelift_codegen::ir::{Function, Inst, InstBuilder, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use hashbrown::HashMap;
 
+use alloc::format;
+
 /// Map TestCase function name to BuiltinId and argument count.
 ///
 /// Returns None if the function name is not a math function that should be converted.

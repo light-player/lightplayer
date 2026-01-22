@@ -8,6 +8,8 @@ use glsl::syntax::{BinaryOp, SourceSpan, UnaryOp};
 use super::conversion::promote_numeric;
 use super::matrix;
 
+use alloc::format;
+
 /// Infer result type of binary operation (with implicit conversion)
 /// Implements GLSL spec: operators.adoc:775-855, operators.adoc:1019-1098 (matrix ops)
 pub fn infer_binary_result_type(

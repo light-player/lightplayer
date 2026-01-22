@@ -96,6 +96,7 @@ cranelift-interpreter = { git = "https://github.com/Yona-Appletree/lp-cranelift.
 target-lexicon = "0.13.0"
 hashbrown = { version = "0.15", default-features = false, features = ["alloc", "default-hasher"] }
 anyhow = { version = "1.0.100", default-features = false }
+log = { version = "0.4", default-features = false }
 regex = "1.9.1"
 glob = "0.3.3"
 object = { version = "0.37.3", default-features = false, features = ['read_core', 'elf'] }

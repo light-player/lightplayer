@@ -3,8 +3,7 @@
 use crate::backend::module::gl_module::GlModule;
 use crate::error::{ErrorCode, GlslError};
 use crate::exec::jit::GlslJitModule;
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{format, string::String, vec::Vec};
 use cranelift_jit::JITModule;
 use cranelift_module::Module;
 use hashbrown::HashMap;

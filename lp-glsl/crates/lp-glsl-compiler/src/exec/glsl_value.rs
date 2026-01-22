@@ -5,6 +5,13 @@ use glsl::syntax::{Expr, JumpStatement, SimpleStatement, Statement};
 
 use alloc::{format, vec::Vec};
 
+/// Truncate f32 toward zero (no_std compatible)
+/// Casts to i32 which truncates toward zero, then to i64
+#[inline]
+fn trunc_f32(f: f32) -> i64 {
+    (f as i32) as i64
+}
+
 /// GLSL value types for function arguments
 ///
 /// ## Matrix Storage Format
@@ -514,7 +521,7 @@ fn parse_int_vector_constructor(args: &[Expr], dim: usize) -> Result<Vec<i32>, G
             }
             Expr::FloatConst(f, _) => {
                 // Convert float to int: truncate towards zero, clamp to i32 range
-                let truncated = f.trunc() as i64;
+                let truncated = trunc_f32(*f);
                 let clamped = if truncated < i32::MIN as i64 {
                     i32::MIN
                 } else if truncated > i32::MAX as i64 {
@@ -569,7 +576,7 @@ fn parse_int_vector_constructor(args: &[Expr], dim: usize) -> Result<Vec<i32>, G
                         let nested = parse_vector_constructor(args, nested_dim)?;
                         // Convert float components to int
                         for val in nested {
-                            let truncated = val.trunc() as i64;
+                            let truncated = trunc_f32(val);
                             let clamped = if truncated < i32::MIN as i64 {
                                 i32::MIN
                             } else if truncated > i32::MAX as i64 {
@@ -606,7 +613,7 @@ fn parse_int_vector_constructor(args: &[Expr], dim: usize) -> Result<Vec<i32>, G
                         }
                         Expr::FloatConst(f, _) => {
                             // Convert negative float to int
-                            let truncated = (-f).trunc() as i64;
+                            let truncated = trunc_f32(-f);
                             let clamped = if truncated < i32::MIN as i64 {
                                 i32::MIN
                             } else if truncated > i32::MAX as i64 {
@@ -668,7 +675,7 @@ fn parse_uint_vector_constructor(args: &[Expr], dim: usize) -> Result<Vec<u32>, 
             Expr::FloatConst(f, _) => {
                 // Convert float to uint: truncate towards zero, then cast to unsigned
                 // Negative values wrap around (e.g., -2.7 -> -2 -> 4294967294u)
-                let truncated = f.trunc() as i32;
+                let truncated = trunc_f32(*f) as i32;
                 let as_uint = truncated as u32;
                 components.push(as_uint);
             }
@@ -700,7 +707,7 @@ fn parse_uint_vector_constructor(args: &[Expr], dim: usize) -> Result<Vec<u32>, 
                         let nested = parse_vector_constructor(args, nested_dim)?;
                         // Convert float/int components to uint
                         for val in nested {
-                            let truncated = val.trunc() as i64;
+                            let truncated = trunc_f32(val) as i64;
                             let clamped = if truncated < 0 {
                                 0
                             } else if truncated > u32::MAX as i64 {
@@ -740,7 +747,7 @@ fn parse_uint_vector_constructor(args: &[Expr], dim: usize) -> Result<Vec<u32>, 
                         }
                         Expr::FloatConst(f, _) => {
                             // Convert negative float to uint: -5.7 → 4294967291 (wrapping)
-                            let truncated = (-f).trunc() as i64;
+                            let truncated = trunc_f32(-f) as i64;
                             let wrapped = if truncated >= 0 {
                                 (truncated as u32).wrapping_neg()
                             } else {

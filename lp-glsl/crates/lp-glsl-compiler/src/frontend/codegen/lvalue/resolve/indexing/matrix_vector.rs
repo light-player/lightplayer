@@ -5,6 +5,8 @@ use crate::frontend::codegen::context::CodegenContext;
 use crate::semantic::types::Type as GlslType;
 use glsl::syntax::{ArraySpecifier, ArraySpecifierDimension, SourceSpan};
 
+use alloc::format;
+
 use super::super::super::types::LValue;
 use super::helpers::{
     extract_base_vars_and_ty, process_matrix_dimension, process_vector_dimension, validate_index,

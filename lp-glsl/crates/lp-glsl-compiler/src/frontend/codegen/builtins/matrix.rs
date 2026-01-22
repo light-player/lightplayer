@@ -5,12 +5,7 @@ use crate::frontend::codegen::context::CodegenContext;
 use crate::semantic::types::Type;
 use cranelift_codegen::ir::{InstBuilder, Value};
 
-use alloc::vec::Vec;
-
-#[cfg(not(feature = "std"))]
-use alloc::format;
-#[cfg(feature = "std")]
-use std::format;
+use alloc::{format, vec, vec::Vec};
 #[allow(
     non_snake_case,
     reason = "Matrix function names follow GLSL naming convention"

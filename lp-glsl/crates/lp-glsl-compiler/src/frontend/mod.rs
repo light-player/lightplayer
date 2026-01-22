@@ -27,6 +27,7 @@ pub use pipeline::{
 #[cfg(feature = "emulator")]
 use crate::backend::codegen::emu::EmulatorOptions;
 use crate::backend::module::gl_module::GlModule;
+#[cfg(feature = "std")]
 use crate::backend::target::Target;
 use crate::backend::transform::fixed32::{Fixed32Transform, FixedPointFormat};
 use crate::error::GlslError;
@@ -52,20 +53,9 @@ pub fn compile_glsl_to_gl_module_jit(
     let mut compiler = GlslCompiler::new();
 
     // Determine target based on run mode
+    #[cfg(feature = "std")]
     let target = match &options.run_mode {
-        RunMode::HostJit => {
-            #[cfg(feature = "std")]
-            {
-                Target::host_jit()?
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                return Err(GlslError::new(
-                    crate::error::ErrorCode::E0400,
-                    "HostJit mode requires 'std' feature flag",
-                ));
-            }
-        }
+        RunMode::HostJit => Target::host_jit()?,
         RunMode::Emulator { .. } => {
             return Err(GlslError::new(
                 crate::error::ErrorCode::E0400,
@@ -74,31 +64,50 @@ pub fn compile_glsl_to_gl_module_jit(
         }
     };
 
-    // Compile to GlModule
-    let mut module = compiler.compile_to_gl_module_jit(source, target)?;
-
-    // Apply transformations
-    match options.decimal_format {
-        DecimalFormat::Fixed32 => {
-            let transform = Fixed32Transform::new(FixedPointFormat::Fixed16x16);
-            module = module.apply_transform(transform)?;
-        }
-        DecimalFormat::Fixed64 => {
+    #[cfg(not(feature = "std"))]
+    match &options.run_mode {
+        RunMode::HostJit => {
             return Err(GlslError::new(
                 crate::error::ErrorCode::E0400,
-                "Fixed64 format is not yet supported. Only Fixed32 format is currently supported.",
+                "HostJit mode requires 'std' feature flag",
             ));
         }
-        DecimalFormat::Float => {
+        RunMode::Emulator { .. } => {
             return Err(GlslError::new(
                 crate::error::ErrorCode::E0400,
-                "Float format is not yet supported. Only Fixed32 format is currently supported. \
-                 Float format will cause TestCase relocation errors. Use Fixed32 format instead.",
+                "Emulator mode not supported for JIT compilation",
             ));
         }
     }
 
-    Ok(module)
+    #[cfg(feature = "std")]
+    {
+        // Compile to GlModule
+        let mut module = compiler.compile_to_gl_module_jit(source, target)?;
+
+        // Apply transformations
+        match options.decimal_format {
+            DecimalFormat::Fixed32 => {
+                let transform = Fixed32Transform::new(FixedPointFormat::Fixed16x16);
+                module = module.apply_transform(transform)?;
+            }
+            DecimalFormat::Fixed64 => {
+                return Err(GlslError::new(
+                    crate::error::ErrorCode::E0400,
+                    "Fixed64 format is not yet supported. Only Fixed32 format is currently supported.",
+                ));
+            }
+            DecimalFormat::Float => {
+                return Err(GlslError::new(
+                    crate::error::ErrorCode::E0400,
+                    "Float format is not yet supported. Only Fixed32 format is currently supported. \
+                     Float format will cause TestCase relocation errors. Use Fixed32 format instead.",
+                ));
+            }
+        }
+
+        Ok(module)
+    }
 }
 
 /// Compile GLSL to GlModule<ObjectModule> (internal, reusable)

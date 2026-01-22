@@ -7,7 +7,7 @@ use glsl::syntax::Expr;
 
 use super::coercion;
 
-use alloc::{format, vec::Vec};
+use alloc::{format, vec, vec::Vec};
 
 pub fn emit_vector_constructor<M: cranelift_module::Module>(
     ctx: &mut CodegenContext<'_, M>,

@@ -10,7 +10,7 @@ use cranelift_codegen::ir::types;
 use hashbrown::HashMap;
 use lp_jit_util::{call_structreturn, call_structreturn_with_args};
 
-use alloc::{format, string::String, vec::Vec};
+use alloc::{format, string::String, vec, vec::Vec};
 
 /// JIT-compiled GLSL module (executes on host or embedded)
 /// Works in both std and no_std (JITModule supports no_std)
@@ -26,6 +26,15 @@ pub struct GlslJitModule {
 }
 
 impl GlslJitModule {
+    /// Get function pointer by name
+    pub fn get_function_ptr(&self, name: &str) -> Result<*const u8, GlslError> {
+        use crate::error::ErrorCode;
+        self.function_ptrs
+            .get(name)
+            .copied()
+            .ok_or_else(|| GlslError::new(ErrorCode::E0101, format!("Function '{name}' not found")))
+    }
+
     /// Validate that only "main" function is being called
     fn validate_main_only(&self, name: &str) -> Result<(), GlslError> {
         use crate::error::ErrorCode;

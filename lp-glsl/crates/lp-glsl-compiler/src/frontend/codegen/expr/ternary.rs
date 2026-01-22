@@ -8,7 +8,7 @@ use glsl::syntax::Expr;
 
 use super::coercion;
 
-use alloc::{format, vec::Vec};
+use alloc::{format, vec, vec::Vec};
 
 /// Emit code to compute a ternary expression as an RValue
 pub fn emit_ternary_rvalue<M: cranelift_module::Module>(

@@ -5,6 +5,8 @@ use crate::error::{ErrorCode, GlslError, source_span_to_location};
 use crate::frontend::semantic::types::Type;
 use glsl::syntax::SourceSpan;
 
+use alloc::format;
+
 /// Promote numeric types (GLSL spec implicit conversion rules)
 /// Implements GLSL spec: variables.adoc:1182-1229
 pub fn promote_numeric(lhs: &Type, rhs: &Type) -> Type {

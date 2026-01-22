@@ -5,7 +5,7 @@ use crate::backend::transform::fixed32::converters::{get_first_result, map_value
 use crate::backend::transform::fixed32::signature::convert_signature;
 use crate::backend::transform::fixed32::types::FixedPointFormat;
 use crate::error::{ErrorCode, GlslError};
-use alloc::{string::String, vec::Vec};
+use alloc::{format, string::String, vec::Vec};
 use cranelift_codegen::ir::{
     AbiParam, ExtFuncData, ExternalName, FuncRef, Function, Inst, InstBuilder, InstructionData,
     SigRef, Signature, UserExternalName, Value, types,

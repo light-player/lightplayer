@@ -7,6 +7,8 @@ use glsl::syntax::SourceSpan;
 
 use super::conversion::can_implicitly_convert;
 
+use alloc::format;
+
 /// Check vector constructor arguments and infer result type
 pub fn check_vector_constructor(type_name: &str, args: &[Type]) -> Result<Type, GlslError> {
     check_vector_constructor_with_span(type_name, args, None)

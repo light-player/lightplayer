@@ -3,6 +3,8 @@ use glsl::syntax::SelectionStatement;
 use crate::error::{ErrorCode, GlslError};
 use crate::frontend::codegen::context::CodegenContext;
 
+use alloc::format;
+
 /// Emit if statement (selection statement)
 pub fn emit_if_stmt<M: cranelift_module::Module>(
     ctx: &mut CodegenContext<'_, M>,

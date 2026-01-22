@@ -5,6 +5,8 @@ use crate::error::{ErrorCode, GlslError, source_span_to_location};
 use crate::frontend::semantic::types::Type;
 use glsl::syntax::{BinaryOp, SourceSpan};
 
+use alloc::format;
+
 /// Infer result type of matrix binary operation
 /// Implements GLSL spec: operators.adoc:1019-1098
 pub fn infer_matrix_binary_result_type(

@@ -193,7 +193,6 @@ int main(int x, int y) {
             }
 
             defmt::panic!("{}", error_msg.as_str());
-            unreachable!()
         }
     };
 

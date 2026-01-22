@@ -6,7 +6,7 @@ use cranelift_codegen::ir::{InstBuilder, Value};
 use super::binary;
 use super::coercion;
 
-use alloc::{format, vec::Vec};
+use alloc::{format, vec, vec::Vec};
 
 pub fn emit_vector_binary<M: cranelift_module::Module>(
     ctx: &mut CodegenContext<'_, M>,

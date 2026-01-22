@@ -5,7 +5,7 @@ use crate::semantic::types::Type as GlslType;
 use cranelift_codegen::ir::{InstBuilder, TrapCode, Value, condcodes::IntCC, types};
 use glsl::syntax::{Expr, SourceSpan};
 
-use alloc::vec::Vec;
+use alloc::{format, vec, vec::Vec};
 use hashbrown::HashSet;
 
 /// Component naming sets for vector swizzles

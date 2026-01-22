@@ -15,6 +15,7 @@ use hashbrown::HashMap;
 
 use alloc::string::String;
 use alloc::vec::Vec;
+use alloc::vec;
 
 use alloc::format;
 /// GLSL compiler that compiles GLSL source to GlModule

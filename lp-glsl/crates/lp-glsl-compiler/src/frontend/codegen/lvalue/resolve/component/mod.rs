@@ -8,6 +8,8 @@ use crate::frontend::codegen::context::CodegenContext;
 use crate::semantic::types::Type as GlslType;
 use glsl::syntax::Expr;
 
+use alloc::format;
+
 use super::super::super::expr::component;
 use super::super::types::LValue;
 

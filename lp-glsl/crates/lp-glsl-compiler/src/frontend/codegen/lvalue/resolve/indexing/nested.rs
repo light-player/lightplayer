@@ -3,7 +3,7 @@
 use crate::error::{ErrorCode, GlslError, source_span_to_location};
 use crate::frontend::codegen::context::CodegenContext;
 use crate::semantic::types::Type as GlslType;
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use cranelift_codegen::ir::Value;
 use glsl::syntax::{ArraySpecifier, ArraySpecifierDimension, SourceSpan};
 

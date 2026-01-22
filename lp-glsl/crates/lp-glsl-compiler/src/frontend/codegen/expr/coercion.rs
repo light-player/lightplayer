@@ -7,6 +7,8 @@ use cranelift_codegen::ir::{
     types,
 };
 
+use alloc::format;
+
 pub fn coerce_to_type<M: cranelift_module::Module>(
     ctx: &mut CodegenContext<'_, M>,
     val: Value,
