@@ -3,7 +3,7 @@
 //! Provides enum-based registry for host functions with support for JIT linking.
 
 use crate::error::{ErrorCode, GlslError};
-use cranelift_codegen::ir::{AbiParam, Signature, types};
+use cranelift_codegen::ir::{types, AbiParam, Signature};
 use cranelift_codegen::isa::CallConv;
 use cranelift_module::{Linkage, Module};
 
@@ -46,11 +46,12 @@ impl HostId {
 ///
 /// Returns the function pointer that can be registered with JITModule.
 #[cfg(feature = "std")]
-pub fn get_host_function_pointer(host: HostId) -> *const u8 {
+pub fn get_host_function_pointer(host: HostId) -> Option<*const u8> {
     use crate::backend::host::impls;
+
     match host {
-        HostId::Debug => impls::__host_debug as *const u8,
-        HostId::Println => impls::__host_println as *const u8,
+        HostId::Debug => Some(impls::__host_debug as *const u8),
+        HostId::Println => Some(impls::__host_println as *const u8),
     }
 }
 
@@ -58,9 +59,8 @@ pub fn get_host_function_pointer(host: HostId) -> *const u8 {
 ///
 /// Returns None since host functions require std.
 #[cfg(not(feature = "std"))]
-pub fn get_host_function_pointer(_host: HostId) -> *const u8 {
-    // Return a null pointer - host functions don't work in no_std
-    core::ptr::null()
+pub fn get_host_function_pointer(_host: HostId) -> Option<*const u8> {
+    None
 }
 
 /// Declare host functions as external symbols.

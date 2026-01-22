@@ -1,5 +1,7 @@
 //! Semantic target enum - hides implementation details
 
+use alloc::format;
+
 use crate::error::{ErrorCode, GlslError};
 use cranelift_codegen::ir::Type;
 use cranelift_codegen::isa::CallConv;
@@ -48,6 +50,7 @@ impl Target {
 
     /// Create host JIT with specific architecture
     #[allow(unused, reason = "Method for architecture-specific JIT creation")]
+    #[cfg(feature = "std")]
     pub fn host_jit_with_arch(arch: Architecture) -> Result<Self, GlslError> {
         Ok(Self::HostJit {
             arch: Some(arch),
@@ -225,6 +228,7 @@ fn detect_host_triple() -> target_lexicon::Triple {
 #[cfg(test)]
 mod tests {
     use super::*;
+use alloc::format;
 
     #[test]
     fn test_riscv32_emulator_creation() {

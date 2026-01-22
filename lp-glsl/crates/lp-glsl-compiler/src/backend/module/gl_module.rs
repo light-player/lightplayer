@@ -6,8 +6,8 @@ use crate::error::{ErrorCode, GlslError};
 use crate::frontend::semantic::functions::{FunctionRegistry, FunctionSignature};
 use crate::frontend::src_loc::GlSourceMap;
 use crate::frontend::src_loc_manager::SourceLocManager;
-#[cfg(feature = "std")]
 use alloc::boxed::Box;
+use alloc::format;
 use alloc::string::String;
 use cranelift_jit::JITModule;
 use cranelift_module::Module;
@@ -37,9 +37,9 @@ impl GlModule<JITModule> {
                 let mut builder = target.create_module_builder()?;
                 // Add builtin and host symbol lookup function before creating module
                 {
-                    use crate::backend::builtins::registry::{BuiltinId, get_function_pointer};
+                    use crate::backend::builtins::registry::{get_function_pointer, BuiltinId};
                     #[cfg(feature = "std")]
-                    use crate::backend::host::{HostId, get_host_function_pointer};
+                    use crate::backend::host::{get_host_function_pointer, HostId};
                     match &mut builder {
                         crate::backend::target::builder::ModuleBuilder::JIT(jit_builder) => {
                             // Create lookup function that returns builtin and host function pointers
@@ -52,13 +52,10 @@ impl GlModule<JITModule> {
                                             return Some(get_function_pointer(*builtin));
                                         }
                                     }
-                                    // Check host functions (only in std mode)
                                     #[cfg(feature = "std")]
-                                    {
-                                        for host in HostId::all() {
-                                            if host.name() == name {
-                                                return Some(get_host_function_pointer(*host));
-                                            }
+                                    for host in HostId::all() {
+                                        if host.name() == name {
+                                            return get_host_function_pointer(*host);
                                         }
                                     }
                                     None
