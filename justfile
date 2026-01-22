@@ -71,9 +71,9 @@ fix: fmt clippy-fix
 fmt-check:
     cargo fmt --all -- --check
 
-# Run clippy checks (exclude lp-builtins-app as it's no_std, and exclude dependencies)
+# Run clippy checks (exclude lp-builtins-app and esp32-glsl-jit as they're no_std, and exclude dependencies)
 clippy:
-    cargo clippy --workspace --exclude lp-builtins-app -- --no-deps -D warnings
+    cargo clippy --workspace --exclude lp-builtins-app --exclude esp32-glsl-jit -- --no-deps -D warnings
 
 # Build ESP32 app (excluded from default-members, only builds for RISC-V)
 esp32-build:
