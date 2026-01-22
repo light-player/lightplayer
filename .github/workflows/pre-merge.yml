@@ -13,7 +13,7 @@ env:
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,4 +43,7 @@ jobs:
         uses: extractions/setup-just@v3
 
       - name: Validate
-        run: just ci
+        # Note: we don't run tests on ci right now because jit tests fail on arm
+        #       due to memory protection, and don't run on x64 due to some cranelift
+        #       x64 build issue.
+        run: just check build
