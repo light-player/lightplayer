@@ -59,7 +59,7 @@ impl Target {
 #[cfg(test)]
 mod tests {
     use super::*;
-use alloc::format;
+    use alloc::format;
 
     #[test]
     #[cfg(feature = "std")]

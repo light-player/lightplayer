@@ -5,8 +5,8 @@ use crate::frontend::codegen::context::CodegenContext;
 use crate::semantic::types::Type;
 use cranelift_codegen::ir::{InstBuilder, Value, condcodes::IntCC, types};
 
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 
 impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
     /// all(x) - returns true if all components are true

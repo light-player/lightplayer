@@ -2,8 +2,8 @@
 
 use crate::frontend::semantic::types::Type;
 
-use alloc::{format, vec, vec::Vec};
 use alloc::string::{String, ToString};
+use alloc::{format, vec, vec::Vec};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuiltinSignature {

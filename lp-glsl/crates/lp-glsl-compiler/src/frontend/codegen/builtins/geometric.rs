@@ -5,8 +5,8 @@ use crate::frontend::codegen::context::CodegenContext;
 use crate::semantic::types::Type;
 use cranelift_codegen::ir::{InstBuilder, Value};
 
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 
 impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
     /// Dot product: x·y = x₀y₀ + x₁y₁ + x₂y₂ + ...

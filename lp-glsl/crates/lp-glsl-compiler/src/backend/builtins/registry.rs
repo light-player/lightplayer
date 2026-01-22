@@ -13,8 +13,6 @@
 
 use crate::error::{ErrorCode, GlslError};
 use cranelift_codegen::ir::{AbiParam, Signature, types};
-
-use alloc::format;
 use cranelift_codegen::isa::CallConv;
 use cranelift_module::{Linkage, Module};
 
