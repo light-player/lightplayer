@@ -1,6 +1,5 @@
 //! Individual relocation type handlers.
 
-use crate::debug;
 use alloc::format;
 use alloc::string::String;
 use hashbrown::HashMap;

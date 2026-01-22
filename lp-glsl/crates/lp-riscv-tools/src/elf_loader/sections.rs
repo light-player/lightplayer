@@ -1,7 +1,6 @@
 //! Section loading into memory buffers.
 
 use super::memory::{is_ram_address, is_rom_address, ram_address_to_offset};
-use crate::debug;
 use alloc::format;
 use alloc::string::{String, ToString};
 use object::{Object, ObjectSection, ObjectSymbol};

@@ -21,7 +21,6 @@ pub use symbols::{build_object_symbol_map, merge_symbol_maps};
 
 extern crate alloc;
 
-use crate::debug;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;

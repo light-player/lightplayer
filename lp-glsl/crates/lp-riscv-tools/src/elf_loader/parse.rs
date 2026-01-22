@@ -1,6 +1,5 @@
 //! ELF parsing and validation utilities.
 
-use crate::debug;
 use alloc::format;
 use alloc::string::String;
 use object::Object;

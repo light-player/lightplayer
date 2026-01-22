@@ -1,6 +1,5 @@
 //! Phase 2: Apply relocations in dependency order.
 
-use crate::debug;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;

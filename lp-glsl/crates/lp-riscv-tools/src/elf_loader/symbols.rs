@@ -1,7 +1,6 @@
 //! Symbol map building for relocations.
 
 use super::memory::is_ram_address;
-use crate::debug;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;

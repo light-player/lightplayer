@@ -1,6 +1,5 @@
 //! Phase 1: Analyze relocations and identify GOT entries.
 
-use crate::debug;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;

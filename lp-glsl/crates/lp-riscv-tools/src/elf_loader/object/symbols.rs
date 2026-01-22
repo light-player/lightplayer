@@ -2,7 +2,6 @@
 
 extern crate alloc;
 
-use crate::debug;
 use ::object::{Object, ObjectSection, ObjectSymbol, SymbolSection};
 use alloc::format;
 use alloc::string::{String, ToString};

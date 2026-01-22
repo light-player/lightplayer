@@ -1,6 +1,5 @@
 //! GOT (Global Offset Table) entry tracking and management.
 
-use crate::debug;
 use alloc::string::String;
 use hashbrown::HashMap;
 

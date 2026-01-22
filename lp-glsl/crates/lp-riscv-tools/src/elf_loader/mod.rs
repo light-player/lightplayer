@@ -13,7 +13,6 @@ mod relocations;
 mod sections;
 mod symbols;
 
-use crate::debug;
 use ::object::{Object, ObjectSection};
 use alloc::string::String;
 use alloc::vec;
