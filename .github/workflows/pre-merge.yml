@@ -43,4 +43,4 @@ jobs:
         uses: extractions/setup-just@v3
 
       - name: Validate
-        run: just validate
+        run: just ci
