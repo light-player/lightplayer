@@ -120,33 +120,4 @@ else
 fi
 
 echo ""
-
-# Install git hooks
-echo "Setting up git hooks..."
-GIT_DIR="$PROJECT_ROOT/.git"
-HOOKS_DIR="$GIT_DIR/hooks"
-GITHOOKS_DIR="$PROJECT_ROOT/.githooks"
-
-if [ ! -d "$GIT_DIR" ]; then
-    echo -e "${YELLOW}Warning:${NC} .git directory not found. This doesn't appear to be a git repository."
-    echo "  Skipping git hook installation."
-else
-    # Ensure hooks directory exists
-    mkdir -p "$HOOKS_DIR"
-    
-    # Copy pre-commit hook
-    PRE_COMMIT_SOURCE="$GITHOOKS_DIR/pre-commit"
-    PRE_COMMIT_TARGET="$HOOKS_DIR/pre-commit"
-    
-    if [ -f "$PRE_COMMIT_SOURCE" ]; then
-        cp "$PRE_COMMIT_SOURCE" "$PRE_COMMIT_TARGET"
-        chmod +x "$PRE_COMMIT_TARGET"
-        echo -e "${GREEN}✓${NC} Pre-commit hook installed"
-    else
-        echo -e "${YELLOW}Warning:${NC} Pre-commit hook source not found at $PRE_COMMIT_SOURCE"
-        echo "  Skipping pre-commit hook installation."
-    fi
-fi
-
-echo ""
 echo -e "${GREEN}Development environment initialized successfully!${NC}"
