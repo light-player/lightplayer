@@ -57,10 +57,17 @@ pub fn get_host_function_pointer(host: HostId) -> Option<*const u8> {
 
 /// Get function pointer for a host function (no_std mode).
 ///
-/// Returns None since host functions require std.
+/// Returns pointers to extern functions that must be provided by the user.
+/// Users must define `lp_jit_debug` and `lp_jit_print` with signature:
+/// `extern "C" fn(ptr: *const u8, len: usize)`
 #[cfg(not(feature = "std"))]
-pub fn get_host_function_pointer(_host: HostId) -> Option<*const u8> {
-    None
+pub fn get_host_function_pointer(host: HostId) -> Option<*const u8> {
+    use crate::backend::host::{lp_jit_debug, lp_jit_print};
+
+    match host {
+        HostId::Debug => Some(lp_jit_debug as *const u8),
+        HostId::Println => Some(lp_jit_print as *const u8),
+    }
 }
 
 /// Declare host functions as external symbols.

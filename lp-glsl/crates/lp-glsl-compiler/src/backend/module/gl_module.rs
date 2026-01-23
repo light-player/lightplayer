@@ -38,7 +38,6 @@ impl GlModule<JITModule> {
                 // Add builtin and host symbol lookup function before creating module
                 {
                     use crate::backend::builtins::registry::{BuiltinId, get_function_pointer};
-                    #[cfg(feature = "std")]
                     use crate::backend::host::{HostId, get_host_function_pointer};
                     match &mut builder {
                         crate::backend::target::builder::ModuleBuilder::JIT(jit_builder) => {
@@ -52,7 +51,7 @@ impl GlModule<JITModule> {
                                             return Some(get_function_pointer(*builtin));
                                         }
                                     }
-                                    #[cfg(feature = "std")]
+                                    // Check host functions (works in both std and no_std)
                                     for host in HostId::all() {
                                         if host.name() == name {
                                             return get_host_function_pointer(*host);
