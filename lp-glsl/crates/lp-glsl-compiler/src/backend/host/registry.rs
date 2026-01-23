@@ -3,6 +3,7 @@
 //! Provides enum-based registry for host functions with support for JIT linking.
 
 use crate::error::{ErrorCode, GlslError};
+use alloc::format;
 use cranelift_codegen::ir::{AbiParam, Signature, types};
 use cranelift_codegen::isa::CallConv;
 use cranelift_module::{Linkage, Module};

@@ -201,7 +201,7 @@ fn create_host_isa(flags: Flags) -> Result<OwnedTargetIsa, GlslError> {
 
 /// Helper: Get RISC-V 32-bit triple
 /// Available in both emulator and no_std modes
-#[allow(dead_code)] // Used in no_std mode via create_host_isa()
+#[allow(dead_code, reason = "Used in no_std mode via create_host_isa()")]
 fn riscv32_triple() -> target_lexicon::Triple {
     use target_lexicon::{
         Architecture, BinaryFormat, Environment, OperatingSystem, Riscv32Architecture, Triple,
