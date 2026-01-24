@@ -209,7 +209,7 @@ impl BuiltinId {
 ///
 /// Returns the function pointer that can be registered with JITModule.
 pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
-    use lp_builtins::builtins::fixed32;
+    use lp_builtins::builtins::{fixed32, shared};
     match builtin {
         BuiltinId::Fixed32Acos => fixed32::__lp_fixed32_acos as *const u8,
         BuiltinId::Fixed32Acosh => fixed32::__lp_fixed32_acosh as *const u8,
