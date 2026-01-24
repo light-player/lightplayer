@@ -44,12 +44,13 @@ build-host-release:
 build-rv32: install-rv32-target
     @echo "Building RISC-V packages ({{rv32_target}})..."
     cargo build --target {{rv32_target}} -p lp-builtins-app
-    cargo build --target {{rv32_target}} -p esp32-glsl-jit --release
+    cd lp-glsl/apps/esp32-glsl-jit && cargo build --target {{rv32_target}} --release --features esp32c6
 
 # Build RISC-V target packages in release mode
 build-rv32-release: install-rv32-target
     @echo "Building RISC-V packages in release mode ({{rv32_target}})..."
-    cargo build --target {{rv32_target}} -p esp32-glsl-jit -p lp-builtins-app --release
+    cargo build --target {{rv32_target}} -p lp-builtins-app --release
+    cd lp-glsl/apps/esp32-glsl-jit && cargo build --target {{rv32_target}} --release --features esp32c6
 
 # Build all packages (host and RISC-V)
 build: build-host build-rv32
