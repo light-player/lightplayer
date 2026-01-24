@@ -1,0 +1,23 @@
+[package]
+name = "fixed32-metrics"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Tool for tracking fixed32 transform bloat metrics"
+publish = false
+
+[[bin]]
+name = "fixed32-metrics"
+path = "src/main.rs"
+
+[dependencies]
+lp-glsl-compiler = { path = "../../crates/lp-glsl-compiler", default-features = false, features = ["std"] }
+serde = { workspace = true, features = ["derive"] }
+toml = "0.8"
+clap = { version = "4.5", features = ["derive"] }
+anyhow = { workspace = true }
+chrono = "0.4"
+cranelift-jit = { workspace = true }
+cranelift-codegen = { workspace = true }
+hashbrown = { workspace = true }

@@ -15,7 +15,7 @@ esp-bootloader-esp-idf = { version = "0.2.0" }
 esp-hal = { version = "1.0.0", features = ["log-04", "unstable"] }
 esp-rtos = { version = "0.2.0", features = ["embassy", "log-04"] }
 esp-println = { version = "0.16.1", features = ["log-04"] }
-esp-alloc = { version = "0.8.0" }
+esp-alloc = { version = "0.8.0", features = ["internal-heap-stats"] }
 hashbrown = { workspace = true }
 
 lp-glsl-compiler = { path = "../../crates/lp-glsl-compiler", default-features = false, features = ["core"] }

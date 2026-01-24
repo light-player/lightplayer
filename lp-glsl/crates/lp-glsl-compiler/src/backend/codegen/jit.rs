@@ -98,6 +98,117 @@ pub fn build_jit_executable(
     })
 }
 
+/// Build JIT executable from GlModule<JITModule> with aggressive memory optimization
+///
+/// This function frees CLIF IR immediately after each function compilation and drops
+/// unused GlModule fields to minimize memory usage. Use this in memory-constrained
+/// environments like embedded systems.
+pub fn build_jit_executable_memory_optimized(
+    mut gl_module: GlModule<JITModule>,
+) -> Result<GlslJitModule, GlslError> {
+    // Builtin functions are already declared when the module was created
+
+    // 1. Extract signatures and target info early (before compilation)
+    let signatures = gl_module.glsl_signatures.clone();
+    let call_conv = gl_module
+        .target
+        .default_call_conv()
+        .map_err(|e| GlslError::new(ErrorCode::E0400, format!("Failed to get call conv: {e}")))?;
+    let pointer_type = gl_module.target.pointer_type().map_err(|e| {
+        GlslError::new(ErrorCode::E0400, format!("Failed to get pointer type: {e}"))
+    })?;
+
+    // 2. Extract function metadata we'll need later (name, func_id, clif_sig)
+    // This allows us to free the CLIF IR and drop the fns HashMap after compilation
+    let func_metadata: Vec<(
+        String,
+        cranelift_module::FuncId,
+        cranelift_codegen::ir::Signature,
+    )> = gl_module
+        .fns
+        .iter()
+        .map(|(name, gl_func)| (name.clone(), gl_func.func_id, gl_func.clif_sig.clone()))
+        .collect();
+
+    // 3. Build cranelift signatures map before freeing CLIF IR
+    let mut cranelift_signatures = HashMap::new();
+    for (name, _, sig) in &func_metadata {
+        cranelift_signatures.insert(name.clone(), sig.clone());
+    }
+
+    // 4. Define all functions (compile them), freeing CLIF IR after each
+    for (name, func_id, _) in &func_metadata {
+        // Extract function IR for this function
+        let func = gl_module
+            .fns
+            .get(name)
+            .ok_or_else(|| {
+                GlslError::new(
+                    ErrorCode::E0400,
+                    format!("Function '{name}' not found in module"),
+                )
+            })?
+            .function
+            .clone();
+
+        // Create context and compile function
+        let mut ctx = {
+            let module_ref = gl_module.module_internal();
+            module_ref.make_context()
+        };
+        ctx.func = func;
+        gl_module
+            .module_mut_internal()
+            .define_function(*func_id, &mut ctx)
+            .map_err(|e| {
+                GlslError::new(
+                    ErrorCode::E0400,
+                    format!("Failed to define function '{name}': {e}"),
+                )
+            })?;
+        {
+            let module_ref = gl_module.module_internal();
+            module_ref.clear_context(&mut ctx);
+        }
+
+        // Free CLIF IR for this function by removing it from the HashMap
+        // We've already extracted what we need (func_id, clif_sig) in func_metadata
+        gl_module.fns.remove(name);
+    }
+
+    // 5. Finalize definitions
+    gl_module
+        .module_mut_internal()
+        .finalize_definitions()
+        .map_err(|e| {
+            GlslError::new(
+                ErrorCode::E0400,
+                format!("Failed to finalize definitions: {e}"),
+            )
+        })?;
+
+    // 6. Extract function pointers using the stored func_ids
+    let mut function_ptrs = HashMap::new();
+    for (name, func_id, _) in &func_metadata {
+        let ptr = gl_module.module_internal().get_finalized_function(*func_id);
+        function_ptrs.insert(name.clone(), ptr);
+    }
+
+    // 7. Extract JITModule and drop the rest of GlModule
+    // This frees: function_registry, source_text, source_loc_manager, source_map, and the now-empty fns HashMap
+    let jit_module = gl_module.into_module();
+
+    // 8. Create GlslJitModule
+    Ok(GlslJitModule {
+        jit_module,
+        function_ptrs,
+        signatures,
+        cranelift_signatures,
+        call_conv,
+        pointer_type,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

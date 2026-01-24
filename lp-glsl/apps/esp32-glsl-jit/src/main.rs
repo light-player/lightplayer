@@ -15,6 +15,7 @@ use alloc::string::String;
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Instant, Timer};
 use esp_backtrace as _;
+use esp_hal::clock::CpuClock;
 use esp_hal::{interrupt::software::SoftwareInterruptControl, timer::timg::TimerGroup};
 use hashbrown::HashMap;
 
@@ -26,8 +27,15 @@ use lp_glsl_compiler::backend::transform::fixed32::{Fixed32Transform, FixedPoint
 use target_lexicon::Triple;
 
 use esp_println::println;
+use lp_glsl_compiler::backend::codegen::jit::build_jit_executable_memory_optimized;
 
 esp_bootloader_esp_idf::esp_app_desc!();
+
+/// Print memory usage statistics with a descriptive label
+fn print_memory_stats(label: &str) {
+    println!("\n=== Memory Stats: {} ===", label);
+    println!("{}", esp_alloc::HEAP.stats());
+}
 
 #[embassy_executor::task]
 async fn run() {
@@ -40,12 +48,15 @@ async fn run() {
 #[esp_rtos::main]
 async fn main(spawner: Spawner) {
     esp_println::logger::init_logger_from_env();
-    let peripherals = esp_hal::init(esp_hal::Config::default());
+    // Configure CPU clock to maximum speed (160MHz for ESP32-C6)
+    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
+    let peripherals = esp_hal::init(config);
 
     // Allocate heap
-    esp_alloc::heap_allocator!(size: 256 * 1024);
+    esp_alloc::heap_allocator!(size: 300_000);
 
     println!("Init!");
+    print_memory_stats("After Heap Initialization");
 
     let sw_int = SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
     let timg0 = TimerGroup::new(peripherals.TIMG0);
@@ -235,6 +246,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     let isa = match isa_builder(triple).finish(isa_flags) {
         Ok(isa) => {
             println!("  ✓ ISA created");
+            print_memory_stats("After ISA Creation");
             isa
         }
         Err(_e) => {
@@ -259,6 +271,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     let gl_module = match compiler.compile_to_gl_module_jit(source, target) {
         Ok(module) => {
             println!("  ✓ GLSL compilation successful");
+            print_memory_stats("After GLSL Compilation");
             module
         }
         Err(e) => {
@@ -290,12 +303,22 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         }
     };
 
+    // Drop compiler before transform - we don't need it anymore
+    drop(compiler);
+    print_memory_stats("After Dropping Compiler");
+
     // Apply fixed32 transform to convert f32 operations to fixed-point (i32)
     println!("Step 2b: Applying fixed32 transform...");
-    let gl_module =
+    print_memory_stats("Before Fixed32 Transform");
+
+    // Explicitly drop the old module after transform by moving it into the function
+    // The transform consumes gl_module and creates a new one, but both may exist temporarily
+    let q32_module =
         match gl_module.apply_transform(Fixed32Transform::new(FixedPointFormat::Fixed16x16)) {
             Ok(module) => {
                 println!("  ✓ Fixed32 transform applied");
+                // The old gl_module should be dropped now, but let's verify
+                print_memory_stats("After Fixed32 Transform");
                 module
             }
             Err(e) => {
@@ -304,11 +327,14 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
             }
         };
 
+    println!("Step 3: Building executable...");
+
     // Build JIT executable directly to get the concrete type with function pointers
-    use lp_glsl_compiler::backend::codegen::jit::build_jit_executable;
-    let jit_module = match build_jit_executable(gl_module) {
+    // Use memory-optimized version to free CLIF IR after compilation
+    let jit_module = match build_jit_executable_memory_optimized(q32_module) {
         Ok(module) => {
             println!("  ✓ JIT executable built");
+            print_memory_stats("After JIT Executable Build");
             module
         }
         Err(e) => {
@@ -321,6 +347,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     let func_ptr = match jit_module.get_function_ptr("main") {
         Ok(ptr) => {
             println!("  ✓ Function pointer obtained");
+            print_memory_stats("After Getting Function Pointer");
             ptr
         }
         Err(e) => {
@@ -422,6 +449,9 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
                 PIXELS_PER_FRAME,
                 frame_count
             );
+
+            // Print memory stats along with FPS report
+            print_memory_stats("During Rendering Loop");
 
             frame_count = 0;
             last_fps_report = frame_end;

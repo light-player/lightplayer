@@ -32,14 +32,16 @@ pub unsafe fn call_vec4_shader(
     let mut result_buffer = [0u8; 16];
 
     // Call the shader function with StructReturn
-    call_structreturn_with_args(
-        func_ptr,
-        result_buffer.as_mut_ptr(),
-        16, // 4 i32s = 16 bytes
-        &jit_args,
-        isa.default_call_conv(),
-        isa.pointer_type(),
-    )?;
+    unsafe {
+        call_structreturn_with_args(
+            func_ptr,
+            result_buffer.as_mut_ptr(),
+            16, // 4 i32s = 16 bytes
+            &jit_args,
+            isa.default_call_conv(),
+            isa.pointer_type(),
+        )?;
+    }
 
     // Extract vec4 result (r, g, b, a) as i32 fixed32 values from buffer
     let r = i32::from_le_bytes([

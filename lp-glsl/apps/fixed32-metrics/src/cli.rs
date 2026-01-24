@@ -1,0 +1,39 @@
+use clap::Parser;
+use lp_glsl_compiler::backend::transform::fixed32::FixedPointFormat;
+use std::path::PathBuf;
+
+#[derive(Parser)]
+#[command(name = "fixed32-metrics")]
+#[command(about = "Track fixed32 transform bloat metrics")]
+pub struct Args {
+    /// Directory containing GLSL test files
+    #[arg(long, required = true)]
+    pub tests_dir: PathBuf,
+
+    /// Directory for report output
+    #[arg(long, required = true)]
+    pub output_dir: PathBuf,
+
+    /// Fixed point format
+    #[arg(long, default_value = "Fixed16x16")]
+    pub format: String,
+
+    /// Verbose output
+    #[arg(short, long)]
+    pub verbose: bool,
+}
+
+pub fn parse_args() -> Args {
+    Args::parse()
+}
+
+pub fn parse_format(format_str: &str) -> anyhow::Result<FixedPointFormat> {
+    match format_str {
+        "Fixed16x16" => Ok(FixedPointFormat::Fixed16x16),
+        "Fixed32x32" => Ok(FixedPointFormat::Fixed32x32),
+        _ => anyhow::bail!(
+            "Unknown format: {}. Supported: Fixed16x16, Fixed32x32",
+            format_str
+        ),
+    }
+}
