@@ -373,21 +373,40 @@ pub(crate) fn convert_call(
                                 )
                             })?;
                         let old_func_id = cranelift_module::FuncId::from_u32(user_name.index);
-                        let func_name = old_func_id_map.get(&old_func_id).ok_or_else(|| {
-                            GlslError::new(
-                                ErrorCode::E0400,
-                                format!(
-                                    "Old FuncId {} not found in old_func_id_map",
-                                    old_func_id.as_u32()
-                                ),
-                            )
-                        })?;
-                        let new_func_id = func_id_map.get(func_name).ok_or_else(|| {
-                            GlslError::new(
-                                ErrorCode::E0400,
-                                format!("Function '{func_name}' not found in func_id_map"),
-                            )
-                        })?;
+                        // Check if this is a builtin function (not in old_func_id_map)
+                        let new_func_id = if let Some(func_name) = old_func_id_map.get(&old_func_id)
+                        {
+                            // Regular user function - remap through old_func_id_map
+                            func_id_map.get(func_name).ok_or_else(|| {
+                                GlslError::new(
+                                    ErrorCode::E0400,
+                                    format!("Function '{func_name}' not found in func_id_map"),
+                                )
+                            })?
+                        } else {
+                            // Builtin function - FuncId should be stable, check if it exists in func_id_map
+                            // Try to find the builtin name by checking all builtins
+                            use crate::backend::builtins::registry::BuiltinId;
+                            let mut found_builtin_id = None;
+                            for builtin in BuiltinId::all() {
+                                if let Some(&func_id) = func_id_map.get(builtin.name()) {
+                                    if func_id == old_func_id {
+                                        found_builtin_id =
+                                            Some(func_id_map.get(builtin.name()).unwrap());
+                                        break;
+                                    }
+                                }
+                            }
+                            found_builtin_id.ok_or_else(|| {
+                                GlslError::new(
+                                    ErrorCode::E0400,
+                                    format!(
+                                        "Old FuncId {} not found in old_func_id_map or builtin registry",
+                                        old_func_id.as_u32()
+                                    ),
+                                )
+                            })?
+                        };
                         let new_user_name = UserExternalName {
                             namespace: user_name.namespace,
                             index: new_func_id.as_u32(),
