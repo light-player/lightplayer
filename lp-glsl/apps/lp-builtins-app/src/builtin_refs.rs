@@ -42,9 +42,9 @@ pub fn ensure_builtins_referenced() {
         let _fixed32_ldexp_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_ldexp;
         let _fixed32_log_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_log;
         let _fixed32_log2_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_log2;
-        let _fixed32_lp_simplex1_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_lp_simplex1;
-        let _fixed32_lp_simplex2_fn: extern "C" fn(i32, i32, i32) -> i32 = __lp_fixed32_lp_simplex2;
-        let _fixed32_lp_simplex3_fn: extern "C" fn(i32, i32, i32, i32) -> i32 =
+        let _fixed32_lp_simplex1_fn: extern "C" fn(i32, u32) -> i32 = __lp_fixed32_lp_simplex1;
+        let _fixed32_lp_simplex2_fn: extern "C" fn(i32, i32, u32) -> i32 = __lp_fixed32_lp_simplex2;
+        let _fixed32_lp_simplex3_fn: extern "C" fn(i32, i32, i32, u32) -> i32 =
             __lp_fixed32_lp_simplex3;
         let _fixed32_mod_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_mod;
         let _fixed32_mul_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_mul;

@@ -600,7 +600,7 @@ fn generate_builtin_refs(path: &Path, builtins: &[BuiltinInfo]) {
                 4 => "extern \"C\" fn(u32, u32, u32, u32) -> u32",
                 _ => "extern \"C\" fn(u32) -> u32",
             }
-        } else if builtin.function_name.starts_with("__lp_simplex") {
+        } else if builtin.function_name.contains("lp_simplex") {
             // Simplex functions use i32 for coordinates, u32 for seed, return i32
             match builtin.param_count {
                 2 => "extern \"C\" fn(i32, u32) -> i32",
