@@ -65,7 +65,7 @@ return result;
 // run: test_vec4_add_in_assignment() ~= vec4(15.0, 10.0, 10.0, 10.0)
 
 vec4 test_vec4_add_large_numbers() {
-// Large numbers are clamped to fixed16x16 max (32767.99998)
+// Large numbers are clamped to fixed16x16 max (32767.99998, rounds to 32768.0)
 // Addition saturates to max for each component
 vec4 a = vec4(100000.0, 50000.0, 25000.0, 10000.0);
 vec4 b = vec4(200000.0, 30000.0, 15000.0, 5000.0);

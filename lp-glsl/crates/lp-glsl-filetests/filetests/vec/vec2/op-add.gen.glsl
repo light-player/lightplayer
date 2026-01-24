@@ -65,7 +65,7 @@ return result;
 // run: test_vec2_add_in_assignment() ~= vec2(15.0, 10.0)
 
 vec2 test_vec2_add_large_numbers() {
-// Large numbers are clamped to fixed16x16 max (32767.99998)
+// Large numbers are clamped to fixed16x16 max (32767.99998, rounds to 32768.0)
 // Addition saturates to max for each component
 vec2 a = vec2(100000.0, 50000.0);
 vec2 b = vec2(200000.0, 30000.0);
