@@ -80,7 +80,7 @@ pub extern "C" fn __lp_hash_3(x: u32, y: u32, z: u32, seed: u32) -> u32 {
 /// 1. Rotate right by 17 bits and XOR
 /// 2. Multiply by KEY
 /// 3. Rotate right by 11 bits, XOR with seed
-/// 4. Multiply by !KEY
+/// 4. Multiply by KEY (using KEY instead of !KEY to preserve LSB)
 ///
 /// This produces a visually pleasing hash suitable for noise generation.
 #[inline(always)]
@@ -91,7 +91,7 @@ fn hash_impl(input: u32, seed: u32) -> u32 {
     x ^= x.rotate_right(17);
     x = x.wrapping_mul(KEY);
     x ^= x.rotate_right(11) ^ seed;
-    x = x.wrapping_mul(!KEY);
+    x = x.wrapping_mul(KEY);
     x
 }
 

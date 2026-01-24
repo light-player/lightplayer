@@ -186,7 +186,7 @@ mod tests {
     extern crate std;
     use super::*;
     use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
-    use std::{println, print};
+    use std::{print, println};
 
     #[test]
     fn test_simplex2_basic() {
@@ -299,7 +299,7 @@ mod tests {
             }
             println!();
         }
-        
+
         println!("\n=== Simplex2 Seed Comparison (x=2.5, y=2.5) ===");
         let x = float_to_fixed(2.5);
         let y = float_to_fixed(2.5);
@@ -308,7 +308,7 @@ mod tests {
             let result_float = fixed_to_float(result);
             println!("  seed={}: {:7.4}", seed, result_float);
         }
-        
+
         // Verify outputs are in reasonable range
         for i in 0..50 {
             let x = float_to_fixed(i as f32 * 0.1);
@@ -321,5 +321,87 @@ mod tests {
                 result_float
             );
         }
+    }
+
+    #[test]
+    fn test_simplex2_different_seeds() {
+        // Test that different seeds produce different outputs
+        // This matches the GLSL filetest
+        let x = float_to_fixed(0.5);
+        let y = float_to_fixed(0.5);
+
+        // Debug: manually trace through the algorithm
+        use crate::fixed32::q32::Q32;
+        let x_q32 = Q32::from_fixed(x);
+        let y_q32 = Q32::from_fixed(y);
+        let sum = x_q32 + y_q32;
+        let skew = sum * super::SKEW_FACTOR_2D;
+        let skewed_x = x_q32 + skew;
+        let skewed_y = y_q32 + skew;
+        let cell_x_int = skewed_x.to_i32();
+        let cell_y_int = skewed_y.to_i32();
+
+        println!("Input: x={}, y={}", fixed_to_float(x), fixed_to_float(y));
+        println!(
+            "Skewed: x={}, y={}",
+            fixed_to_float(skewed_x.to_fixed()),
+            fixed_to_float(skewed_y.to_fixed())
+        );
+        println!("Cell: ({}, {})", cell_x_int, cell_y_int);
+
+        let n1 = __lp_fixed32_lp_simplex2(x, y, 0);
+        let n2 = __lp_fixed32_lp_simplex2(x, y, 1);
+        let n1_float = fixed_to_float(n1);
+        let n2_float = fixed_to_float(n2);
+        let diff = (n1_float - n2_float).abs();
+
+        println!("Simplex2(0.5, 0.5, seed=0) = {}", n1_float);
+        println!("Simplex2(0.5, 0.5, seed=1) = {}", n2_float);
+        println!("Difference = {}", diff);
+
+        // Check hash values directly
+        use crate::builtins::shared::lp_hash::__lp_hash_2;
+        let hash0 = __lp_hash_2(cell_x_int as u32, cell_y_int as u32, 0);
+        let hash1 = __lp_hash_2(cell_x_int as u32, cell_y_int as u32, 1);
+        println!(
+            "Hash({}, {}, seed=0) = {}, mod 8 = {}",
+            cell_x_int,
+            cell_y_int,
+            hash0,
+            hash0 % 8
+        );
+        println!(
+            "Hash({}, {}, seed=1) = {}, mod 8 = {}",
+            cell_x_int,
+            cell_y_int,
+            hash1,
+            hash1 % 8
+        );
+
+        // Test multiple points to find one where seeds differ
+        let mut found_difference = false;
+        for i in 0..100 {
+            let test_x = float_to_fixed(i as f32 * 0.1);
+            let test_y = float_to_fixed(i as f32 * 0.1);
+            let result_seed0 = __lp_fixed32_lp_simplex2(test_x, test_y, 0);
+            let result_seed1 = __lp_fixed32_lp_simplex2(test_x, test_y, 1);
+            if result_seed0 != result_seed1 {
+                found_difference = true;
+                println!(
+                    "Found difference at ({}, {}): seed=0 -> {}, seed=1 -> {}",
+                    i as f32 * 0.1,
+                    i as f32 * 0.1,
+                    fixed_to_float(result_seed0),
+                    fixed_to_float(result_seed1)
+                );
+                break;
+            }
+        }
+
+        assert!(
+            found_difference,
+            "Different seeds should produce different outputs at least at some points. At (0.5, 0.5): seed=0: {}, seed=1: {}, diff: {}",
+            n1_float, n2_float, diff
+        );
     }
 }

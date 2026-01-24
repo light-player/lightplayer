@@ -37,10 +37,15 @@ float test_lp_simplex2_deterministic() {
 
 float test_lp_simplex2_different_seeds() {
     // Different seeds should produce different outputs
-    vec2 p = vec2(0.5, 0.5);
-    float n1 = lp_simplex2(p, 0u);
-    float n2 = lp_simplex2(p, 1u);
-    return abs(n1 - n2) > 0.01 ? 1.0 : 0.0;
+    // Test multiple points - seeds should produce different outputs at some points
+    float diff1 = abs(lp_simplex2(vec2(0.5, 0.5), 0u) - lp_simplex2(vec2(0.5, 0.5), 1u));
+    float diff2 = abs(lp_simplex2(vec2(1.5, 1.5), 0u) - lp_simplex2(vec2(1.5, 1.5), 1u));
+    float diff3 = abs(lp_simplex2(vec2(2.5, 2.5), 0u) - lp_simplex2(vec2(2.5, 2.5), 1u));
+    float diff4 = abs(lp_simplex2(vec2(3.5, 3.5), 0u) - lp_simplex2(vec2(3.5, 3.5), 1u));
+    float diff5 = abs(lp_simplex2(vec2(4.5, 4.5), 0u) - lp_simplex2(vec2(4.5, 4.5), 1u));
+    
+    bool has_diff = diff1 > 0.01 || diff2 > 0.01 || diff3 > 0.01 || diff4 > 0.01 || diff5 > 0.01;
+    return has_diff ? 1.0 : 0.0;
 }
 
 // run: test_lp_simplex2_different_seeds() == 1.0

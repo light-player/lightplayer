@@ -52,6 +52,7 @@ pub extern "C" fn __lp_fixed32_lp_simplex1(x: i32, seed: u32) -> i32 {
 
     // Hash cell coordinate to get gradient (1 or -1 for 1D)
     let hash = __lp_hash_1(cell as u32, seed);
+
     let gradient = if (hash & 1) == 0 { Q32::ONE } else { -Q32::ONE };
 
     // Compute dot product: gradient * dist
@@ -88,8 +89,8 @@ mod tests {
     extern crate std;
     use super::*;
     use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
-    use std::vec::Vec;
     use std::println;
+    use std::vec::Vec;
 
     #[test]
     fn test_simplex1_basic() {
@@ -116,29 +117,29 @@ mod tests {
         // Test that different seeds produce different hash values
         // This verifies the seed parameter is being passed correctly to the hash function
         use crate::builtins::shared::lp_hash::__lp_hash_1;
-        
+
         // Test that hash function itself works with different seeds
         let hash0 = __lp_hash_1(0, 0);
         let hash1 = __lp_hash_1(0, 1);
         assert_ne!(hash0, hash1, "Hash should differ for different seeds");
-        
+
         // Test that simplex1 uses the seed correctly by checking hash values
         // We can't directly access the hash, but we can verify that different seeds
         // produce different outputs at least sometimes (they affect the gradient)
         let mut found_difference = false;
-        
+
         // Test many points - seeds should produce different outputs at some points
         for i in 0..100 {
             let x = float_to_fixed(i as f32 * 0.1);
             let result_seed0 = __lp_fixed32_lp_simplex1(x, 0);
             let result_seed1 = __lp_fixed32_lp_simplex1(x, 1);
-            
+
             if result_seed0 != result_seed1 {
                 found_difference = true;
                 break;
             }
         }
-        
+
         assert!(
             found_difference,
             "Different seeds should produce different outputs at least at some points. \
@@ -158,7 +159,7 @@ mod tests {
             let result_float = fixed_to_float(result);
             println!("  x={:4.1}: {:7.4}", x, result_float);
         }
-        
+
         println!("\n=== Simplex1 Noise Grid (seed=1) ===");
         println!("X values from 0.0 to 9.0:");
         for row in 0..10 {
@@ -167,7 +168,7 @@ mod tests {
             let result_float = fixed_to_float(result);
             println!("  x={:4.1}: {:7.4}", x, result_float);
         }
-        
+
         println!("\n=== Simplex1 Seed Comparison (x=0.5) ===");
         let x = float_to_fixed(0.5);
         for seed in 0..5 {
@@ -175,7 +176,7 @@ mod tests {
             let result_float = fixed_to_float(result);
             println!("  seed={}: {:7.4}", seed, result_float);
         }
-        
+
         // Verify outputs are in reasonable range
         for i in 0..100 {
             let x = float_to_fixed(i as f32 * 0.1);

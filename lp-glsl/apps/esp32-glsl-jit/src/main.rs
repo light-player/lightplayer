@@ -314,8 +314,8 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     }
 
     // Image dimensions: 64x64 pixels = 4096 pixels per frame
-    const IMAGE_WIDTH: i32 = 64;
-    const IMAGE_HEIGHT: i32 = 64;
+    const IMAGE_WIDTH: i32 = 32;
+    const IMAGE_HEIGHT: i32 = 32;
     const PIXELS_PER_FRAME: u32 = (IMAGE_WIDTH * IMAGE_HEIGHT) as u32;
 
     // Convert to fixed32 using Q32

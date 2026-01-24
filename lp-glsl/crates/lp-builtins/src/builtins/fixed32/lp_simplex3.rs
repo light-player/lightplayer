@@ -288,7 +288,7 @@ mod tests {
     use super::*;
     use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
     use std::vec::Vec;
-    use std::{println, print};
+    use std::{print, println};
 
     #[test]
     fn test_simplex3_basic() {
@@ -449,7 +449,7 @@ mod tests {
             }
             println!();
         }
-        
+
         println!("\n=== Simplex3 Noise Grid (seed=0, z=2.0) ===");
         println!("5x5 grid, X and Y from 0.0 to 4.0, Z=2.0:");
         println!("      ");
@@ -474,7 +474,7 @@ mod tests {
             }
             println!();
         }
-        
+
         println!("\n=== Simplex3 Seed Comparison (x=2.5, y=2.5, z=2.5) ===");
         let x = float_to_fixed(2.5);
         let y = float_to_fixed(2.5);
@@ -484,7 +484,7 @@ mod tests {
             let result_float = fixed_to_float(result);
             println!("  seed={}: {:7.4}", seed, result_float);
         }
-        
+
         // Verify outputs are in reasonable range
         for i in 0..30 {
             let x = float_to_fixed(i as f32 * 0.1);

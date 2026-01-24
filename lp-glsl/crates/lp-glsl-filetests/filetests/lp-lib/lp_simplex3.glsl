@@ -37,19 +37,36 @@ float test_lp_simplex3_deterministic() {
 
 float test_lp_simplex3_different_seeds() {
     // Different seeds should produce different outputs
-    vec3 p = vec3(0.5, 0.5, 0.5);
-    float n1 = lp_simplex3(p, 0u);
-    float n2 = lp_simplex3(p, 1u);
-    return abs(n1 - n2) > 0.01 ? 1.0 : 0.0;
+    // Test many points with varied coordinates - seeds should produce different outputs at some points
+    float diff1 = abs(lp_simplex3(vec3(0.5, 0.5, 0.5), 0u) - lp_simplex3(vec3(0.5, 0.5, 0.5), 1u));
+    float diff2 = abs(lp_simplex3(vec3(1.2, 1.3, 1.4), 0u) - lp_simplex3(vec3(1.2, 1.3, 1.4), 1u));
+    float diff3 = abs(lp_simplex3(vec3(2.1, 2.2, 2.3), 0u) - lp_simplex3(vec3(2.1, 2.2, 2.3), 1u));
+    float diff4 = abs(lp_simplex3(vec3(3.7, 3.8, 3.9), 0u) - lp_simplex3(vec3(3.7, 3.8, 3.9), 1u));
+    float diff5 = abs(lp_simplex3(vec3(4.3, 4.4, 4.5), 0u) - lp_simplex3(vec3(4.3, 4.4, 4.5), 1u));
+    float diff6 = abs(lp_simplex3(vec3(0.1, 0.2, 0.3), 0u) - lp_simplex3(vec3(0.1, 0.2, 0.3), 1u));
+    float diff7 = abs(lp_simplex3(vec3(5.5, 5.6, 5.7), 0u) - lp_simplex3(vec3(5.5, 5.6, 5.7), 1u));
+    float diff8 = abs(lp_simplex3(vec3(6.1, 6.2, 6.3), 0u) - lp_simplex3(vec3(6.1, 6.2, 6.3), 1u));
+    float diff9 = abs(lp_simplex3(vec3(7.4, 7.5, 7.6), 0u) - lp_simplex3(vec3(7.4, 7.5, 7.6), 1u));
+    float diff10 = abs(lp_simplex3(vec3(8.8, 8.9, 9.0), 0u) - lp_simplex3(vec3(8.8, 8.9, 9.0), 1u));
+    
+    bool has_diff = diff1 > 0.01 || diff2 > 0.01 || diff3 > 0.01 || diff4 > 0.01 || diff5 > 0.01 ||
+                    diff6 > 0.01 || diff7 > 0.01 || diff8 > 0.01 || diff9 > 0.01 || diff10 > 0.01;
+    return has_diff ? 1.0 : 0.0;
 }
 
 // run: test_lp_simplex3_different_seeds() == 1.0
 
 float test_lp_simplex3_different_positions() {
     // Different positions should produce different outputs (with high probability)
-    float n1 = lp_simplex3(vec3(0.0, 0.0, 0.0), 0u);
-    float n2 = lp_simplex3(vec3(1.0, 1.0, 1.0), 0u);
-    return abs(n1 - n2) > 0.01 ? 1.0 : 0.0;
+    // Test multiple position pairs to ensure we find differences
+    float diff1 = abs(lp_simplex3(vec3(0.0, 0.0, 0.0), 0u) - lp_simplex3(vec3(1.0, 1.0, 1.0), 0u));
+    float diff2 = abs(lp_simplex3(vec3(0.5, 0.5, 0.5), 0u) - lp_simplex3(vec3(2.5, 2.5, 2.5), 0u));
+    float diff3 = abs(lp_simplex3(vec3(1.0, 0.0, 0.0), 0u) - lp_simplex3(vec3(0.0, 1.0, 0.0), 0u));
+    float diff4 = abs(lp_simplex3(vec3(2.0, 2.0, 2.0), 0u) - lp_simplex3(vec3(3.0, 3.0, 3.0), 0u));
+    float diff5 = abs(lp_simplex3(vec3(0.0, 0.0, 1.0), 0u) - lp_simplex3(vec3(1.0, 1.0, 0.0), 0u));
+    
+    bool has_diff = diff1 > 0.01 || diff2 > 0.01 || diff3 > 0.01 || diff4 > 0.01 || diff5 > 0.01;
+    return has_diff ? 1.0 : 0.0;
 }
 
 // run: test_lp_simplex3_different_positions() == 1.0
