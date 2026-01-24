@@ -70,4 +70,4 @@ float test_float_multiply_large_numbers() {
     return 1000.0 * 2000.0;
 }
 
-// run: test_float_multiply_large_numbers() ~= 32767.0
+// run: test_float_multiply_large_numbers() ~= 32768.0
