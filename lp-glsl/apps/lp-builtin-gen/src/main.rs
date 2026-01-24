@@ -32,9 +32,10 @@ fn main() {
     generate_builtin_refs(&builtin_refs_path, &builtins);
 
     // Generate mod.rs (only fixed32 functions, not shared)
-    let fixed32_builtins: Vec<_> = builtins
+    let fixed32_builtins: Vec<BuiltinInfo> = builtins
         .iter()
         .filter(|b| !b.function_name.starts_with("__lp_hash_"))
+        .cloned()
         .collect();
     let mod_rs_path = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/fixed32/mod.rs");
     generate_mod_rs(&mod_rs_path, &fixed32_builtins);
