@@ -184,6 +184,7 @@ fn discover_builtins(dir: &Path) -> Result<Vec<BuiltinInfo>, Box<dyn std::error:
     Ok(builtins)
 }
 
+#[allow(dead_code)]
 fn extract_builtin(func: &ItemFn, file_name: &str) -> Option<BuiltinInfo> {
     // Check for #[unsafe(no_mangle)] attribute
     let has_no_mangle = func.attrs.iter().any(|attr| attr.path().is_ident("unsafe"));
@@ -242,6 +243,7 @@ fn extract_builtin(func: &ItemFn, file_name: &str) -> Option<BuiltinInfo> {
     })
 }
 
+#[allow(dead_code)]
 fn capitalize_first(s: &str) -> String {
     let mut chars = s.chars();
     match chars.next() {
