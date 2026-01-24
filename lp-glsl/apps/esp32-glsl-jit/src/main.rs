@@ -231,6 +231,9 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     flag_builder.set("opt_level", "none").unwrap();
     flag_builder.set("is_pic", "false").unwrap();
     flag_builder.set("enable_verifier", "false").unwrap();
+    flag_builder
+        .set("regalloc_algorithm", "single_pass")
+        .unwrap();
     let isa_flags = settings::Flags::new(flag_builder);
 
     let triple = Triple {

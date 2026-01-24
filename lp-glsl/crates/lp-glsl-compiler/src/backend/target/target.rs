@@ -136,6 +136,14 @@ fn default_riscv32_flags() -> Result<Flags, GlslError> {
                 format!("failed to set enable_multi_ret_implicit_sret: {e}"),
             )
         })?;
+    flag_builder
+        .set("regalloc_algorithm", "single_pass")
+        .map_err(|e| {
+            GlslError::new(
+                ErrorCode::E0400,
+                format!("failed to set regalloc_algorithm: {e}"),
+            )
+        })?;
 
     Ok(settings::Flags::new(flag_builder))
 }
@@ -162,6 +170,14 @@ fn default_host_flags() -> Result<Flags, GlslError> {
             GlslError::new(
                 ErrorCode::E0400,
                 format!("failed to set enable_multi_ret_implicit_sret: {e}"),
+            )
+        })?;
+    flag_builder
+        .set("regalloc_algorithm", "single_pass")
+        .map_err(|e| {
+            GlslError::new(
+                ErrorCode::E0400,
+                format!("failed to set regalloc_algorithm: {e}"),
             )
         })?;
 
