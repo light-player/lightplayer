@@ -7,7 +7,10 @@ use crate::error::{ErrorCode, GlslError};
 use crate::frontend::codegen::context::CodegenContext;
 use crate::frontend::semantic::lp_lib_fns::LpLibFn;
 use crate::frontend::semantic::types::Type;
-use cranelift_codegen::ir::{InstBuilder, Value};
+use cranelift_codegen::ir::{
+    AbiParam, ExtFuncData, ExternalName, FuncRef, InstBuilder, Signature, Value, types,
+};
+use cranelift_codegen::isa::CallConv;
 
 use alloc::{format, vec, vec::Vec};
 
@@ -87,32 +90,88 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
             }
         }
 
-        // Get function reference
-        let func_ref = self
-            .gl_module
-            .get_builtin_func_ref(builtin_id, self.builder.func)?;
+        // Check if this function needs fixed32 mapping
+        if lp_fn.needs_fixed32_mapping() {
+            // Emit TestCase call - transform will convert to fixed32 builtin
+            let testcase_name = lp_fn.symbol_name();
+            let func_ref = self.get_lp_lib_testcase_call(&lp_fn, flat_args.len())?;
 
-        // Build call arguments
-        let call_args: Vec<Value> = flat_args;
+            // Emit call instruction
+            let call_inst = self.builder.ins().call(func_ref, &flat_args);
 
-        // Emit call instruction
-        let call_inst = self.builder.ins().call(func_ref, &call_args);
+            // Extract return value(s)
+            let results = self.builder.inst_results(call_inst);
+            if results.len() != 1 {
+                return Err(GlslError::new(
+                    ErrorCode::E0400,
+                    format!(
+                        "Expected 1 return value from LP library function, got {}",
+                        results.len()
+                    ),
+                ));
+            }
 
-        // Extract return value(s)
-        let results = self.builder.inst_results(call_inst);
-        if results.len() != 1 {
-            return Err(GlslError::new(
-                ErrorCode::E0400,
-                format!(
-                    "Expected 1 return value from LP library function, got {}",
-                    results.len()
-                ),
-            ));
+            // Get return type from the enum
+            let return_type = lp_fn.return_type();
+
+            Ok((vec![results[0]], return_type))
+        } else {
+            // Direct builtin call (hash functions don't need conversion)
+            let func_ref = self
+                .gl_module
+                .get_builtin_func_ref(builtin_id, self.builder.func)?;
+
+            // Build call arguments
+            let call_args: Vec<Value> = flat_args;
+
+            // Emit call instruction
+            let call_inst = self.builder.ins().call(func_ref, &call_args);
+
+            // Extract return value(s)
+            let results = self.builder.inst_results(call_inst);
+            if results.len() != 1 {
+                return Err(GlslError::new(
+                    ErrorCode::E0400,
+                    format!(
+                        "Expected 1 return value from LP library function, got {}",
+                        results.len()
+                    ),
+                ));
+            }
+
+            // Get return type from the enum
+            let return_type = lp_fn.return_type();
+
+            Ok((vec![results[0]], return_type))
         }
+    }
 
-        // Get return type from the enum
-        let return_type = lp_fn.return_type();
+    /// Helper to declare and get FuncRef for LP library function TestCase call.
+    ///
+    /// Creates external function calls using TestCase names (e.g., "__lp_simplex3").
+    /// These are converted to fixed32 builtins by the transform.
+    fn get_lp_lib_testcase_call(
+        &mut self,
+        lp_fn: &LpLibFn,
+        arg_count: usize,
+    ) -> Result<FuncRef, GlslError> {
+        let testcase_name = lp_fn.symbol_name();
 
-        Ok((vec![results[0]], return_type))
+        // Create signature with F32 types (before transform)
+        let mut sig = Signature::new(CallConv::SystemV);
+        for _ in 0..arg_count {
+            sig.params.push(AbiParam::new(types::F32));
+        }
+        sig.returns.push(AbiParam::new(types::F32));
+
+        // Create TestCase name for external function call
+        let sig_ref = self.builder.func.import_signature(sig);
+        let ext_name = ExternalName::testcase(testcase_name.as_bytes());
+        let ext_func = ExtFuncData {
+            name: ext_name,
+            signature: sig_ref,
+            colocated: false,
+        };
+        Ok(self.builder.func.import_function(ext_func))
     }
 }
