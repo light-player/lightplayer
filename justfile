@@ -88,6 +88,8 @@ fmt-check:
 # ============================================================================
 
 # Run clippy on host target packages
+# Exclude esp32 packages to avoid esp32 dependency resolution issues
+# Note: esp32 packages require feature flags that cause issues during workspace resolution
 clippy-host:
     cargo clippy --workspace --exclude lp-builtins-app --exclude esp32-glsl-jit -- --no-deps -D warnings
 
@@ -95,7 +97,7 @@ clippy-host:
 # Note: esp32-glsl-jit must be built in release mode (esp-hal requirement)
 clippy-rv32: install-rv32-target
     @echo "Running clippy on RISC-V packages ({{rv32_target}})..."
-    cargo clippy --target {{rv32_target}} -p esp32-glsl-jit --release -- --no-deps -D warnings
+    cd lp-glsl/apps/esp32-glsl-jit && cargo clippy --target {{rv32_target}} --release --features esp32c6 -- --no-deps -D warnings
 
 # Run clippy on all packages (host and RISC-V)
 clippy: clippy-host clippy-rv32

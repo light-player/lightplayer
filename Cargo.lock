@@ -995,6 +995,7 @@ dependencies = [
 [[package]]
 name = "cranelift-bforest"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "cranelift-entity",
 ]
@@ -1002,10 +1003,12 @@ dependencies = [
 [[package]]
 name = "cranelift-bitset"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 
 [[package]]
 name = "cranelift-codegen"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "anyhow",
  "bumpalo",
@@ -1032,6 +1035,7 @@ dependencies = [
 [[package]]
 name = "cranelift-codegen-meta"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "cranelift-codegen-shared",
  "cranelift-srcgen",
@@ -1041,14 +1045,17 @@ dependencies = [
 [[package]]
 name = "cranelift-codegen-shared"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 
 [[package]]
 name = "cranelift-control"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 
 [[package]]
 name = "cranelift-entity"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "cranelift-bitset",
 ]
@@ -1056,6 +1063,7 @@ dependencies = [
 [[package]]
 name = "cranelift-frontend"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "cranelift-codegen",
  "hashbrown 0.15.5",
@@ -1067,6 +1075,7 @@ dependencies = [
 [[package]]
 name = "cranelift-interpreter"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "cranelift-codegen",
  "cranelift-entity",
@@ -1079,10 +1088,12 @@ dependencies = [
 [[package]]
 name = "cranelift-isle"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 
 [[package]]
 name = "cranelift-jit"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
@@ -1102,6 +1113,7 @@ dependencies = [
 [[package]]
 name = "cranelift-module"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
@@ -1112,6 +1124,7 @@ dependencies = [
 [[package]]
 name = "cranelift-native"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "cranelift-codegen",
  "libc",
@@ -1121,6 +1134,7 @@ dependencies = [
 [[package]]
 name = "cranelift-object"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
@@ -1134,6 +1148,7 @@ dependencies = [
 [[package]]
 name = "cranelift-reader"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
@@ -1144,6 +1159,7 @@ dependencies = [
 [[package]]
 name = "cranelift-srcgen"
 version = "0.127.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 
 [[package]]
 name = "crc32fast"
@@ -1565,29 +1581,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95285007a91b619dc9f26ea8f55452aa6c60f7115a4edc05085cd2bd3127cd7a"
 dependencies = [
  "num-traits",
-]
-
-[[package]]
-name = "embassy-hello-world-hashbrown"
-version = "0.0.0"
-dependencies = [
- "cranelift-codegen",
- "cranelift-control",
- "cranelift-frontend",
- "cranelift-module",
- "embassy-executor",
- "embassy-time",
- "esp-alloc",
- "esp-backtrace",
- "esp-bootloader-esp-idf",
- "esp-hal",
- "esp-println",
- "esp-rtos",
- "hashbrown 0.15.5",
- "lp-builtins",
- "lp-glsl-compiler",
- "lp-jit-util",
- "target-lexicon",
 ]
 
 [[package]]
@@ -2112,6 +2105,29 @@ checksum = "b76170a463d18f888a1ad258031901036fd827a9ef126733053ba5f8739fb0c8"
 dependencies = [
  "critical-section",
  "vcell",
+]
+
+[[package]]
+name = "esp32-glsl-jit"
+version = "0.0.0"
+dependencies = [
+ "cranelift-codegen",
+ "cranelift-control",
+ "cranelift-frontend",
+ "cranelift-module",
+ "embassy-executor",
+ "embassy-time",
+ "esp-alloc",
+ "esp-backtrace",
+ "esp-bootloader-esp-idf",
+ "esp-hal",
+ "esp-println",
+ "esp-rtos",
+ "hashbrown 0.15.5",
+ "lp-builtins",
+ "lp-glsl-compiler",
+ "lp-jit-util",
+ "target-lexicon",
 ]
 
 [[package]]
@@ -5373,6 +5389,7 @@ dependencies = [
 [[package]]
 name = "wasmtime-internal-jit-icache-coherence"
 version = "40.0.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -5383,6 +5400,7 @@ dependencies = [
 [[package]]
 name = "wasmtime-internal-math"
 version = "40.0.0"
+source = "git+https://github.com/Yona-Appletree/lp-cranelift.git?branch=feature%2Flp2025#bfc79b3ffb6c8f653d496f1c2974403235dde407"
 dependencies = [
  "libm",
 ]

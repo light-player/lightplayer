@@ -1,5 +1,5 @@
 [package]
-name    = "embassy-hello-world-hashbrown"
+name    = "esp32-glsl-jit"
 version = "0.0.0"
 edition = "2024"
 publish = false
@@ -30,6 +30,7 @@ cranelift-control = { workspace = true }
 target-lexicon = { workspace = true }
 
 [features]
+default = ["esp32c6"]
 esp32 = [
     "esp-backtrace/esp32",
     "esp-bootloader-esp-idf/esp32",

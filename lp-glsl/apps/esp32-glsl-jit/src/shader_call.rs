@@ -21,12 +21,13 @@ pub unsafe fn call_vec4_shader(
 ) -> Result<[i32; 4], lp_jit_util::JitCallError> {
     // Prepare JIT call arguments (i32 values as u64)
     // vec2 expands to 2 i32s each, so we have 5 i32 parameters total
-    let mut jit_args = alloc::vec::Vec::new();
-    jit_args.push(frag_coord[0] as u64); // fragCoord.x
-    jit_args.push(frag_coord[1] as u64); // fragCoord.y
-    jit_args.push(output_size[0] as u64); // outputSize.x
-    jit_args.push(output_size[1] as u64); // outputSize.y
-    jit_args.push(time as u64); // time
+    let jit_args = alloc::vec![
+        frag_coord[0] as u64,  // fragCoord.x
+        frag_coord[1] as u64,  // fragCoord.y
+        output_size[0] as u64, // outputSize.x
+        output_size[1] as u64, // outputSize.y
+        time as u64,           // time
+    ];
 
     // vec4 return value buffer (4 i32s = 16 bytes)
     let mut result_buffer = [0u8; 16];

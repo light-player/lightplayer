@@ -1,6 +1,5 @@
 /// Host function implementation for debug output (no_std mode).
 /// Called by JIT-compiled GLSL code when using __host_debug.
-
 #[unsafe(no_mangle)]
 pub extern "C" fn lp_jit_host_debug(ptr: *const u8, len: usize) {
     unsafe {
