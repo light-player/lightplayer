@@ -41,26 +41,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-
-    /// Convert float to fixed16x16 with saturation
-    fn float_to_fixed(f: f32) -> i32 {
-        const SCALE: f32 = 65536.0;
-        const MAX_FLOAT: f32 = MAX_FIXED as f32 / SCALE;
-        const MIN_FLOAT: f32 = MIN_FIXED as f32 / SCALE;
-
-        if f > MAX_FLOAT {
-            MAX_FIXED
-        } else if f < MIN_FLOAT {
-            MIN_FIXED
-        } else {
-            (f * SCALE).round() as i32
-        }
-    }
-
-    /// Convert fixed16x16 to float
-    fn fixed_to_float(fixed: i32) -> f32 {
-        fixed as f32 / 65536.0
-    }
+    use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
 
     #[test]
     fn test_basic_division() {
@@ -170,5 +151,43 @@ mod tests {
             result_min <= MIN_FIXED + 1000,
             "MIN / 1 should be close to MIN"
         );
+    }
+
+    #[test]
+    fn test_small_divisors() {
+        // Test small divisors (< 2^16) - this was a bug fix in inline code
+        // The builtin should handle this correctly with (dividend << 16) / divisor
+        let tests = [
+            (10.0, 0.1, 100.0),
+            (5.0, 0.5, 10.0),
+            (1.0, 0.001, 1000.0),
+            (100.0, 0.01, 10000.0),
+        ];
+
+        for (dividend, divisor, expected) in tests {
+            let dividend_fixed = float_to_fixed(dividend);
+            let divisor_fixed = float_to_fixed(divisor);
+            let result_fixed = __lp_fixed32_div(dividend_fixed, divisor_fixed);
+            let result = fixed_to_float(result_fixed);
+
+            std::println!(
+                "Test: {} / {} -> Expected: {}, Actual: {}",
+                dividend,
+                divisor,
+                expected,
+                result
+            );
+
+            // Use larger tolerance for small divisors due to precision limits
+            let tolerance = if divisor < 1.0 { 10.0 } else { 0.01 };
+            assert!(
+                (result - expected).abs() < tolerance,
+                "Test failed: {} / {}; actual: {}; expected {}",
+                dividend,
+                divisor,
+                result,
+                expected
+            );
+        }
     }
 }
