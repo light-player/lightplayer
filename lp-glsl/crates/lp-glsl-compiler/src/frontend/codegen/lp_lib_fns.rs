@@ -93,7 +93,6 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
         // Check if this function needs fixed32 mapping
         if lp_fn.needs_fixed32_mapping() {
             // Emit TestCase call - transform will convert to fixed32 builtin
-            let testcase_name = lp_fn.symbol_name();
             let func_ref = self.get_lp_lib_testcase_call(&lp_fn, flat_args.len())?;
 
             // Emit call instruction

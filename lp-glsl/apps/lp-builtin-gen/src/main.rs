@@ -31,9 +31,13 @@ fn main() {
     let builtin_refs_path = workspace_root.join("lp-glsl/apps/lp-builtins-app/src/builtin_refs.rs");
     generate_builtin_refs(&builtin_refs_path, &builtins);
 
-    // Generate mod.rs
+    // Generate mod.rs (only fixed32 functions, not shared)
+    let fixed32_builtins: Vec<_> = builtins
+        .iter()
+        .filter(|b| !b.function_name.starts_with("__lp_hash_"))
+        .collect();
     let mod_rs_path = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/fixed32/mod.rs");
-    generate_mod_rs(&mod_rs_path, &builtins);
+    generate_mod_rs(&mod_rs_path, &fixed32_builtins);
 
     // Generate testcase mapping in math.rs
     let math_rs_path = workspace_root

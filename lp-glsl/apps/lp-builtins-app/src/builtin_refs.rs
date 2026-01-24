@@ -14,7 +14,7 @@ use lp_builtins::builtins::fixed32::{
     __lp_fixed32_lp_simplex1, __lp_fixed32_lp_simplex2, __lp_fixed32_lp_simplex3, __lp_fixed32_mod,
     __lp_fixed32_mul, __lp_fixed32_pow, __lp_fixed32_round, __lp_fixed32_roundeven,
     __lp_fixed32_sin, __lp_fixed32_sinh, __lp_fixed32_sqrt, __lp_fixed32_sub, __lp_fixed32_tan,
-    __lp_fixed32_tanh,
+    __lp_fixed32_tanh, __lp_hash_1, __lp_hash_2, __lp_hash_3,
 };
 
 /// Reference all builtin functions to prevent dead code elimination.
@@ -56,6 +56,9 @@ pub fn ensure_builtins_referenced() {
         let _fixed32_sub_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_sub;
         let _fixed32_tan_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_tan;
         let _fixed32_tanh_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_tanh;
+        let _hash_1_fn: extern "C" fn(u32, u32) -> u32 = __lp_hash_1;
+        let _hash_2_fn: extern "C" fn(u32, u32, u32) -> u32 = __lp_hash_2;
+        let _hash_3_fn: extern "C" fn(u32, u32, u32, u32) -> u32 = __lp_hash_3;
 
         // Force these to be included by using them in a way that can't be optimized away
         // We'll use volatile reads to prevent optimization
@@ -91,5 +94,8 @@ pub fn ensure_builtins_referenced() {
         let _ = core::ptr::read_volatile(&_fixed32_sub_fn as *const _);
         let _ = core::ptr::read_volatile(&_fixed32_tan_fn as *const _);
         let _ = core::ptr::read_volatile(&_fixed32_tanh_fn as *const _);
+        let _ = core::ptr::read_volatile(&_hash_1_fn as *const _);
+        let _ = core::ptr::read_volatile(&_hash_2_fn as *const _);
+        let _ = core::ptr::read_volatile(&_hash_3_fn as *const _);
     }
 }

@@ -40,13 +40,10 @@ pub enum BuiltinId {
     Fixed32Ldexp,
     Fixed32Log,
     Fixed32Log2,
-    Fixed32Mod,
-    LpHash1,
-    LpHash2,
-    LpHash3,
     LpSimplex1,
     LpSimplex2,
     LpSimplex3,
+    Fixed32Mod,
     Fixed32Mul,
     Fixed32Pow,
     Fixed32Round,
@@ -57,6 +54,9 @@ pub enum BuiltinId {
     Fixed32Sub,
     Fixed32Tan,
     Fixed32Tanh,
+    LpHash1,
+    LpHash2,
+    LpHash3,
 }
 
 impl BuiltinId {
@@ -81,13 +81,10 @@ impl BuiltinId {
             BuiltinId::Fixed32Ldexp => "__lp_fixed32_ldexp",
             BuiltinId::Fixed32Log => "__lp_fixed32_log",
             BuiltinId::Fixed32Log2 => "__lp_fixed32_log2",
-            BuiltinId::Fixed32Mod => "__lp_fixed32_mod",
-            BuiltinId::LpHash1 => "__lp_hash_1",
-            BuiltinId::LpHash2 => "__lp_hash_2",
-            BuiltinId::LpHash3 => "__lp_hash_3",
             BuiltinId::LpSimplex1 => "__lp_fixed32_lp_simplex1",
             BuiltinId::LpSimplex2 => "__lp_fixed32_lp_simplex2",
             BuiltinId::LpSimplex3 => "__lp_fixed32_lp_simplex3",
+            BuiltinId::Fixed32Mod => "__lp_fixed32_mod",
             BuiltinId::Fixed32Mul => "__lp_fixed32_mul",
             BuiltinId::Fixed32Pow => "__lp_fixed32_pow",
             BuiltinId::Fixed32Round => "__lp_fixed32_round",
@@ -98,6 +95,9 @@ impl BuiltinId {
             BuiltinId::Fixed32Sub => "__lp_fixed32_sub",
             BuiltinId::Fixed32Tan => "__lp_fixed32_tan",
             BuiltinId::Fixed32Tanh => "__lp_fixed32_tanh",
+            BuiltinId::LpHash1 => "__lp_hash_1",
+            BuiltinId::LpHash2 => "__lp_hash_2",
+            BuiltinId::LpHash3 => "__lp_hash_3",
         }
     }
 
@@ -105,7 +105,7 @@ impl BuiltinId {
     pub fn signature(&self) -> Signature {
         let mut sig = Signature::new(CallConv::SystemV);
         match self {
-            BuiltinId::Fixed32Fma | BuiltinId::LpHash3 | BuiltinId::LpSimplex3 => {
+            BuiltinId::LpSimplex3 | BuiltinId::LpHash3 => {
                 // (i32, i32, i32, i32) -> i32
                 sig.params.push(AbiParam::new(types::I32));
                 sig.params.push(AbiParam::new(types::I32));
@@ -113,7 +113,7 @@ impl BuiltinId {
                 sig.params.push(AbiParam::new(types::I32));
                 sig.returns.push(AbiParam::new(types::I32));
             }
-            BuiltinId::LpHash2 | BuiltinId::LpSimplex2 => {
+            BuiltinId::Fixed32Fma | BuiltinId::LpSimplex2 | BuiltinId::LpHash2 => {
                 // (i32, i32, i32) -> i32
                 sig.params.push(AbiParam::new(types::I32));
                 sig.params.push(AbiParam::new(types::I32));
@@ -124,12 +124,12 @@ impl BuiltinId {
             | BuiltinId::Fixed32Atan2
             | BuiltinId::Fixed32Div
             | BuiltinId::Fixed32Ldexp
-            | BuiltinId::Fixed32Mod
-            | BuiltinId::LpHash1
             | BuiltinId::LpSimplex1
+            | BuiltinId::Fixed32Mod
             | BuiltinId::Fixed32Mul
             | BuiltinId::Fixed32Pow
-            | BuiltinId::Fixed32Sub => {
+            | BuiltinId::Fixed32Sub
+            | BuiltinId::LpHash1 => {
                 // (i32, i32) -> i32
                 sig.params.push(AbiParam::new(types::I32));
                 sig.params.push(AbiParam::new(types::I32));
@@ -184,13 +184,10 @@ impl BuiltinId {
             BuiltinId::Fixed32Ldexp,
             BuiltinId::Fixed32Log,
             BuiltinId::Fixed32Log2,
-            BuiltinId::Fixed32Mod,
-            BuiltinId::LpHash1,
-            BuiltinId::LpHash2,
-            BuiltinId::LpHash3,
             BuiltinId::LpSimplex1,
             BuiltinId::LpSimplex2,
             BuiltinId::LpSimplex3,
+            BuiltinId::Fixed32Mod,
             BuiltinId::Fixed32Mul,
             BuiltinId::Fixed32Pow,
             BuiltinId::Fixed32Round,
@@ -201,6 +198,9 @@ impl BuiltinId {
             BuiltinId::Fixed32Sub,
             BuiltinId::Fixed32Tan,
             BuiltinId::Fixed32Tanh,
+            BuiltinId::LpHash1,
+            BuiltinId::LpHash2,
+            BuiltinId::LpHash3,
         ]
     }
 }
@@ -209,7 +209,7 @@ impl BuiltinId {
 ///
 /// Returns the function pointer that can be registered with JITModule.
 pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
-    use lp_builtins::builtins::{fixed32, shared};
+    use lp_builtins::builtins::fixed32;
     match builtin {
         BuiltinId::Fixed32Acos => fixed32::__lp_fixed32_acos as *const u8,
         BuiltinId::Fixed32Acosh => fixed32::__lp_fixed32_acosh as *const u8,
@@ -229,13 +229,10 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         BuiltinId::Fixed32Ldexp => fixed32::__lp_fixed32_ldexp as *const u8,
         BuiltinId::Fixed32Log => fixed32::__lp_fixed32_log as *const u8,
         BuiltinId::Fixed32Log2 => fixed32::__lp_fixed32_log2 as *const u8,
-        BuiltinId::Fixed32Mod => fixed32::__lp_fixed32_mod as *const u8,
-        BuiltinId::LpHash1 => shared::__lp_hash_1 as *const u8,
-        BuiltinId::LpHash2 => shared::__lp_hash_2 as *const u8,
-        BuiltinId::LpHash3 => shared::__lp_hash_3 as *const u8,
         BuiltinId::LpSimplex1 => fixed32::__lp_fixed32_lp_simplex1 as *const u8,
         BuiltinId::LpSimplex2 => fixed32::__lp_fixed32_lp_simplex2 as *const u8,
         BuiltinId::LpSimplex3 => fixed32::__lp_fixed32_lp_simplex3 as *const u8,
+        BuiltinId::Fixed32Mod => fixed32::__lp_fixed32_mod as *const u8,
         BuiltinId::Fixed32Mul => fixed32::__lp_fixed32_mul as *const u8,
         BuiltinId::Fixed32Pow => fixed32::__lp_fixed32_pow as *const u8,
         BuiltinId::Fixed32Round => fixed32::__lp_fixed32_round as *const u8,
@@ -246,6 +243,9 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         BuiltinId::Fixed32Sub => fixed32::__lp_fixed32_sub as *const u8,
         BuiltinId::Fixed32Tan => fixed32::__lp_fixed32_tan as *const u8,
         BuiltinId::Fixed32Tanh => fixed32::__lp_fixed32_tanh as *const u8,
+        BuiltinId::LpHash1 => fixed32::__lp_hash_1 as *const u8,
+        BuiltinId::LpHash2 => fixed32::__lp_hash_2 as *const u8,
+        BuiltinId::LpHash3 => fixed32::__lp_hash_3 as *const u8,
     }
 }
 
