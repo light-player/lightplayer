@@ -1,9 +1,15 @@
-vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
-    float a = 5.0;
-    float b = 2.3;
-    float c = a - b;
-    float d = c - 0.7;
-    float e = d - a;
-    
-    return vec4(c, d, e, 1.0);
+float scalar(float a, float b) {
+    return a - b;
+}
+
+vec2 vec2_scalar(vec2 a, float b) {
+    return a - b;
+}
+
+vec2 vec2_vec2(vec2 a, vec2 b) {
+    return a - b;
+}
+
+vec4 vec4_scalar(vec4 a, float b) {
+    return a - b;
 }

@@ -557,6 +557,66 @@ impl GlModule<ObjectModule> {
         new_module.source_map = source_map;
         Self::apply_transform_impl(fns, transform, new_module)
     }
+
+    /// Compile a function and extract vcode and assembly
+    ///
+    /// This compiles the function to machine code and extracts the vcode (intermediate
+    /// representation) and assembly (disassembly) if available.
+    #[cfg(feature = "std")]
+    pub fn compile_function_and_extract_codegen(
+        &mut self,
+        name: &str,
+        func: cranelift_codegen::ir::Function,
+        func_id: cranelift_module::FuncId,
+    ) -> Result<(Option<alloc::string::String>, Option<alloc::string::String>), GlslError> {
+        // Create context
+        let mut ctx = self.module_mut_internal().make_context();
+        ctx.func = func;
+
+        // Enable disassembly
+        ctx.set_disasm(true);
+
+        // Define function (compiles it)
+        self.module_mut_internal()
+            .define_function(func_id, &mut ctx)
+            .map_err(|e| {
+                GlslError::new(
+                    ErrorCode::E0400,
+                    format!("Failed to define function '{name}': {e}"),
+                )
+            })?;
+
+        // Extract vcode and assembly
+        let (vcode, disasm) = if let Some(compiled_code) = ctx.compiled_code() {
+            // Get VCode (intermediate representation)
+            let vcode = compiled_code.vcode.as_ref().map(|s| s.clone());
+
+            // Try to generate RISC-V disassembly using Capstone
+            let disasm = {
+                let isa = self.module_internal().isa();
+                if let Ok(cs) = isa.to_capstone() {
+                    if let Ok(disasm_str) = compiled_code.disassemble(Some(&ctx.func.params), &cs) {
+                        Some(disasm_str)
+                    } else {
+                        // Fall back to vcode if Capstone disassembly fails
+                        vcode.clone()
+                    }
+                } else {
+                    // Fall back to vcode if Capstone isn't available
+                    vcode.clone()
+                }
+            };
+
+            (vcode, disasm)
+        } else {
+            (None, None)
+        };
+
+        // Clear context
+        self.module_internal().clear_context(&mut ctx);
+
+        Ok((vcode, disasm))
+    }
 }
 
 #[cfg(test)]

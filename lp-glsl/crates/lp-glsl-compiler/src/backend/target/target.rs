@@ -209,7 +209,7 @@ fn riscv32_triple() -> target_lexicon::Triple {
     };
 
     Triple {
-        architecture: Architecture::Riscv32(Riscv32Architecture::Riscv32imac),
+        architecture: Architecture::Riscv32(Riscv32Architecture::Riscv32imafc),
         vendor: Vendor::Unknown,
         operating_system: OperatingSystem::None_,
         environment: Environment::Unknown,

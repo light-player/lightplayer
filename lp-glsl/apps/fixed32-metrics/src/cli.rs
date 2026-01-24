@@ -14,6 +14,10 @@ pub struct Args {
     #[arg(long, required = true)]
     pub output_dir: PathBuf,
 
+    /// Report name (appended to timestamp in directory name)
+    #[arg(required = true)]
+    pub report_name: String,
+
     /// Fixed point format
     #[arg(long, default_value = "Fixed16x16")]
     pub format: String,

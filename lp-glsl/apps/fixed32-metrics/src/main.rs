@@ -1,5 +1,5 @@
 mod cli;
-mod clif;
+mod codegen;
 mod compiler;
 mod report;
 mod stats;
@@ -33,9 +33,10 @@ fn main() -> Result<()> {
         eprintln!("Found {} GLSL files", glsl_files.len());
     }
 
-    // Create timestamped report directory
+    // Create timestamped report directory with report name
     let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H.%M.%S");
-    let report_dir = args.output_dir.join(timestamp.to_string());
+    let report_dir_name = format!("{}-{}", timestamp, args.report_name);
+    let report_dir = args.output_dir.join(report_dir_name);
     fs::create_dir_all(&report_dir)?;
 
     if args.verbose {
@@ -61,14 +62,14 @@ fn main() -> Result<()> {
 
         // Compile and transform
         let format = cli::parse_format(&args.format)?;
-        let (module_before, module_after) = compile_and_transform(&glsl_source, format)?;
+        let (mut module_before, mut module_after) = compile_and_transform(&glsl_source, format)?;
 
         // Process test (collect stats, write CLIF files, generate report)
         let summary = process_test(
             &test_name,
             &test_dir,
-            &module_before,
-            &module_after,
+            &mut module_before,
+            &mut module_after,
             &glsl_source,
             args.verbose,
         )?;
@@ -102,20 +103,23 @@ fn find_glsl_files(dir: &Path) -> Result<Vec<std::path::PathBuf>> {
 fn process_test(
     test_name: &str,
     test_dir: &Path,
-    module_before: &lp_glsl_compiler::backend::module::gl_module::GlModule<
-        cranelift_jit::JITModule,
+    module_before: &mut lp_glsl_compiler::backend::module::gl_module::GlModule<
+        cranelift_object::ObjectModule,
     >,
-    module_after: &lp_glsl_compiler::backend::module::gl_module::GlModule<cranelift_jit::JITModule>,
+    module_after: &mut lp_glsl_compiler::backend::module::gl_module::GlModule<
+        cranelift_object::ObjectModule,
+    >,
     _glsl_source: &str,
     verbose: bool,
 ) -> Result<report::TestSummary> {
-    // Collect statistics
-    let stats_before = stats::collect_module_stats(module_before)?;
-    let stats_after = stats::collect_module_stats(module_after)?;
-    let delta = stats::calculate_deltas(&stats_before, &stats_after);
+    // Write codegen files (CLIF, vcode, assembly) and get sizes
+    let vcode_assembly_sizes =
+        codegen::write_codegen_files(test_dir, module_before, module_after, verbose)?;
 
-    // Write CLIF files
-    clif::write_clif_files(test_dir, module_before, module_after, verbose)?;
+    // Collect statistics (will be updated to use vcode/assembly sizes)
+    let stats_before = stats::collect_module_stats(module_before, &vcode_assembly_sizes)?;
+    let stats_after = stats::collect_module_stats(module_after, &vcode_assembly_sizes)?;
+    let delta = stats::calculate_deltas(&stats_before, &stats_after);
 
     // Generate test report
     let test_report = report::TestReport {
@@ -123,7 +127,11 @@ fn process_test(
         before: stats_before.clone(),
         after: stats_after.clone(),
         delta: delta.clone(),
-        functions: stats::collect_function_reports(module_before, module_after)?,
+        functions: stats::collect_function_reports(
+            module_before,
+            module_after,
+            &vcode_assembly_sizes,
+        )?,
     };
     report::generate_test_report(test_dir, &test_report)?;
 

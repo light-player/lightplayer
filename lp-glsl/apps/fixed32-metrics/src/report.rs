@@ -69,6 +69,8 @@ pub fn generate_reports(report_dir: &Path, test_summaries: &[TestSummary]) -> Re
         total_instructions: 0,
         total_values: 0,
         total_clif_size: 0,
+        total_vcode_size: 0,
+        total_assembly_size: 0,
         functions: Vec::new(),
     };
     let mut total_after = ModuleStats {
@@ -76,6 +78,8 @@ pub fn generate_reports(report_dir: &Path, test_summaries: &[TestSummary]) -> Re
         total_instructions: 0,
         total_values: 0,
         total_clif_size: 0,
+        total_vcode_size: 0,
+        total_assembly_size: 0,
         functions: Vec::new(),
     };
 
@@ -84,11 +88,15 @@ pub fn generate_reports(report_dir: &Path, test_summaries: &[TestSummary]) -> Re
         total_before.total_instructions += summary.before.total_instructions;
         total_before.total_values += summary.before.total_values;
         total_before.total_clif_size += summary.before.total_clif_size;
+        total_before.total_vcode_size += summary.before.total_vcode_size;
+        total_before.total_assembly_size += summary.before.total_assembly_size;
 
         total_after.total_blocks += summary.after.total_blocks;
         total_after.total_instructions += summary.after.total_instructions;
         total_after.total_values += summary.after.total_values;
         total_after.total_clif_size += summary.after.total_clif_size;
+        total_after.total_vcode_size += summary.after.total_vcode_size;
+        total_after.total_assembly_size += summary.after.total_assembly_size;
     }
 
     let summary_delta = crate::stats::calculate_deltas(&total_before, &total_after);
