@@ -176,9 +176,9 @@ pub fn infer_expr_type_with_registry(
                         .with_location(source_span_to_location(span))),
                 }
             }
-            // Check if it's an LP library function
-            else if crate::frontend::semantic::lpfx::lpfx_fn_registry::is_lp_lib_fn(func_name) {
-                match crate::frontend::semantic::lpfx::lpfx_fn_registry::check_lp_lib_fn_call(
+            // Check if it's an LPFX function
+            else if crate::frontend::semantic::lpfx::lpfx_fn_registry::is_lpfx_fn(func_name) {
+                match crate::frontend::semantic::lpfx::lpfx_fn_registry::check_lpfx_fn_call(
                     func_name, &arg_types,
                 ) {
                     Ok(return_type) => Ok(return_type),
