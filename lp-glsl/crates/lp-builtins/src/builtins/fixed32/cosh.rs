@@ -1,6 +1,6 @@
 //! Fixed-point 16.16 hyperbolic cosine function.
 
-use super::div::__lp_fixed32_div;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::exp::__lp_fixed32_exp;
 
 /// Fixed-point value of 2.0 (Q16.16 format)
@@ -30,7 +30,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_cosh_basic() {

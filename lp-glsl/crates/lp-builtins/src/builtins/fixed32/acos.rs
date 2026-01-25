@@ -21,7 +21,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_acos_basic() {

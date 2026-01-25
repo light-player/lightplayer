@@ -11,7 +11,7 @@ Change `emit_lp_lib_fn_call()` to emit TestCase calls for functions that need fi
 In `lp-glsl/crates/lp-glsl-compiler/src/frontend/codegen/lp_lib_fns.rs`:
 - Check `needs_fixed32_mapping()` to determine if function needs TestCase conversion
 - If `true` (simplex functions):
-  - Get TestCase name from `symbol_name()` (e.g., `"__lp_simplex3"`)
+  - Get TestCase name from `symbol_name()` (e.g., `"__lpfx_simplex3"`)
   - Flatten vector arguments (already done)
   - Emit TestCase call using pattern similar to `get_math_libcall()`
   - Create signature with `F32` types (before transform)

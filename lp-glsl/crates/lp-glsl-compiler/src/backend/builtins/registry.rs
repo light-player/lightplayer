@@ -12,7 +12,7 @@
 //! JIT (function pointer) and emulator (ELF symbol) linking.
 
 use crate::error::{ErrorCode, GlslError};
-use cranelift_codegen::ir::{AbiParam, Signature, types};
+use cranelift_codegen::ir::{types, AbiParam, Signature};
 use cranelift_codegen::isa::CallConv;
 use cranelift_module::{Linkage, Module};
 
@@ -81,9 +81,9 @@ impl BuiltinId {
             BuiltinId::Fixed32Ldexp => "__lp_fixed32_ldexp",
             BuiltinId::Fixed32Log => "__lp_fixed32_log",
             BuiltinId::Fixed32Log2 => "__lp_fixed32_log2",
-            BuiltinId::LpSimplex1 => "__lp_fixed32_lp_simplex1",
-            BuiltinId::LpSimplex2 => "__lp_fixed32_lp_simplex2",
-            BuiltinId::LpSimplex3 => "__lp_fixed32_lp_simplex3",
+            BuiltinId::LpSimplex1 => "__lp_fixed32_lpfx_simplex1",
+            BuiltinId::LpSimplex2 => "__lp_fixed32_lpfx_simplex2",
+            BuiltinId::LpSimplex3 => "__lp_fixed32_lpfx_simplex3",
             BuiltinId::Fixed32Mod => "__lp_fixed32_mod",
             BuiltinId::Fixed32Mul => "__lp_fixed32_mul",
             BuiltinId::Fixed32Pow => "__lp_fixed32_pow",
@@ -95,9 +95,9 @@ impl BuiltinId {
             BuiltinId::Fixed32Sub => "__lp_fixed32_sub",
             BuiltinId::Fixed32Tan => "__lp_fixed32_tan",
             BuiltinId::Fixed32Tanh => "__lp_fixed32_tanh",
-            BuiltinId::LpHash1 => "__lp_hash_1",
-            BuiltinId::LpHash2 => "__lp_hash_2",
-            BuiltinId::LpHash3 => "__lp_hash_3",
+            BuiltinId::LpHash1 => "__lpfx_hash_1",
+            BuiltinId::LpHash2 => "__lpfx_hash_2",
+            BuiltinId::LpHash3 => "__lpfx_hash_3",
         }
     }
 
@@ -209,7 +209,7 @@ impl BuiltinId {
 ///
 /// Returns the function pointer that can be registered with JITModule.
 pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
-    use lp_builtins::builtins::{fixed32, shared};
+    use lp_builtins::builtins::fixed32;
     match builtin {
         BuiltinId::Fixed32Acos => fixed32::__lp_fixed32_acos as *const u8,
         BuiltinId::Fixed32Acosh => fixed32::__lp_fixed32_acosh as *const u8,
@@ -229,9 +229,9 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         BuiltinId::Fixed32Ldexp => fixed32::__lp_fixed32_ldexp as *const u8,
         BuiltinId::Fixed32Log => fixed32::__lp_fixed32_log as *const u8,
         BuiltinId::Fixed32Log2 => fixed32::__lp_fixed32_log2 as *const u8,
-        BuiltinId::LpSimplex1 => fixed32::__lp_fixed32_lp_simplex1 as *const u8,
-        BuiltinId::LpSimplex2 => fixed32::__lp_fixed32_lp_simplex2 as *const u8,
-        BuiltinId::LpSimplex3 => fixed32::__lp_fixed32_lp_simplex3 as *const u8,
+        BuiltinId::LpSimplex1 => fixed32::__lpfx_simplex1_q32 as *const u8,
+        BuiltinId::LpSimplex2 => fixed32::__lpfx_simplex2_q32 as *const u8,
+        BuiltinId::LpSimplex3 => fixed32::__lpfx_simplex3_q32 as *const u8,
         BuiltinId::Fixed32Mod => fixed32::__lp_fixed32_mod as *const u8,
         BuiltinId::Fixed32Mul => fixed32::__lp_fixed32_mul as *const u8,
         BuiltinId::Fixed32Pow => fixed32::__lp_fixed32_pow as *const u8,
@@ -243,9 +243,9 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         BuiltinId::Fixed32Sub => fixed32::__lp_fixed32_sub as *const u8,
         BuiltinId::Fixed32Tan => fixed32::__lp_fixed32_tan as *const u8,
         BuiltinId::Fixed32Tanh => fixed32::__lp_fixed32_tanh as *const u8,
-        BuiltinId::LpHash1 => shared::__lp_hash_1 as *const u8,
-        BuiltinId::LpHash2 => shared::__lp_hash_2 as *const u8,
-        BuiltinId::LpHash3 => shared::__lp_hash_3 as *const u8,
+        BuiltinId::LpHash1 => shared::__lpfx_hash_1 as *const u8,
+        BuiltinId::LpHash2 => shared::__lpfx_hash_2 as *const u8,
+        BuiltinId::LpHash3 => shared::__lpfx_hash_3 as *const u8,
     }
 }
 

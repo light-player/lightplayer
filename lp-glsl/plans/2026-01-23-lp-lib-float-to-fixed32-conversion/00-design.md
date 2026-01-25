@@ -2,7 +2,7 @@
 
 ## Overview
 
-Fix LP library functions (`lp_simplex1/2/3`, `lp_hash`) to follow the correct float→fixed32 conversion pattern. Currently, codegen directly calls builtins, bypassing the transform. Functions should emit TestCase calls that the fixed32 transform converts, matching the pattern used for `sin`/`cos`.
+Fix LP library functions (`lpfx_simplex1/2/3`, `lpfx_hash`) to follow the correct float→fixed32 conversion pattern. Currently, codegen directly calls builtins, bypassing the transform. Functions should emit TestCase calls that the fixed32 transform converts, matching the pattern used for `sin`/`cos`.
 
 ## File Structure
 
@@ -35,12 +35,12 @@ lp-glsl/apps/lp-builtin-gen/
 ```
 LpLibFn - # UPDATE: Add new methods
 ├── needs_fixed32_mapping(&self) -> bool - # NEW: Returns true for simplex functions, false for hash
-└── fixed32_name(&self) -> Option<&'static str> - # NEW: Returns Some("__lp_fixed32_lp_simplex3") or None
+└── fixed32_name(&self) -> Option<&'static str> - # NEW: Returns Some("__lp_fixed32_lpfx_simplex3") or None
 
 Existing methods (unchanged):
-├── symbol_name(&self) -> &'static str - # Returns "__lp_simplex3" (TestCase name)
+├── symbol_name(&self) -> &'static str - # Returns "__lpfx_simplex3" (TestCase name)
 ├── builtin_id(&self) -> BuiltinId - # Returns BuiltinId::LpSimplex3
-└── user_name(&self) -> &'static str - # Returns "lp_simplex3"
+└── user_name(&self) -> &'static str - # Returns "lpfx_simplex3"
 ```
 
 ### Codegen Changes (`frontend/codegen/lp_lib_fns.rs`)
@@ -50,7 +50,7 @@ emit_lp_lib_fn_call() - # UPDATE: Change implementation
 ├── OLD: Direct builtin call via get_builtin_func_ref()
 └── NEW: Emit TestCase call using LpLibFn::symbol_name()
     ├── Check if needs_fixed32_mapping() -> true
-    ├── Get TestCase name from symbol_name() (e.g., "__lp_simplex3")
+    ├── Get TestCase name from symbol_name() (e.g., "__lpfx_simplex3")
     ├── Flatten vector arguments
     ├── Emit TestCase call (similar to get_math_libcall() pattern)
     └── Let fixed32 transform handle conversion
@@ -60,7 +60,7 @@ emit_lp_lib_fn_call() - # UPDATE: Change implementation
 
 ```
 discover_builtins() - # UPDATE: Use LpLibFn enum as source of truth
-├── OLD: Prefix matching (__lp_fixed32_, __lp_hash_, __lp_simplex)
+├── OLD: Prefix matching (__lp_fixed32_, __lpfx_hash_, __lpfx_simplex)
 └── NEW: Read LpLibFn enum
     ├── For each LpLibFn variant:
     │   ├── Use LpLibFn::builtin_id() to get BuiltinId name (e.g., LpSimplex3)
@@ -80,7 +80,7 @@ BuiltinId - # UPDATE: Regenerate with correct names
 └── NEW: LpSimplex1, LpSimplex2, LpSimplex3 (matches LpLibFn::builtin_id())
 
 BuiltinId::LpSimplex3.name() - # UPDATE: Return actual function name
-└── Returns "__lp_fixed32_lp_simplex3" (actual implementation)
+└── Returns "__lp_fixed32_lpfx_simplex3" (actual implementation)
 ```
 
 ## Architecture Flow
@@ -88,37 +88,37 @@ BuiltinId::LpSimplex3.name() - # UPDATE: Return actual function name
 ### Current (Incorrect) Flow
 
 ```
-1. GLSL: lp_simplex3(vec3(1.0, 2.0, 3.0), 123u)
+1. GLSL: lpfx_simplex3(vec3(1.0, 2.0, 3.0), 123u)
 2. Codegen: emit_lp_lib_fn_call() → get_builtin_func_ref(BuiltinId::LpSimplex3)
-3. Direct call to __lp_fixed32_lp_simplex3 (bypasses transform)
+3. Direct call to __lp_fixed32_lpfx_simplex3 (bypasses transform)
 ```
 
 ### New (Correct) Flow
 
 ```
-1. GLSL: lp_simplex3(vec3(1.0, 2.0, 3.0), 123u)
+1. GLSL: lpfx_simplex3(vec3(1.0, 2.0, 3.0), 123u)
 2. Codegen: emit_lp_lib_fn_call()
    ├── Check needs_fixed32_mapping() → true
-   ├── Get symbol_name() → "__lp_simplex3"
+   ├── Get symbol_name() → "__lpfx_simplex3"
    ├── Flatten vec3 → (i32, i32, i32, u32)
-   └── Emit TestCase call to "__lp_simplex3"
+   └── Emit TestCase call to "__lpfx_simplex3"
 3. Fixed32 Transform: convert_call()
-   ├── Detect TestCase call to "__lp_simplex3"
-   ├── map_testcase_to_builtin("__lp_simplex3") → BuiltinId::LpSimplex3
-   ├── BuiltinId::LpSimplex3.name() → "__lp_fixed32_lp_simplex3"
-   ├── Look up "__lp_fixed32_lp_simplex3" in func_id_map
-   └── Create call to __lp_fixed32_lp_simplex3
-4. Runtime: Calls __lp_fixed32_lp_simplex3
+   ├── Detect TestCase call to "__lpfx_simplex3"
+   ├── map_testcase_to_builtin("__lpfx_simplex3") → BuiltinId::LpSimplex3
+   ├── BuiltinId::LpSimplex3.name() → "__lp_fixed32_lpfx_simplex3"
+   ├── Look up "__lp_fixed32_lpfx_simplex3" in func_id_map
+   └── Create call to __lp_fixed32_lpfx_simplex3
+4. Runtime: Calls __lp_fixed32_lpfx_simplex3
 ```
 
 ### Hash Functions Flow (Unchanged)
 
 ```
-1. GLSL: lp_hash(42u, 123u)
+1. GLSL: lpfx_hash(42u, 123u)
 2. Codegen: emit_lp_lib_fn_call()
    ├── Check needs_fixed32_mapping() → false
-   └── Direct builtin call to __lp_hash_1 (no TestCase conversion needed)
-3. Runtime: Calls __lp_hash_1
+   └── Direct builtin call to __lpfx_hash_1 (no TestCase conversion needed)
+3. Runtime: Calls __lpfx_hash_1
 ```
 
 ## Design Decisions
@@ -137,10 +137,10 @@ This ensures consistency across codegen, transform, and generator.
 
 ### 2. TestCase Names Represent Semantic Functions
 
-TestCase names like `"__lp_simplex3"` represent the semantic function (float version), not the implementation. The transform decides which implementation to use based on the target:
+TestCase names like `"__lpfx_simplex3"` represent the semantic function (float version), not the implementation. The transform decides which implementation to use based on the target:
 
-- Fixed32 target: `"__lp_simplex3"` → `__lp_fixed32_lp_simplex3`
-- Float target (future): `"__lp_simplex3"` → `__lp_float_lp_simplex3` (or similar)
+- Fixed32 target: `"__lpfx_simplex3"` → `__lp_fixed32_lpfx_simplex3`
+- Float target (future): `"__lpfx_simplex3"` → `__lp_float_lpfx_simplex3` (or similar)
 
 ### 3. Hash Functions Don't Need Conversion
 
@@ -167,9 +167,9 @@ impl LpLibFn {
     /// Get the fixed32 implementation name, if this function needs mapping
     pub fn fixed32_name(&self) -> Option<&'static str> {
         match self {
-            LpLibFn::Simplex1 => Some("__lp_fixed32_lp_simplex1"),
-            LpLibFn::Simplex2 => Some("__lp_fixed32_lp_simplex2"),
-            LpLibFn::Simplex3 => Some("__lp_fixed32_lp_simplex3"),
+            LpLibFn::Simplex1 => Some("__lp_fixed32_lpfx_simplex1"),
+            LpLibFn::Simplex2 => Some("__lp_fixed32_lpfx_simplex2"),
+            LpLibFn::Simplex3 => Some("__lp_fixed32_lpfx_simplex3"),
 
             // Hash functions don't have fixed32 versions
             LpLibFn::Hash1 => None,
@@ -193,7 +193,7 @@ impl LpLibFn {
 ```rust
 // Similar to get_math_libcall() but for LP library functions
 fn get_lp_lib_testcase_call(&mut self, lp_fn: LpLibFn, arg_count: usize) -> Result<FuncRef, GlslError> {
-    let testcase_name = lp_fn.symbol_name(); // e.g., "__lp_simplex3"
+    let testcase_name = lp_fn.symbol_name(); // e.g., "__lpfx_simplex3"
 
     // Create signature based on argument count
     let mut sig = Signature::new(CallConv::SystemV);
@@ -230,7 +230,7 @@ fn discover_lp_lib_functions() -> Vec<BuiltinInfo> {
         if let Some(func) = find_function_by_name(expected_name) {
             builtins.push(BuiltinInfo {
                 enum_variant: lp_fn.builtin_id().to_string(), // "LpSimplex3"
-                symbol_name: expected_name, // "__lp_fixed32_lp_simplex3"
+                symbol_name: expected_name, // "__lp_fixed32_lpfx_simplex3"
                 function_name: func.name,
                 param_count: func.param_count,
             });
@@ -243,8 +243,8 @@ fn discover_lp_lib_functions() -> Vec<BuiltinInfo> {
 
 ## Verification Points
 
-1. **Registry**: `BuiltinId::LpSimplex3.name()` returns `"__lp_fixed32_lp_simplex3"`
-2. **Mapping**: `map_testcase_to_builtin("__lp_simplex3")` returns `BuiltinId::LpSimplex3`
+1. **Registry**: `BuiltinId::LpSimplex3.name()` returns `"__lp_fixed32_lpfx_simplex3"`
+2. **Mapping**: `map_testcase_to_builtin("__lpfx_simplex3")` returns `BuiltinId::LpSimplex3`
 3. **Codegen**: `emit_lp_lib_fn_call()` emits TestCase calls for simplex functions
 4. **Transform**: `convert_call()` correctly converts TestCase calls to builtin calls
 5. **Hash**: Hash functions continue to work as direct builtin calls

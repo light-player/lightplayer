@@ -11,12 +11,12 @@ use lp_builtins::builtins::fixed32::{
     __lp_fixed32_atan, __lp_fixed32_atan2, __lp_fixed32_atanh, __lp_fixed32_cos, __lp_fixed32_cosh,
     __lp_fixed32_div, __lp_fixed32_exp, __lp_fixed32_exp2, __lp_fixed32_fma,
     __lp_fixed32_inversesqrt, __lp_fixed32_ldexp, __lp_fixed32_log, __lp_fixed32_log2,
-    __lp_fixed32_lp_simplex1, __lp_fixed32_lp_simplex2, __lp_fixed32_lp_simplex3, __lp_fixed32_mod,
+    __lpfx_simplex1_q32, __lpfx_simplex2_q32, __lpfx_simplex3_q32, __lp_fixed32_mod,
     __lp_fixed32_mul, __lp_fixed32_pow, __lp_fixed32_round, __lp_fixed32_roundeven,
     __lp_fixed32_sin, __lp_fixed32_sinh, __lp_fixed32_sqrt, __lp_fixed32_sub, __lp_fixed32_tan,
     __lp_fixed32_tanh,
 };
-use lp_builtins::builtins::shared::{__lp_hash_1, __lp_hash_2, __lp_hash_3};
+use lp_builtins::builtins::shared::{__lpfx_hash_1, __lpfx_hash_2, __lpfx_hash_3};
 
 /// Reference all builtin functions to prevent dead code elimination.
 ///
@@ -42,10 +42,10 @@ pub fn ensure_builtins_referenced() {
         let _fixed32_ldexp_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_ldexp;
         let _fixed32_log_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_log;
         let _fixed32_log2_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_log2;
-        let _fixed32_lp_simplex1_fn: extern "C" fn(i32, u32) -> i32 = __lp_fixed32_lp_simplex1;
-        let _fixed32_lp_simplex2_fn: extern "C" fn(i32, i32, u32) -> i32 = __lp_fixed32_lp_simplex2;
-        let _fixed32_lp_simplex3_fn: extern "C" fn(i32, i32, i32, u32) -> i32 =
-            __lp_fixed32_lp_simplex3;
+        let _fixed32_lpfx_simplex1_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_simplex1_q32;
+        let _fixed32_lpfx_simplex2_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_simplex2_q32;
+        let _fixed32_lpfx_simplex3_fn: extern "C" fn(i32, i32, i32, u32) -> i32 =
+            __lpfx_simplex3_q32;
         let _fixed32_mod_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_mod;
         let _fixed32_mul_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_mul;
         let _fixed32_pow_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_pow;
@@ -57,9 +57,9 @@ pub fn ensure_builtins_referenced() {
         let _fixed32_sub_fn: extern "C" fn(i32, i32) -> i32 = __lp_fixed32_sub;
         let _fixed32_tan_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_tan;
         let _fixed32_tanh_fn: extern "C" fn(i32) -> i32 = __lp_fixed32_tanh;
-        let _hash_1_fn: extern "C" fn(u32, u32) -> u32 = __lp_hash_1;
-        let _hash_2_fn: extern "C" fn(u32, u32, u32) -> u32 = __lp_hash_2;
-        let _hash_3_fn: extern "C" fn(u32, u32, u32, u32) -> u32 = __lp_hash_3;
+        let _hash_1_fn: extern "C" fn(u32, u32) -> u32 = __lpfx_hash_1;
+        let _hash_2_fn: extern "C" fn(u32, u32, u32) -> u32 = __lpfx_hash_2;
+        let _hash_3_fn: extern "C" fn(u32, u32, u32, u32) -> u32 = __lpfx_hash_3;
 
         // Force these to be included by using them in a way that can't be optimized away
         // We'll use volatile reads to prevent optimization
@@ -81,9 +81,9 @@ pub fn ensure_builtins_referenced() {
         let _ = core::ptr::read_volatile(&_fixed32_ldexp_fn as *const _);
         let _ = core::ptr::read_volatile(&_fixed32_log_fn as *const _);
         let _ = core::ptr::read_volatile(&_fixed32_log2_fn as *const _);
-        let _ = core::ptr::read_volatile(&_fixed32_lp_simplex1_fn as *const _);
-        let _ = core::ptr::read_volatile(&_fixed32_lp_simplex2_fn as *const _);
-        let _ = core::ptr::read_volatile(&_fixed32_lp_simplex3_fn as *const _);
+        let _ = core::ptr::read_volatile(&_fixed32_lpfx_simplex1_fn as *const _);
+        let _ = core::ptr::read_volatile(&_fixed32_lpfx_simplex2_fn as *const _);
+        let _ = core::ptr::read_volatile(&_fixed32_lpfx_simplex3_fn as *const _);
         let _ = core::ptr::read_volatile(&_fixed32_mod_fn as *const _);
         let _ = core::ptr::read_volatile(&_fixed32_mul_fn as *const _);
         let _ = core::ptr::read_volatile(&_fixed32_pow_fn as *const _);

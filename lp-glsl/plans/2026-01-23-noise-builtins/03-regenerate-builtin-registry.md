@@ -22,7 +22,7 @@ scripts/build-builtins.sh
 
 The generator will:
 1. Scan `lp-builtins/src/builtins/fixed32/` for new functions
-2. Detect `__lp_hash_1`, `__lp_hash_2`, `__lp_hash_3`, `__lp_simplex1`, `__lp_simplex2`, `__lp_simplex3`
+2. Detect `__lpfx_hash_1`, `__lpfx_hash_2`, `__lpfx_hash_3`, `__lpfx_simplex1`, `__lpfx_simplex2`, `__lpfx_simplex3`
 3. Add enum variants to `BuiltinId`: `LpHash1`, `LpHash2`, `LpHash3`, `LpSimplex1`, `LpSimplex2`, `LpSimplex3`
 4. Generate `name()` method returning symbol names
 5. Generate `signature()` method with correct parameter types
@@ -33,7 +33,7 @@ The generator will:
 
 Check that `backend/builtins/registry.rs` includes:
 - New enum variants in `BuiltinId`
-- `name()` implementations returning `"__lp_hash_1"`, etc.
+- `name()` implementations returning `"__lpfx_hash_1"`, etc.
 - `signature()` implementations with correct parameter counts and types
 - Function pointer mappings in `get_function_pointer()`
 

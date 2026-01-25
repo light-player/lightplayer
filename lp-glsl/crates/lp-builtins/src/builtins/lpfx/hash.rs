@@ -8,17 +8,17 @@
 //!
 //! # GLSL Usage
 //!
-//! These functions are callable from GLSL shaders using the `lp_hash` name:
+//! These functions are callable from GLSL shaders using the `lpfx_hash` name:
 //!
 //! ```glsl
-//! uint h1 = lp_hash(42u, 123u);           // 1D hash
-//! uint h2 = lp_hash(10u, 20u, 123u);      // 2D hash
-//! uint h3 = lp_hash(10u, 20u, 30u, 123u); // 3D hash
+//! uint h1 = lpfx_hash(42u, 123u);           // 1D hash
+//! uint h2 = lpfx_hash(10u, 20u, 123u);      // 2D hash
+//! uint h3 = lpfx_hash(10u, 20u, 30u, 123u); // 3D hash
 //! ```
 //!
 //! # Internal Implementation
 //!
-//! The user-facing `lp_hash` functions map to internal `__lp_hash_*` functions
+//! The user-facing `lpfx_hash` functions map to internal `__lpfx_hash_*` functions
 //! which are registered in the builtin system. The compiler handles the mapping
 //! and argument flattening automatically.
 
@@ -35,7 +35,7 @@ const KEY: u32 = 249_222_277;
 /// # Returns
 /// Hash value as u32
 #[unsafe(no_mangle)]
-pub extern "C" fn __lp_hash_1(x: u32, seed: u32) -> u32 {
+pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
     #[cfg(feature = "test_hash_fixed")]
     {
         use crate::builtins::shared::test_hash::hash_1;
@@ -56,7 +56,7 @@ pub extern "C" fn __lp_hash_1(x: u32, seed: u32) -> u32 {
 /// # Returns
 /// Hash value as u32
 #[unsafe(no_mangle)]
-pub extern "C" fn __lp_hash_2(x: u32, y: u32, seed: u32) -> u32 {
+pub extern "C" fn __lp_lpfx_hash_2(x: u32, y: u32, seed: u32) -> u32 {
     #[cfg(feature = "test_hash_fixed")]
     {
         use crate::builtins::shared::test_hash::hash_2;
@@ -82,7 +82,7 @@ pub extern "C" fn __lp_hash_2(x: u32, y: u32, seed: u32) -> u32 {
 /// # Returns
 /// Hash value as u32
 #[unsafe(no_mangle)]
-pub extern "C" fn __lp_hash_3(x: u32, y: u32, z: u32, seed: u32) -> u32 {
+pub extern "C" fn __lp_lpfx_hash_3(x: u32, y: u32, z: u32, seed: u32) -> u32 {
     #[cfg(feature = "test_hash_fixed")]
     {
         use crate::builtins::shared::test_hash::hash_3;
@@ -128,9 +128,9 @@ mod tests {
 
     #[test]
     fn test_hash_1_basic() {
-        let result1 = __lp_hash_1(0, 0);
-        let result2 = __lp_hash_1(1, 0);
-        let result3 = __lp_hash_1(0, 1);
+        let result1 = __lpfx_hash_1(0, 0);
+        let result2 = __lpfx_hash_1(1, 0);
+        let result3 = __lpfx_hash_1(0, 1);
 
         // Different inputs should produce different outputs
         assert_ne!(
@@ -142,8 +142,8 @@ mod tests {
 
     #[test]
     fn test_hash_1_deterministic() {
-        let result1 = __lp_hash_1(42, 123);
-        let result2 = __lp_hash_1(42, 123);
+        let result1 = __lpfx_hash_1(42, 123);
+        let result2 = __lpfx_hash_1(42, 123);
 
         // Same input and seed should produce same output
         assert_eq!(result1, result2, "Hash should be deterministic");
@@ -151,10 +151,10 @@ mod tests {
 
     #[test]
     fn test_hash_2_basic() {
-        let result1 = __lp_hash_2(0, 0, 0);
-        let result2 = __lp_hash_2(1, 0, 0);
-        let result3 = __lp_hash_2(0, 1, 0);
-        let result4 = __lp_hash_2(0, 0, 1);
+        let result1 = __lp_lpfx_hash_2(0, 0, 0);
+        let result2 = __lp_lpfx_hash_2(1, 0, 0);
+        let result3 = __lp_lpfx_hash_2(0, 1, 0);
+        let result4 = __lp_lpfx_hash_2(0, 0, 1);
 
         // Different inputs should produce different outputs
         assert_ne!(
@@ -170,8 +170,8 @@ mod tests {
 
     #[test]
     fn test_hash_2_deterministic() {
-        let result1 = __lp_hash_2(10, 20, 30);
-        let result2 = __lp_hash_2(10, 20, 30);
+        let result1 = __lp_lpfx_hash_2(10, 20, 30);
+        let result2 = __lp_lpfx_hash_2(10, 20, 30);
 
         // Same inputs and seed should produce same output
         assert_eq!(result1, result2, "Hash should be deterministic");
@@ -179,11 +179,11 @@ mod tests {
 
     #[test]
     fn test_hash_3_basic() {
-        let result1 = __lp_hash_3(0, 0, 0, 0);
-        let result2 = __lp_hash_3(1, 0, 0, 0);
-        let result3 = __lp_hash_3(0, 1, 0, 0);
-        let result4 = __lp_hash_3(0, 0, 1, 0);
-        let result5 = __lp_hash_3(0, 0, 0, 1);
+        let result1 = __lp_lpfx_hash_3(0, 0, 0, 0);
+        let result2 = __lp_lpfx_hash_3(1, 0, 0, 0);
+        let result3 = __lp_lpfx_hash_3(0, 1, 0, 0);
+        let result4 = __lp_lpfx_hash_3(0, 0, 1, 0);
+        let result5 = __lp_lpfx_hash_3(0, 0, 0, 1);
 
         // Different inputs should produce different outputs
         assert_ne!(
@@ -203,8 +203,8 @@ mod tests {
 
     #[test]
     fn test_hash_3_deterministic() {
-        let result1 = __lp_hash_3(100, 200, 300, 400);
-        let result2 = __lp_hash_3(100, 200, 300, 400);
+        let result1 = __lp_lpfx_hash_3(100, 200, 300, 400);
+        let result2 = __lp_lpfx_hash_3(100, 200, 300, 400);
 
         // Same inputs and seed should produce same output
         assert_eq!(result1, result2, "Hash should be deterministic");
@@ -213,8 +213,8 @@ mod tests {
     #[test]
     fn test_hash_coordinate_combination() {
         // Test that coordinate combination is non-commutative
-        let result1 = __lp_hash_2(10, 20, 0);
-        let result2 = __lp_hash_2(20, 10, 0);
+        let result1 = __lp_lpfx_hash_2(10, 20, 0);
+        let result2 = __lp_lpfx_hash_2(20, 10, 0);
 
         // Swapped coordinates should produce different hash
         assert_ne!(result1, result2, "Hash should be non-commutative");

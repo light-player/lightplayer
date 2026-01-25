@@ -5,7 +5,7 @@
 
 use crate::error::{ErrorCode, GlslError};
 use crate::frontend::codegen::context::CodegenContext;
-use crate::frontend::semantic::lp_lib_fns::LpLibFn;
+use crate::frontend::semantic::lpfx::lpfx_fn_registry::LpfxFnId;
 use crate::frontend::semantic::types::Type;
 use cranelift_codegen::ir::{
     AbiParam, ExtFuncData, ExternalName, FuncRef, InstBuilder, Signature, Value, types,
@@ -18,7 +18,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
     /// Emit code for an LP library function call.
     ///
     /// # Arguments
-    /// * `name` - Function name (e.g., "lp_hash", "lp_simplex2")
+    /// * `name` - Function name (e.g., "lpfx_hash", "lpfx_simplex2")
     /// * `args` - Vector of (value, type) pairs for each argument
     ///
     /// # Returns
@@ -29,7 +29,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
         args: Vec<(Vec<Value>, Type)>,
     ) -> Result<(Vec<Value>, Type), GlslError> {
         // Determine which BuiltinId to use based on name and argument count
-        let lp_fn = LpLibFn::from_name_and_args(name, args.len()).ok_or_else(|| {
+        let lp_fn = LpfxFnId::from_name_and_args(name, args.len()).ok_or_else(|| {
             GlslError::new(
                 ErrorCode::E0400,
                 format!(
@@ -147,11 +147,11 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
     /// Helper to declare and get FuncRef for LP library function TestCase call.
     ///
-    /// Creates external function calls using TestCase names (e.g., "__lp_simplex3").
+    /// Creates external function calls using TestCase names (e.g., "__lpfx_simplex3").
     /// These are converted to fixed32 builtins by the transform.
     fn get_lp_lib_testcase_call(
         &mut self,
-        lp_fn: &LpLibFn,
+        lp_fn: &LpfxFnId,
         param_types: &[Type],
     ) -> Result<FuncRef, GlslError> {
         let testcase_name = lp_fn.symbol_name();

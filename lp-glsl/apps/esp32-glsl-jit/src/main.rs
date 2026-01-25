@@ -21,7 +21,7 @@ use hashbrown::HashMap;
 
 use cranelift_codegen::isa::riscv32::isa_builder;
 use cranelift_codegen::settings::{self, Configurable};
-use lp_builtins::fixed32::q32::Q32;
+use lp_builtins::util::q32::Q32;
 use lp_glsl_compiler::Compiler;
 use lp_glsl_compiler::backend::transform::fixed32::{Fixed32Transform, FixedPointFormat};
 use target_lexicon::Triple;
@@ -84,9 +84,9 @@ async fn main(spawner: Spawner) {
     // Note: Using main() with parameters (non-standard GLSL, but supported by our compiler)
     let source = r#"
 // Use LP library function for Simplex noise
-// lp_simplex2 returns values in approximately [-1, 1] range
+// lpfx_simplex2 returns values in approximately [-1, 1] range
 float noise(vec2 p, uint seed) {
-    float n = lp_simplex2(p, seed);
+    float n = lpfx_simplex2(p, seed);
     // Normalize from [-1, 1] to [0, 1] for compatibility with existing code
     return n * 0.5 + 0.5;
 }

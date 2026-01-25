@@ -45,9 +45,9 @@ pub fn map_testcase_to_builtin(testcase_name: &str) -> Option<(BuiltinId, usize)
         "ldexpf" | "__lp_ldexp" => Some((BuiltinId::Fixed32Ldexp, 2)),
         "logf" | "__lp_log" => Some((BuiltinId::Fixed32Log, 1)),
         "log2f" | "__lp_log2" => Some((BuiltinId::Fixed32Log2, 1)),
-        "__lp_simplex1" => Some((BuiltinId::LpSimplex1, 2)),
-        "__lp_simplex2" => Some((BuiltinId::LpSimplex2, 3)),
-        "__lp_simplex3" => Some((BuiltinId::LpSimplex3, 4)),
+        "__lpfx_simplex1" => Some((BuiltinId::LpSimplex1, 2)),
+        "__lpfx_simplex2" => Some((BuiltinId::LpSimplex2, 3)),
+        "__lpfx_simplex3" => Some((BuiltinId::LpSimplex3, 4)),
         "modf" | "__lp_mod" | "fmodf" => Some((BuiltinId::Fixed32Mod, 2)),
         "mulf" | "__lp_mul" => Some((BuiltinId::Fixed32Mul, 2)),
         "powf" | "__lp_pow" => Some((BuiltinId::Fixed32Pow, 2)),
@@ -294,39 +294,39 @@ block0:
     fn test_map_testcase_to_builtin_simplex() {
         // Test simplex function mappings
         assert_eq!(
-            map_testcase_to_builtin("lp_simplex1f"),
+            map_testcase_to_builtin("lpfx_simplex1f"),
             Some((BuiltinId::LpSimplex1, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_lp_simplex1"),
+            map_testcase_to_builtin("__lp_lpfx_simplex1"),
             Some((BuiltinId::LpSimplex1, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_simplex1"),
+            map_testcase_to_builtin("__lpfx_simplex1"),
             Some((BuiltinId::LpSimplex1, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("lp_simplex2f"),
+            map_testcase_to_builtin("lpfx_simplex2f"),
             Some((BuiltinId::LpSimplex2, 3))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_lp_simplex2"),
+            map_testcase_to_builtin("__lp_lpfx_simplex2"),
             Some((BuiltinId::LpSimplex2, 3))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_simplex2"),
+            map_testcase_to_builtin("__lpfx_simplex2"),
             Some((BuiltinId::LpSimplex2, 3))
         );
         assert_eq!(
-            map_testcase_to_builtin("lp_simplex3f"),
+            map_testcase_to_builtin("lpfx_simplex3f"),
             Some((BuiltinId::LpSimplex3, 4))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_lp_simplex3"),
+            map_testcase_to_builtin("__lp_lpfx_simplex3"),
             Some((BuiltinId::LpSimplex3, 4))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_simplex3"),
+            map_testcase_to_builtin("__lpfx_simplex3"),
             Some((BuiltinId::LpSimplex3, 4))
         );
     }
@@ -340,7 +340,7 @@ block0:
             Some((BuiltinId::LpHash1, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_hash_1"),
+            map_testcase_to_builtin("__lpfx_hash_1"),
             Some((BuiltinId::LpHash1, 2))
         );
         assert_eq!(map_testcase_to_builtin("2f"), Some((BuiltinId::LpHash2, 3)));
@@ -349,7 +349,7 @@ block0:
             Some((BuiltinId::LpHash2, 3))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_hash_2"),
+            map_testcase_to_builtin("__lpfx_hash_2"),
             Some((BuiltinId::LpHash2, 3))
         );
         assert_eq!(map_testcase_to_builtin("3f"), Some((BuiltinId::LpHash3, 4)));
@@ -358,7 +358,7 @@ block0:
             Some((BuiltinId::LpHash3, 4))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_hash_3"),
+            map_testcase_to_builtin("__lpfx_hash_3"),
             Some((BuiltinId::LpHash3, 4))
         );
     }

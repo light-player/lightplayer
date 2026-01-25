@@ -9,18 +9,18 @@ Verify that `map_testcase_to_builtin()` correctly maps TestCase names to `Builti
 ### 5.1 Verify TestCase Mapping
 
 Check `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/math.rs`:
-- `map_testcase_to_builtin("__lp_simplex1")` should return `Some((BuiltinId::LpSimplex1, 2))`
-- `map_testcase_to_builtin("__lp_simplex2")` should return `Some((BuiltinId::LpSimplex2, 3))`
-- `map_testcase_to_builtin("__lp_simplex3")` should return `Some((BuiltinId::LpSimplex3, 4))`
+- `map_testcase_to_builtin("__lpfx_simplex1")` should return `Some((BuiltinId::LpSimplex1, 2))`
+- `map_testcase_to_builtin("__lpfx_simplex2")` should return `Some((BuiltinId::LpSimplex2, 3))`
+- `map_testcase_to_builtin("__lpfx_simplex3")` should return `Some((BuiltinId::LpSimplex3, 4))`
 - Hash functions should not be in the mapping (they don't go through transform)
 
 ### 5.2 Verify Transform Conversion Logic
 
 Check `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/calls.rs`:
-- `convert_call()` should detect TestCase calls to `"__lp_simplex3"`
+- `convert_call()` should detect TestCase calls to `"__lpfx_simplex3"`
 - Should map to `BuiltinId::LpSimplex3` via `map_testcase_to_builtin()`
-- Should use `BuiltinId::LpSimplex3.name()` to get `"__lp_fixed32_lp_simplex3"`
-- Should look up `"__lp_fixed32_lp_simplex3"` in `func_id_map`
+- Should use `BuiltinId::LpSimplex3.name()` to get `"__lp_fixed32_lpfx_simplex3"`
+- Should look up `"__lp_fixed32_lpfx_simplex3"` in `func_id_map`
 - Should create call to the fixed32 function
 
 ### 5.3 Add Tests if Needed

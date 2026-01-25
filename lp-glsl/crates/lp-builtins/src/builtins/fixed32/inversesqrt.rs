@@ -2,7 +2,7 @@
 //!
 //! inversesqrt(x) = 1 / sqrt(x)
 
-use super::div::__lp_fixed32_div;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::sqrt::__lp_fixed32_sqrt;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
@@ -31,7 +31,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_inversesqrt_basic() {

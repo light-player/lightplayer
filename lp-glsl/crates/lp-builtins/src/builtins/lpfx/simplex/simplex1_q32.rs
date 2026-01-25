@@ -7,10 +7,10 @@
 //!
 //! # GLSL Usage
 //!
-//! This function is callable from GLSL shaders using the `lp_simplex1` name:
+//! This function is callable from GLSL shaders using the `lpfx_simplex1` name:
 //!
 //! ```glsl
-//! float noise = lp_simplex1(5.0, 123u);
+//! float noise = lpfx_simplex1(5.0, 123u);
 //! ```
 //!
 //! # Parameters
@@ -24,11 +24,11 @@
 //!
 //! # Internal Implementation
 //!
-//! The user-facing `lp_simplex1` function maps to internal `__lp_simplex1` which
+//! The user-facing `lpfx_simplex1` function maps to internal `__lpfx_simplex1` which
 //! operates on Q32 fixed-point values. The compiler handles type conversion automatically.
 
-use crate::builtins::shared::lp_hash::__lp_hash_1;
-use crate::fixed32::q32::Q32;
+use crate::builtins::lpfx::hash::__lpfx_hash_1;
+use crate::util::q32::Q32;
 
 /// 1D Simplex noise function.
 ///
@@ -39,7 +39,7 @@ use crate::fixed32::q32::Q32;
 /// # Returns
 /// Noise value in Q32 fixed-point format, approximately in range [-1, 1]
 #[unsafe(no_mangle)]
-pub extern "C" fn __lp_fixed32_lp_simplex1(x: i32, seed: u32) -> i32 {
+pub extern "C" fn __lpfx_simplex1_q32(x: i32, seed: u32) -> i32 {
     // Convert input to Q32
     let x = Q32::from_fixed(x);
 
@@ -51,7 +51,7 @@ pub extern "C" fn __lp_fixed32_lp_simplex1(x: i32, seed: u32) -> i32 {
     let dist = x - cell_origin;
 
     // Hash cell coordinate to get gradient (1 or -1 for 1D)
-    let hash = __lp_hash_1(cell as u32, seed);
+    let hash = __lpfx_hash_1(cell as u32, seed);
 
     let gradient = if (hash & 1) == 0 { Q32::ONE } else { -Q32::ONE };
 
@@ -88,7 +88,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
+    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
     use std::println;
     use std::vec::Vec;
 
@@ -96,7 +96,7 @@ mod tests {
     fn test_simplex1_basic() {
         // Test with various inputs to ensure we get different outputs
         let results: Vec<i32> = (0..10)
-            .map(|i| __lp_fixed32_lp_simplex1(float_to_fixed(i as f32 * 0.5), 0))
+            .map(|i| __lpfx_simplex1_q32(float_to_fixed(i as f32 * 0.5), 0))
             .collect();
 
         // Check that we get some variation (not all zeros)
@@ -104,8 +104,8 @@ mod tests {
         assert!(!all_zero, "Simplex1 should produce non-zero values");
 
         // Test seed affects output
-        let result_seed0 = __lp_fixed32_lp_simplex1(float_to_fixed(5.0), 0);
-        let result_seed1 = __lp_fixed32_lp_simplex1(float_to_fixed(5.0), 1);
+        let result_seed0 = __lpfx_simplex1_q32(float_to_fixed(5.0), 0);
+        let result_seed1 = __lpfx_simplex1_q32(float_to_fixed(5.0), 1);
         // Note: seed might not always change output at every point, but should often
         // We just verify the function works with different seeds
         let _ = result_seed0;
@@ -116,11 +116,10 @@ mod tests {
     fn test_simplex1_different_seeds() {
         // Test that different seeds produce different hash values
         // This verifies the seed parameter is being passed correctly to the hash function
-        use crate::builtins::shared::lp_hash::__lp_hash_1;
 
         // Test that hash function itself works with different seeds
-        let hash0 = __lp_hash_1(0, 0);
-        let hash1 = __lp_hash_1(0, 1);
+        let hash0 = __lpfx_hash_1(0, 0);
+        let hash1 = __lpfx_hash_1(0, 1);
         assert_ne!(hash0, hash1, "Hash should differ for different seeds");
 
         // Test that simplex1 uses the seed correctly by checking hash values
@@ -131,8 +130,8 @@ mod tests {
         // Test many points - seeds should produce different outputs at some points
         for i in 0..100 {
             let x = float_to_fixed(i as f32 * 0.1);
-            let result_seed0 = __lp_fixed32_lp_simplex1(x, 0);
-            let result_seed1 = __lp_fixed32_lp_simplex1(x, 1);
+            let result_seed0 = __lpfx_simplex1_q32(x, 0);
+            let result_seed1 = __lpfx_simplex1_q32(x, 1);
 
             if result_seed0 != result_seed1 {
                 found_difference = true;
@@ -155,7 +154,7 @@ mod tests {
         println!("X values from 0.0 to 9.0:");
         for row in 0..10 {
             let x = row as f32;
-            let result = __lp_fixed32_lp_simplex1(float_to_fixed(x), 0);
+            let result = __lpfx_simplex1_q32(float_to_fixed(x), 0);
             let result_float = fixed_to_float(result);
             println!("  x={:4.1}: {:7.4}", x, result_float);
         }
@@ -164,7 +163,7 @@ mod tests {
         println!("X values from 0.0 to 9.0:");
         for row in 0..10 {
             let x = row as f32;
-            let result = __lp_fixed32_lp_simplex1(float_to_fixed(x), 1);
+            let result = __lpfx_simplex1_q32(float_to_fixed(x), 1);
             let result_float = fixed_to_float(result);
             println!("  x={:4.1}: {:7.4}", x, result_float);
         }
@@ -172,7 +171,7 @@ mod tests {
         println!("\n=== Simplex1 Seed Comparison (x=0.5) ===");
         let x = float_to_fixed(0.5);
         for seed in 0..5 {
-            let result = __lp_fixed32_lp_simplex1(x, seed);
+            let result = __lpfx_simplex1_q32(x, seed);
             let result_float = fixed_to_float(result);
             println!("  seed={}: {:7.4}", seed, result_float);
         }
@@ -180,7 +179,7 @@ mod tests {
         // Verify outputs are in reasonable range
         for i in 0..100 {
             let x = float_to_fixed(i as f32 * 0.1);
-            let result = __lp_fixed32_lp_simplex1(x, 0);
+            let result = __lpfx_simplex1_q32(x, 0);
             let result_float = fixed_to_float(result);
             assert!(
                 result_float >= -2.0 && result_float <= 2.0,
@@ -195,7 +194,7 @@ mod tests {
         // Test that output is approximately in [-1, 1] range
         for i in 0..100 {
             let x = float_to_fixed(i as f32 * 0.1);
-            let result = __lp_fixed32_lp_simplex1(x, 0);
+            let result = __lpfx_simplex1_q32(x, 0);
             let result_float = fixed_to_float(result);
 
             assert!(
@@ -209,8 +208,8 @@ mod tests {
 
     #[test]
     fn test_simplex1_deterministic() {
-        let result1 = __lp_fixed32_lp_simplex1(float_to_fixed(42.5), 123);
-        let result2 = __lp_fixed32_lp_simplex1(float_to_fixed(42.5), 123);
+        let result1 = __lpfx_simplex1_q32(float_to_fixed(42.5), 123);
+        let result2 = __lpfx_simplex1_q32(float_to_fixed(42.5), 123);
 
         // Same input and seed should produce same output
         assert_eq!(result1, result2, "Noise should be deterministic");
@@ -229,7 +228,7 @@ mod tests {
 
         for x in test_points {
             // Get our output
-            let our_value_fixed = __lp_fixed32_lp_simplex1(float_to_fixed(x), 0);
+            let our_value_fixed = __lpfx_simplex1_q32(float_to_fixed(x), 0);
             let our_value = fixed_to_float(our_value_fixed);
 
             // Get noise-rs output for reference (1D simplex uses [x, 0.0] as 2D point)

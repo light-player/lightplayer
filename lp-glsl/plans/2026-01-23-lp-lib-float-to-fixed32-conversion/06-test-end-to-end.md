@@ -9,15 +9,15 @@ Verify the complete flow from GLSL codegen → fixed32 transform → runtime wor
 ### 6.1 Test Simplex Functions
 
 Create or update tests that verify:
-- GLSL code with `lp_simplex3()` call compiles
-- Codegen emits TestCase call to `"__lp_simplex3"`
-- Transform converts to call to `__lp_fixed32_lp_simplex3`
+- GLSL code with `lpfx_simplex3()` call compiles
+- Codegen emits TestCase call to `"__lpfx_simplex3"`
+- Transform converts to call to `__lp_fixed32_lpfx_simplex3`
 - Runtime executes correctly and returns expected values
 
 ### 6.2 Test Hash Functions
 
 Verify hash functions still work:
-- GLSL code with `lp_hash()` call compiles
+- GLSL code with `lpfx_hash()` call compiles
 - Codegen uses direct builtin call (no TestCase conversion)
 - Runtime executes correctly
 

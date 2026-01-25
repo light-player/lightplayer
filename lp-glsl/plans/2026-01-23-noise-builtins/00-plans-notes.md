@@ -3,7 +3,7 @@
 ## Context
 
 We want to add Lightplayer-specific builtin functions for noise generation that can be called from GLSL shaders. These functions will:
-- Use the `lp_` prefix (e.g., `lp_perlin3`, `lp_hash`)
+- Use the `lp_` prefix (e.g., `lp_perlin3`, `lpfx_hash`)
 - Support Q32 fixed-point arithmetic (the only mode currently supported)
 - Take vector types as arguments (vec2, vec3, ivec2, ivec3)
 - Include frequency and seed parameters
@@ -25,10 +25,10 @@ We want to add Lightplayer-specific builtin functions for noise generation that 
 **ANSWERED**: Option B (`lp_fixed32_perlin3`) - explicit about fixed-point format, clearer and more consistent with internal naming.
 
 **UPDATED**: User wants `lp_` prefix for clarity to match usage in code. So user-facing names:
-- `lp_hash` (not `lp_fixed32_hash`)
-- `lp_simplex1` (not `lp_fixed32_simplex1`)
-- `lp_simplex2` (not `lp_fixed32_simplex2`)
-- `lp_simplex3` (not `lp_fixed32_simplex3`)
+- `lpfx_hash` (not `lp_fixed32_hash`)
+- `lpfx_simplex1` (not `lp_fixed32_simplex1`)
+- `lpfx_simplex2` (not `lp_fixed32_simplex2`)
+- `lpfx_simplex3` (not `lp_fixed32_simplex3`)
 
 Internal implementation functions can still use `__lp_fixed32_*` naming.
 
@@ -54,7 +54,7 @@ Naming:
 - Category: `LpLibFn` / `LpLibraryFunction`
 - Registry enum: `LpLibFnId`
 - Check function: `is_lp_lib_fn()` (checks for `lp_` prefix)
-- User-facing names: `lp_hash`, `lp_simplex1`, `lp_simplex2`, `lp_simplex3`
+- User-facing names: `lpfx_hash`, `lpfx_simplex1`, `lpfx_simplex2`, `lpfx_simplex3`
 
 ### Q3: Vector Argument Handling
 
@@ -68,12 +68,12 @@ Naming:
 **Suggested Answer**: Option A - Flatten vectors to individual i32 parameters. This matches how the compiler currently handles vectors and is simplest. The function signature will be `lp_perlin3(i32 x, i32 y, i32 z, i32 frequency, u32 seed) -> i32`.
 
 **ANSWERED**: Option A - Flatten vectors to individual parameters. Function signatures (updated after removing frequency and using lp_ prefix):
-- `lp_simplex1(i32 x, u32 seed) -> i32`
-- `lp_simplex2(i32 x, i32 y, u32 seed) -> i32`
-- `lp_simplex3(i32 x, i32 y, i32 z, u32 seed) -> i32`
-- `lp_hash(u32 x) -> u32`
-- `lp_hash(u32 x, u32 y) -> u32`
-- `lp_hash(u32 x, u32 y, u32 z) -> u32`
+- `lpfx_simplex1(i32 x, u32 seed) -> i32`
+- `lpfx_simplex2(i32 x, i32 y, u32 seed) -> i32`
+- `lpfx_simplex3(i32 x, i32 y, i32 z, u32 seed) -> i32`
+- `lpfx_hash(u32 x) -> u32`
+- `lpfx_hash(u32 x, u32 y) -> u32`
+- `lpfx_hash(u32 x, u32 y, u32 z) -> u32`
 
 ### Q4: Function Signature Generation
 

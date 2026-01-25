@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 inverse hyperbolic cosine function.
 
 use super::log::__lp_fixed32_log;
-use super::mul::__lp_fixed32_mul;
+use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 use super::sqrt::__lp_fixed32_sqrt;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
@@ -42,7 +42,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_acosh_basic() {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Fix LP library functions (`lp_simplex1/2/3`, `lp_hash`) to follow the correct float→fixed32 conversion pattern. Currently, codegen directly calls builtins, bypassing the transform. Functions should emit TestCase calls that the fixed32 transform converts, matching the pattern used for `sin`/`cos`.
+Fix LP library functions (`lpfx_simplex1/2/3`, `lpfx_hash`) to follow the correct float→fixed32 conversion pattern. Currently, codegen directly calls builtins, bypassing the transform. Functions should emit TestCase calls that the fixed32 transform converts, matching the pattern used for `sin`/`cos`.
 
 ## Phases
 

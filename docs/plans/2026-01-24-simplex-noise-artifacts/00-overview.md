@@ -41,10 +41,10 @@ This causes incorrect positioning of simplex corners, leading to discontinuities
 
 ## Files to Modify
 
-1. `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lp_simplex2.rs`
-2. `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lp_simplex3.rs`
+1. `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lpfx_simplex2.rs`
+2. `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lpfx_simplex3.rs`
 3. `lp-glsl/crates/lp-builtins/Cargo.toml` (add features)
-4. `lp-glsl/crates/lp-builtins/src/builtins/shared/lp_hash.rs` (conditional compilation)
+4. `lp-glsl/crates/lp-builtins/src/builtins/shared/lpfx_hash.rs` (conditional compilation)
 5. New: `lp-glsl/crates/lp-builtins/src/builtins/shared/test_hash.rs`
 
 ## Success Criteria

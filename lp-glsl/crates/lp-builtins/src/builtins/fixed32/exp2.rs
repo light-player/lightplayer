@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 base-2 exponential function.
 
 use super::exp::__lp_fixed32_exp;
-use super::mul::__lp_fixed32_mul;
+use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Fixed-point value of ln(2) ≈ 0.693147 (Q16.16 format)
 /// ln(2) ≈ 0.6931471805599453
@@ -25,7 +25,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_exp2_basic() {

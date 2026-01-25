@@ -10,9 +10,9 @@ Add methods to `LpLibFn` enum to determine if a function needs fixed32 mapping a
 
 In `lp-glsl/crates/lp-glsl-compiler/src/frontend/semantic/lp_lib_fns.rs`:
 - Add `fixed32_name(&self) -> Option<&'static str>` method to `LpLibFn` impl
-- Return `Some("__lp_fixed32_lp_simplex1")` for `Simplex1`
-- Return `Some("__lp_fixed32_lp_simplex2")` for `Simplex2`
-- Return `Some("__lp_fixed32_lp_simplex3")` for `Simplex3`
+- Return `Some("__lp_fixed32_lpfx_simplex1")` for `Simplex1`
+- Return `Some("__lp_fixed32_lpfx_simplex2")` for `Simplex2`
+- Return `Some("__lp_fixed32_lpfx_simplex3")` for `Simplex3`
 - Return `None` for hash functions (they don't need fixed32 conversion)
 
 ### 1.2 Add `needs_fixed32_mapping()` Method
@@ -26,7 +26,7 @@ In the same file:
 
 Add tests to verify:
 - `LpLibFn::Simplex1.needs_fixed32_mapping()` returns `true`
-- `LpLibFn::Simplex1.fixed32_name()` returns `Some("__lp_fixed32_lp_simplex1")`
+- `LpLibFn::Simplex1.fixed32_name()` returns `Some("__lp_fixed32_lpfx_simplex1")`
 - `LpLibFn::Hash1.needs_fixed32_mapping()` returns `false`
 - `LpLibFn::Hash1.fixed32_name()` returns `None`
 

@@ -9,10 +9,10 @@ Update `mod.rs` to export new functions and add documentation. Ensure all functi
 ### File: `lp-builtins/src/builtins/fixed32/mod.rs`
 
 The builtin generator should have already updated this file, but verify:
-- `mod lp_hash;` is included
-- `mod lp_simplex1;` is included
-- `mod lp_simplex2;` is included
-- `mod lp_simplex3;` is included
+- `mod lpfx_hash;` is included
+- `mod lpfx_simplex1;` is included
+- `mod lpfx_simplex2;` is included
+- `mod lpfx_simplex3;` is included
 - `pub use` statements for all functions are present
 
 ### Documentation

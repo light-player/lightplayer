@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 hyperbolic tangent function.
 
 use super::cosh::__lp_fixed32_cosh;
-use super::div::__lp_fixed32_div;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::sinh::__lp_fixed32_sinh;
 
 /// Compute tanh(x) using: tanh(x) = sinh(x) / cosh(x)
@@ -28,7 +28,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_tanh_basic() {

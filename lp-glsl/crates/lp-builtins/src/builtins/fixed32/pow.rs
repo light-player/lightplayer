@@ -1,9 +1,9 @@
 //! Fixed-point 16.16 power function.
 
-use super::div::__lp_fixed32_div;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::exp2::__lp_fixed32_exp2;
 use super::log2::__lp_fixed32_log2;
-use super::mul::__lp_fixed32_mul;
+use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
 const FIX16_ONE: i32 = 0x00010000; // 65536
@@ -88,10 +88,10 @@ mod tests {
     /// Test pow with 2-arg function
     fn test_pow_helper(inputs: &[(f32, f32, f32)], tolerance: f32, min_tolerance: f32) {
         for (x, y, expected) in inputs {
-            let x_fixed = crate::builtins::fixed32::test_helpers::float_to_fixed(*x);
-            let y_fixed = crate::builtins::fixed32::test_helpers::float_to_fixed(*y);
+            let x_fixed = crate::util::test_helpers::float_to_fixed(*x);
+            let y_fixed = crate::util::test_helpers::float_to_fixed(*y);
             let result_fixed = __lp_fixed32_pow(x_fixed, y_fixed);
-            let result_float = crate::builtins::fixed32::test_helpers::fixed_to_float(result_fixed);
+            let result_float = crate::util::test_helpers::fixed_to_float(result_fixed);
 
             let abs_error = (result_float - expected).abs();
             let rel_tolerance = expected.abs() * tolerance;

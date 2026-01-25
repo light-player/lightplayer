@@ -34,7 +34,7 @@ fn main() {
     // Generate mod.rs (only fixed32 functions, not shared)
     let fixed32_builtins: Vec<BuiltinInfo> = builtins
         .iter()
-        .filter(|b| !b.function_name.starts_with("__lp_hash_"))
+        .filter(|b| !b.function_name.starts_with("__lpfx_hash_"))
         .cloned()
         .collect();
     let mod_rs_path = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/fixed32/mod.rs");
@@ -77,7 +77,7 @@ fn find_workspace_root() -> Result<PathBuf, Box<dyn std::error::Error>> {
 }
 
 fn discover_builtins(dir: &Path) -> Result<Vec<BuiltinInfo>, Box<dyn std::error::Error>> {
-    use lp_glsl_compiler::frontend::semantic::lp_lib_fns::LpLibFn;
+    use lp_glsl_compiler::frontend::semantic::lpfx::lpfx_fn_registry::LpfxFnId;
 
     // First, discover all functions from files
     let mut discovered_functions = Vec::new();
@@ -125,7 +125,7 @@ fn discover_builtins(dir: &Path) -> Result<Vec<BuiltinInfo>, Box<dyn std::error:
     // Use LpLibFn::all() as single source of truth
     let mut builtins = Vec::new();
 
-    for lp_fn in LpLibFn::all() {
+    for lp_fn in LpfxFnId::all() {
         // Determine expected function name
         let expected_name = lp_fn.fixed32_name().unwrap_or_else(|| lp_fn.symbol_name());
 
@@ -195,13 +195,13 @@ fn extract_builtin(func: &ItemFn, file_name: &str) -> Option<BuiltinInfo> {
 
     let func_name = func.sig.ident.to_string();
 
-    // Check if function name starts with __lp_fixed32_, __lp_hash_, or __lp_simplex
+    // Check if function name starts with __lp_fixed32_, __lpfx_hash_, or __lpfx_simplex
     let (prefix, enum_prefix) = if func_name.starts_with("__lp_fixed32_") {
         ("__lp_fixed32_", "Fixed32")
-    } else if func_name.starts_with("__lp_hash_") {
-        ("__lp_hash_", "LpHash")
-    } else if func_name.starts_with("__lp_simplex") {
-        ("__lp_simplex", "LpSimplex")
+    } else if func_name.starts_with("__lpfx_hash_") {
+        ("__lpfx_hash_", "LpHash")
+    } else if func_name.starts_with("__lpfx_simplex") {
+        ("__lpfx_simplex", "LpSimplex")
     } else {
         return None;
     };
@@ -211,8 +211,8 @@ fn extract_builtin(func: &ItemFn, file_name: &str) -> Option<BuiltinInfo> {
 
     // Derive enum variant name
     // __lp_fixed32_sqrt -> Fixed32Sqrt
-    // __lp_hash_1 -> LpHash1
-    // __lp_simplex2 -> LpSimplex2
+    // __lpfx_hash_1 -> LpHash1
+    // __lpfx_simplex2 -> LpSimplex2
     let suffix = symbol_name.strip_prefix(prefix).unwrap();
     let enum_variant = if prefix == "__lp_fixed32_" {
         // For fixed32 functions, capitalize each word
@@ -256,10 +256,10 @@ fn capitalize_first(s: &str) -> String {
 fn strip_function_prefix(name: &str) -> &str {
     if name.starts_with("__lp_fixed32_") {
         name.strip_prefix("__lp_fixed32_").unwrap()
-    } else if name.starts_with("__lp_hash_") {
-        name.strip_prefix("__lp_hash_").unwrap()
-    } else if name.starts_with("__lp_simplex") {
-        name.strip_prefix("__lp_simplex").unwrap()
+    } else if name.starts_with("__lpfx_hash_") {
+        name.strip_prefix("__lpfx_hash_").unwrap()
+    } else if name.starts_with("__lpfx_simplex") {
+        name.strip_prefix("__lpfx_simplex").unwrap()
     } else {
         name
     }
@@ -437,10 +437,10 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
     output.push_str("pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {\n");
     let has_hash = builtins
         .iter()
-        .any(|b| b.function_name.starts_with("__lp_hash_"));
+        .any(|b| b.function_name.starts_with("__lpfx_hash_"));
     let has_fixed32 = builtins
         .iter()
-        .any(|b| !b.function_name.starts_with("__lp_hash_"));
+        .any(|b| !b.function_name.starts_with("__lpfx_hash_"));
     if has_hash || has_fixed32 {
         if has_hash && has_fixed32 {
             output.push_str("    use lp_builtins::builtins::{fixed32, shared};\n");
@@ -456,7 +456,7 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
     } else {
         for builtin in builtins {
             // Determine module path based on function name
-            let module_path = if builtin.function_name.starts_with("__lp_hash_") {
+            let module_path = if builtin.function_name.starts_with("__lpfx_hash_") {
                 "shared"
             } else {
                 "fixed32"
@@ -546,11 +546,11 @@ fn generate_builtin_refs(path: &Path, builtins: &[BuiltinInfo]) {
         // Split builtins by module (fixed32 vs shared)
         let fixed32_builtins: Vec<_> = builtins
             .iter()
-            .filter(|b| !b.function_name.starts_with("__lp_hash_"))
+            .filter(|b| !b.function_name.starts_with("__lpfx_hash_"))
             .collect();
         let shared_builtins: Vec<_> = builtins
             .iter()
-            .filter(|b| b.function_name.starts_with("__lp_hash_"))
+            .filter(|b| b.function_name.starts_with("__lpfx_hash_"))
             .collect();
 
         // Generate imports for fixed32 functions
@@ -592,7 +592,7 @@ fn generate_builtin_refs(path: &Path, builtins: &[BuiltinInfo]) {
     // Generate function pointer declarations
     for builtin in builtins {
         // Determine function signature based on function name
-        let fn_type = if builtin.function_name.starts_with("__lp_hash_") {
+        let fn_type = if builtin.function_name.starts_with("__lpfx_hash_") {
             // Hash functions use u32 for all parameters and return u32
             match builtin.param_count {
                 2 => "extern \"C\" fn(u32, u32) -> u32",
@@ -600,7 +600,7 @@ fn generate_builtin_refs(path: &Path, builtins: &[BuiltinInfo]) {
                 4 => "extern \"C\" fn(u32, u32, u32, u32) -> u32",
                 _ => "extern \"C\" fn(u32) -> u32",
             }
-        } else if builtin.function_name.contains("lp_simplex") {
+        } else if builtin.function_name.contains("lpfx_simplex") {
             // Simplex functions use i32 for coordinates, u32 for seed, return i32
             match builtin.param_count {
                 2 => "extern \"C\" fn(i32, u32) -> i32",
@@ -739,12 +739,12 @@ fn generate_testcase_mapping(path: &Path, builtins: &[BuiltinInfo]) {
     if builtins.is_empty() {
         // No builtins, so no mappings
     } else {
-        use lp_glsl_compiler::frontend::semantic::lp_lib_fns::LpLibFn;
+        use lp_glsl_compiler::frontend::semantic::lpfx::lpfx_fn_registry::LpfxFnId;
 
         for builtin in builtins {
             // Check if this is an LP library function by matching symbol name to enum
             // Match against both fixed32_name() and symbol_name() to handle both cases
-            let lp_fn_opt = LpLibFn::all()
+            let lp_fn_opt = LpfxFnId::all()
                 .iter()
                 .find(|lp_fn| {
                     let fixed32_name_opt = lp_fn.fixed32_name();
@@ -760,7 +760,7 @@ fn generate_testcase_mapping(path: &Path, builtins: &[BuiltinInfo]) {
 
             if let Some(lp_fn) = lp_fn_opt {
                 // LP library function - use enum to determine mapping
-                if builtin.symbol_name.starts_with("__lp_hash_") {
+                if builtin.symbol_name.starts_with("__lpfx_hash_") {
                     // Hash functions: use testcase pattern "1f" | "__lp_1"
                     let base_name = strip_function_prefix(&builtin.symbol_name);
                     let c_name = format!("{}f", base_name);

@@ -7,10 +7,10 @@
 //!
 //! # GLSL Usage
 //!
-//! This function is callable from GLSL shaders using the `lp_simplex2` name:
+//! This function is callable from GLSL shaders using the `lpfx_simplex2` name:
 //!
 //! ```glsl
-//! float noise = lp_simplex2(vec2(5.0, 3.0), 123u);
+//! float noise = lpfx_simplex2(vec2(5.0, 3.0), 123u);
 //! ```
 //!
 //! # Parameters
@@ -24,12 +24,12 @@
 //!
 //! # Internal Implementation
 //!
-//! The user-facing `lp_simplex2` function maps to internal `__lp_simplex2` which
+//! The user-facing `lpfx_simplex2` function maps to internal `__lpfx_simplex2` which
 //! operates on Q32 fixed-point values. Vector arguments are automatically flattened
 //! by the compiler (vec2 becomes two i32 parameters).
 
-use crate::builtins::shared::lp_hash::__lp_hash_2;
-use crate::fixed32::q32::Q32;
+use crate::builtins::lpfx::hash::__lp_lpfx_hash_2;
+use crate::util::q32::Q32;
 
 /// Fixed-point constants
 const TWO: Q32 = Q32(0x00020000); // 2.0 in Q16.16
@@ -54,7 +54,7 @@ const UNSKEW_FACTOR_2D: Q32 = Q32(13853);
 /// # Returns
 /// Noise value in Q32 fixed-point format, approximately in range [-1, 1]
 #[unsafe(no_mangle)]
-pub extern "C" fn __lp_fixed32_lp_simplex2(x: i32, y: i32, seed: u32) -> i32 {
+pub extern "C" fn __lpfx_simplex2_q32(x: i32, y: i32, seed: u32) -> i32 {
     // Convert inputs to Q32
     let x = Q32::from_fixed(x);
     let y = Q32::from_fixed(y);
@@ -103,13 +103,13 @@ pub extern "C" fn __lp_fixed32_lp_simplex2(x: i32, y: i32, seed: u32) -> i32 {
     let offset3_y = offset1_y - Q32::ONE + (TWO * UNSKEW_FACTOR_2D);
 
     // Calculate gradient indexes for each corner
-    let gi0 = __lp_hash_2(cell_x_int as u32, cell_y_int as u32, seed);
-    let gi1 = __lp_hash_2(
+    let gi0 = __lp_lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, seed);
+    let gi1 = __lp_lpfx_hash_2(
         (cell_x_int + order_x.to_i32()) as u32,
         (cell_y_int + order_y.to_i32()) as u32,
         seed,
     );
-    let gi2 = __lp_hash_2((cell_x_int + 1) as u32, (cell_y_int + 1) as u32, seed);
+    let gi2 = __lp_lpfx_hash_2((cell_x_int + 1) as u32, (cell_y_int + 1) as u32, seed);
 
     // Calculate contribution from each corner
     let corner0 = surflet_2d(gi0 as usize, offset1_x, offset1_y);
@@ -185,14 +185,15 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
+    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
     use std::{print, println};
+    use crate::builtins::lpfx::hash::__lp_lpfx_hash_2;
 
     #[test]
     fn test_simplex2_basic() {
-        let result1 = __lp_fixed32_lp_simplex2(float_to_fixed(1.5), float_to_fixed(2.3), 0);
-        let result2 = __lp_fixed32_lp_simplex2(float_to_fixed(3.7), float_to_fixed(2.3), 0);
-        let result3 = __lp_fixed32_lp_simplex2(float_to_fixed(1.5), float_to_fixed(2.3), 1);
+        let result1 = __lpfx_simplex2_q32(float_to_fixed(1.5), float_to_fixed(2.3), 0);
+        let result2 = __lpfx_simplex2_q32(float_to_fixed(3.7), float_to_fixed(2.3), 0);
+        let result3 = __lpfx_simplex2_q32(float_to_fixed(1.5), float_to_fixed(2.3), 1);
 
         // Different inputs should produce different outputs
         assert_ne!(
@@ -208,7 +209,7 @@ mod tests {
         for i in 0..50 {
             let x = float_to_fixed(i as f32 * 0.1);
             let y = float_to_fixed(i as f32 * 0.15);
-            let result = __lp_fixed32_lp_simplex2(x, y, 0);
+            let result = __lpfx_simplex2_q32(x, y, 0);
             let result_float = fixed_to_float(result);
 
             assert!(
@@ -222,8 +223,8 @@ mod tests {
 
     #[test]
     fn test_simplex2_deterministic() {
-        let result1 = __lp_fixed32_lp_simplex2(float_to_fixed(42.5), float_to_fixed(37.3), 123);
-        let result2 = __lp_fixed32_lp_simplex2(float_to_fixed(42.5), float_to_fixed(37.3), 123);
+        let result1 = __lpfx_simplex2_q32(float_to_fixed(42.5), float_to_fixed(37.3), 123);
+        let result2 = __lpfx_simplex2_q32(float_to_fixed(42.5), float_to_fixed(37.3), 123);
 
         // Same input and seed should produce same output
         assert_eq!(result1, result2, "Noise should be deterministic");
@@ -249,7 +250,7 @@ mod tests {
 
         for (x, y) in test_points {
             // Get our output
-            let our_value_fixed = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+            let our_value_fixed = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
             let our_value = fixed_to_float(our_value_fixed);
 
             // Get noise-rs output for reference
@@ -293,7 +294,7 @@ mod tests {
             for x_idx in 0..5 {
                 let x = x_idx as f32;
                 let y = y_idx as f32;
-                let result = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+                let result = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
                 let result_float = fixed_to_float(result);
                 print!("{:6.3} ", result_float);
             }
@@ -304,7 +305,7 @@ mod tests {
         let x = float_to_fixed(2.5);
         let y = float_to_fixed(2.5);
         for seed in 0..5 {
-            let result = __lp_fixed32_lp_simplex2(x, y, seed);
+            let result = __lpfx_simplex2_q32(x, y, seed);
             let result_float = fixed_to_float(result);
             println!("  seed={}: {:7.4}", seed, result_float);
         }
@@ -313,7 +314,7 @@ mod tests {
         for i in 0..50 {
             let x = float_to_fixed(i as f32 * 0.1);
             let y = float_to_fixed(i as f32 * 0.15);
-            let result = __lp_fixed32_lp_simplex2(x, y, 0);
+            let result = __lpfx_simplex2_q32(x, y, 0);
             let result_float = fixed_to_float(result);
             assert!(
                 result_float >= -2.0 && result_float <= 2.0,
@@ -331,7 +332,7 @@ mod tests {
         let y = float_to_fixed(0.5);
 
         // Debug: manually trace through the algorithm
-        use crate::fixed32::q32::Q32;
+        use crate::util::q32::Q32;
         let x_q32 = Q32::from_fixed(x);
         let y_q32 = Q32::from_fixed(y);
         let sum = x_q32 + y_q32;
@@ -349,8 +350,8 @@ mod tests {
         );
         println!("Cell: ({}, {})", cell_x_int, cell_y_int);
 
-        let n1 = __lp_fixed32_lp_simplex2(x, y, 0);
-        let n2 = __lp_fixed32_lp_simplex2(x, y, 1);
+        let n1 = __lpfx_simplex2_q32(x, y, 0);
+        let n2 = __lpfx_simplex2_q32(x, y, 1);
         let n1_float = fixed_to_float(n1);
         let n2_float = fixed_to_float(n2);
         let diff = (n1_float - n2_float).abs();
@@ -360,9 +361,8 @@ mod tests {
         println!("Difference = {}", diff);
 
         // Check hash values directly
-        use crate::builtins::shared::lp_hash::__lp_hash_2;
-        let hash0 = __lp_hash_2(cell_x_int as u32, cell_y_int as u32, 0);
-        let hash1 = __lp_hash_2(cell_x_int as u32, cell_y_int as u32, 1);
+        let hash0 = __lp_lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, 0);
+        let hash1 = __lp_lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, 1);
         println!(
             "Hash({}, {}, seed=0) = {}, mod 8 = {}",
             cell_x_int,
@@ -383,8 +383,8 @@ mod tests {
         for i in 0..100 {
             let test_x = float_to_fixed(i as f32 * 0.1);
             let test_y = float_to_fixed(i as f32 * 0.1);
-            let result_seed0 = __lp_fixed32_lp_simplex2(test_x, test_y, 0);
-            let result_seed1 = __lp_fixed32_lp_simplex2(test_x, test_y, 1);
+            let result_seed0 = __lpfx_simplex2_q32(test_x, test_y, 0);
+            let result_seed1 = __lpfx_simplex2_q32(test_x, test_y, 1);
             if result_seed0 != result_seed1 {
                 found_difference = true;
                 println!(
@@ -408,7 +408,7 @@ mod tests {
     #[cfg(all(test, feature = "test_hash_fixed"))]
     mod fixed_hash_tests {
         use super::*;
-        use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
+        use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
 
         #[test]
         fn test_simplex2_boundary_continuity() {
@@ -428,7 +428,7 @@ mod tests {
             let mut max_jump = 0.0f32;
 
             for (x, y) in boundary_points {
-                let result = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+                let result = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
                 let result_float = fixed_to_float(result);
 
                 if let Some(prev) = prev_value {
@@ -463,8 +463,8 @@ mod tests {
             let test_points = [(0.0, 0.0), (0.5, 0.5), (1.0, 1.0), (2.5, 2.5), (5.0, 5.0)];
 
             for (x, y) in test_points {
-                let result1 = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
-                let result2 = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+                let result1 = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
+                let result2 = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
                 assert_eq!(
                     result1, result2,
                     "Simplex2({}, {}) should be deterministic with fixed hash",
@@ -486,7 +486,7 @@ mod tests {
             for i in 0..1000 {
                 let x = i as f32 * STEP;
                 let y = x; // Diagonal line
-                let result = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+                let result = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
                 let result_float = fixed_to_float(result);
 
                 if let Some(prev) = prev_value {
@@ -523,7 +523,7 @@ mod tests {
     #[cfg(all(test, feature = "test_visual"))]
     mod visual_tests {
         use super::*;
-        use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
+        use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
         use std::fs::File;
         use std::io::Write;
 
@@ -540,7 +540,7 @@ mod tests {
                 for x in 0..WIDTH {
                     let fx = x as f32 * SCALE;
                     let fy = y as f32 * SCALE;
-                    let noise = __lp_fixed32_lp_simplex2(float_to_fixed(fx), float_to_fixed(fy), 0);
+                    let noise = __lpfx_simplex2_q32(float_to_fixed(fx), float_to_fixed(fy), 0);
                     let noise_float = fixed_to_float(noise);
 
                     // Normalize from [-1, 1] to [0, 255]
@@ -578,7 +578,7 @@ mod tests {
             for i in 0..1000 {
                 let x = i as f32 * STEP;
                 let y = x; // Diagonal line
-                let result = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+                let result = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
                 let result_float = fixed_to_float(result);
 
                 if let Some(prev) = prev_value {
@@ -628,7 +628,7 @@ mod tests {
 
             println!("\n=== Simplex2 Comparison with noise-rs ===");
             for (x, y) in test_points {
-                let our_value = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+                let our_value = __lpfx_simplex2_q32(float_to_fixed(x), float_to_fixed(y), 0);
                 let our_float = fixed_to_float(our_value);
 
                 let noise_rs_value = noise_rs_fn.get([x as f64, y as f64]) as f32;

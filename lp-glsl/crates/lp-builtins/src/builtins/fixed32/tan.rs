@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 tangent function.
 
 use super::cos::__lp_fixed32_cos;
-use super::div::__lp_fixed32_div;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::sin::__lp_fixed32_sin;
 
 /// Compute tangent using sine and cosine: tan(x) = sin(x) / cos(x)
@@ -20,7 +20,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_tan_basic() {

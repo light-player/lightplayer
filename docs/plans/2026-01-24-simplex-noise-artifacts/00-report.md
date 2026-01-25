@@ -8,7 +8,7 @@ The simplex noise implementation exhibits visible artifacts including diagonal l
 
 ### 1. **Sign Error in 2D Offset Calculation** (CRITICAL)
 
-**Location**: `lp-builtins/src/builtins/fixed32/lp_simplex2.rs:98-99`
+**Location**: `lp-builtins/src/builtins/fixed32/lpfx_simplex2.rs:98-99`
 
 **Current (WRONG)**:
 ```rust
@@ -31,7 +31,7 @@ let offset2 = offset1 - order + unskew_factor;
 
 ### 2. **Sign Error in 3D Offset Calculations** (CRITICAL)
 
-**Location**: `lp-builtins/src/builtins/fixed32/lp_simplex3.rs:163-165`
+**Location**: `lp-builtins/src/builtins/fixed32/lpfx_simplex3.rs:163-165`
 
 **Current (WRONG)**:
 ```rust
@@ -56,15 +56,15 @@ let offset2 = offset1 - order1.numcast().unwrap() + unskew_factor;
 
 ### 3. **Additional Sign Errors in offset3 and offset4** (CRITICAL)
 
-**2D offset3** (`lp_simplex2.rs:102-103`):
+**2D offset3** (`lpfx_simplex2.rs:102-103`):
 - Current (WRONG): `offset3_x = offset1_x - Q32::ONE - (TWO * UNSKEW_FACTOR_2D)`
 - Should be: `offset3_x = offset1_x - Q32::ONE + (TWO * UNSKEW_FACTOR_2D)`
 
-**3D offset3** (`lp_simplex3.rs:167-169`):
+**3D offset3** (`lpfx_simplex3.rs:167-169`):
 - Current (WRONG): `offset3_x = offset1_x - order2_x - (TWO * UNSKEW_FACTOR_3D)`
 - Should be: `offset3_x = offset1_x - order2_x + (TWO * UNSKEW_FACTOR_3D)`
 
-**3D offset4** (`lp_simplex3.rs:171-173`):
+**3D offset4** (`lpfx_simplex3.rs:171-173`):
 - Current (WRONG): `offset4_x = offset1_x - Q32::ONE - Q32::ONE - (THREE * UNSKEW_FACTOR_3D)`
 - Should be: `offset4_x = offset1_x - Q32::ONE - Q32::ONE + (THREE * UNSKEW_FACTOR_3D)`
 

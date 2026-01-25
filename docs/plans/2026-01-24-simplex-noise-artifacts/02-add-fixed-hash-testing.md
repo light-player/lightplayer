@@ -47,7 +47,7 @@ pub mod test_hash {
 
 ### 3. Update Hash Module to Use Test Hash When Enabled
 
-**File**: `lp-glsl/crates/lp-builtins/src/builtins/shared/lp_hash.rs`
+**File**: `lp-glsl/crates/lp-builtins/src/builtins/shared/lpfx_hash.rs`
 
 Add conditional compilation:
 ```rust
@@ -55,7 +55,7 @@ Add conditional compilation:
 use crate::builtins::shared::test_hash::{hash_1 as test_hash_1, hash_2 as test_hash_2, hash_3 as test_hash_3};
 
 #[unsafe(no_mangle)]
-pub extern "C" fn __lp_hash_1(x: u32, seed: u32) -> u32 {
+pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
     #[cfg(feature = "test_hash_fixed")]
     return test_hash_1(x, seed);
     
@@ -63,12 +63,12 @@ pub extern "C" fn __lp_hash_1(x: u32, seed: u32) -> u32 {
     hash_impl(x, seed)
 }
 
-// Similar for __lp_hash_2 and __lp_hash_3
+// Similar for __lpfx_hash_2 and __lpfx_hash_3
 ```
 
 ### 4. Add Reference Value Tests
 
-**File**: `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lp_simplex2.rs` (in test module)
+**File**: `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lpfx_simplex2.rs` (in test module)
 
 Add test with fixed hash:
 ```rust
@@ -89,7 +89,7 @@ mod fixed_hash_tests {
         ];
         
         for ((x, y), seed) in test_cases {
-            let result = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), seed);
+            let result = __lp_fixed32_lpfx_simplex2(float_to_fixed(x), float_to_fixed(y), seed);
             let result_float = fixed_to_float(result);
             // Verify against expected value (to be filled in after fixing bugs)
             println!("Simplex2({}, {}, seed={}) = {}", x, y, seed, result_float);
@@ -111,7 +111,7 @@ mod fixed_hash_tests {
         
         let mut prev_value = None;
         for (x, y) in boundary_points {
-            let result = __lp_fixed32_lp_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+            let result = __lp_fixed32_lpfx_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
             let result_float = fixed_to_float(result);
             
             if let Some(prev) = prev_value {
@@ -131,7 +131,7 @@ mod fixed_hash_tests {
 
 ### 5. Add Similar Tests for 3D
 
-**File**: `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lp_simplex3.rs`
+**File**: `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lpfx_simplex3.rs`
 
 Add similar test module with fixed hash tests.
 

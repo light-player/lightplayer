@@ -2,7 +2,7 @@
 //!
 //! fma(a, b, c) = a * b + c
 
-use super::mul::__lp_fixed32_mul;
+use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Compute fma(a, b, c) = a * b + c
 ///
@@ -23,7 +23,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
+    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
 
     #[test]
     fn test_fma_simple() {

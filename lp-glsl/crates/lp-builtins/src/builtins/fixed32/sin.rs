@@ -1,6 +1,6 @@
 //! Fixed-point 16.16 sine function.
 
-use super::mul::__lp_fixed32_mul;
+use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Fixed-point value of π (Q16.16 format)
 const FIX16_PI: i32 = 205887;
@@ -63,7 +63,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_sin_basic() {

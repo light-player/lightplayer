@@ -2,8 +2,8 @@
 //!
 //! mod(x, y) = x - y * floor(x / y)
 
-use super::div::__lp_fixed32_div;
-use super::mul::__lp_fixed32_mul;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
+use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Fixed-point modulus: mod(x, y) = x - y * floor(x / y)
 ///
@@ -30,7 +30,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::{fixed_to_float, float_to_fixed};
+    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
 
     #[test]
     fn test_mod_positive_positive() {

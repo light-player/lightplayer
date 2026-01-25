@@ -1,6 +1,6 @@
 //! Fixed-point 16.16 inverse hyperbolic tangent function.
 
-use super::div::__lp_fixed32_div;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::log::__lp_fixed32_log;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
@@ -42,7 +42,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_atanh_basic() {

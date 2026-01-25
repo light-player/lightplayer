@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 exponential function.
 
-use super::div::__lp_fixed32_div;
-use super::mul::__lp_fixed32_mul;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
+use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
 const FIX16_ONE: i32 = 0x00010000; // 65536
@@ -66,7 +66,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::builtins::fixed32::test_helpers::test_fixed32_function_relative;
+    use crate::util::test_helpers::test_fixed32_function_relative;
 
     #[test]
     fn test_exp_basic() {

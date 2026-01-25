@@ -177,8 +177,8 @@ pub fn infer_expr_type_with_registry(
                 }
             }
             // Check if it's an LP library function
-            else if crate::frontend::semantic::lp_lib_fns::is_lp_lib_fn(func_name) {
-                match crate::frontend::semantic::lp_lib_fns::check_lp_lib_fn_call(
+            else if crate::frontend::semantic::lpfx::lpfx_fn_registry::is_lp_lib_fn(func_name) {
+                match crate::frontend::semantic::lpfx::lpfx_fn_registry::check_lp_lib_fn_call(
                     func_name, &arg_types,
                 ) {
                     Ok(return_type) => Ok(return_type),
