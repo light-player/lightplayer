@@ -139,7 +139,11 @@ pub fn convert_to_cranelift_types(
 ///
 /// Expands vector parameters and converts types based on decimal format.
 /// Returns a Signature ready for use in Cranelift function calls.
-pub fn build_call_signature(func: &LpfxFn, impl_: &LpfxFnImpl, format: DecimalFormat) -> Signature {
+pub fn build_call_signature(
+    func: &LpfxFn,
+    _impl_: &LpfxFnImpl,
+    format: DecimalFormat,
+) -> Signature {
     let mut sig = Signature::new(CallConv::SystemV);
 
     // Get parameter types from function signature
