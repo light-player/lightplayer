@@ -12,7 +12,7 @@
 //! JIT (function pointer) and emulator (ELF symbol) linking.
 
 use crate::error::{ErrorCode, GlslError};
-use cranelift_codegen::ir::{types, AbiParam, Signature};
+use cranelift_codegen::ir::{AbiParam, Signature, types};
 use cranelift_codegen::isa::CallConv;
 use cranelift_module::{Linkage, Module};
 

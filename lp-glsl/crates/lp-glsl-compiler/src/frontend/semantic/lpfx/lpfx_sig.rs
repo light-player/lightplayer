@@ -4,9 +4,9 @@
 use super::lpfx_fn::{LpfxFn, LpfxFnImpl};
 use crate::DecimalFormat;
 use crate::semantic::types::Type;
+use alloc::vec::Vec;
 use cranelift_codegen::ir::{AbiParam, Signature, types};
 use cranelift_codegen::isa::CallConv;
-use alloc::vec::Vec;
 
 /// Expand vector arguments to individual components
 ///
