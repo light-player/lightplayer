@@ -38,7 +38,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
         // Flatten vector arguments to individual components
         let mut flat_values = Vec::new();
-        for (vals, ty) in args {
+        for (vals, _ty) in args {
             flat_values.extend(vals);
         }
         let flat_args = expand_vector_args(&param_types, &flat_values);
@@ -127,7 +127,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
         &mut self,
         func: &crate::frontend::semantic::lpfx::lpfx_fn::LpfxFn,
         impl_: &crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl,
-        param_types: &[Type],
+        _param_types: &[Type],
         format: DecimalFormat,
     ) -> Result<FuncRef, GlslError> {
         let testcase_name = impl_.rust_fn_name;
