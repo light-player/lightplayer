@@ -1,6 +1,5 @@
 //! LPFX Function Registry
 
-
 /// Registry for Lpfx functions, contains util code for looking them up, resolving signatures, etc.
 struct LpfxFnRegistry {}
 impl LpfxFnRegistry {
