@@ -15,7 +15,7 @@ Implement pack/unpack builtins for converting between float and uint bit pattern
 
 ### Pack Functions
 - **packHalf2x16**: Pack 2 float32 values into uint32 as half-precision floats
-- **packDouble2x32**: Pack 2 float32 values into uint64 as double-precision (may not be needed for fixed32)
+- **packDouble2x32**: Pack 2 float32 values into uint64 as double-precision (may not be needed for q32)
 - **packUnorm4x8**: Pack 4 float32 values (0.0-1.0) into uint32 as 8-bit unorm values
 
 ### Unpack Functions
@@ -25,17 +25,17 @@ Implement pack/unpack builtins for converting between float and uint bit pattern
 
 ## Considerations
 - These functions convert between float bit patterns and integers
-- For fixed-point: may need to convert fixed32 → float → pack → uint, or work directly with bit patterns
+- For fixed-point: may need to convert q32 → float → pack → uint, or work directly with bit patterns
 - Half-precision: 16-bit float format (sign:1, exp:5, mantissa:10)
 - Unorm: unsigned normalized integer (0-255 maps to 0.0-1.0)
 
 ## Files to Create/Modify
-- `lightplayer/crates/lp-builtins/src/fixed32/pack_half.rs` - new file
-- `lightplayer/crates/lp-builtins/src/fixed32/pack_double.rs` - new file (if needed)
-- `lightplayer/crates/lp-builtins/src/fixed32/pack_unorm.rs` - new file
-- `lightplayer/crates/lp-builtins/src/fixed32/unpack_half.rs` - new file
-- `lightplayer/crates/lp-builtins/src/fixed32/unpack_double.rs` - new file (if needed)
-- `lightplayer/crates/lp-builtins/src/fixed32/unpack_unorm.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/pack_half.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/pack_double.rs` - new file (if needed)
+- `lightplayer/crates/lp-builtins/src/q32/pack_unorm.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/unpack_half.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/unpack_double.rs` - new file (if needed)
+- `lightplayer/crates/lp-builtins/src/q32/unpack_unorm.rs` - new file
 - Run builtin generator to update boilerplate
 
 ## Success Criteria

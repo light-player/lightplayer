@@ -56,7 +56,7 @@ fn map_value(
 ///
 /// * `func_ref_map` - Optional mapping from function names to FuncRefs (currently unused,
 ///   kept for API compatibility with TransformContext).
-/// * `map_param_type` - Callback to map block parameter types (e.g., F32 → I32 for fixed32 transform)
+/// * `map_param_type` - Callback to map block parameter types (e.g., F32 → I32 for q32 transform)
 pub fn copy_instruction(
     old_func: &Function,
     old_inst: Inst,
@@ -330,7 +330,7 @@ pub fn copy_instruction(
                 .collect::<Result<Vec<_>, _>>()?;
 
             // Map FuncRef: import the external function into the builder's function context
-            // Similar to fixed32 transform: import signature first, then handle external names
+            // Similar to q32 transform: import signature first, then handle external names
             let old_ext_func = &old_func.dfg.ext_funcs[*func_ref];
             let old_sig_ref = old_ext_func.signature;
 
@@ -358,7 +358,7 @@ pub fn copy_instruction(
                         })?;
                     // Declare the imported user function in the new function
                     // Note: FuncId remapping for transforms is handled at the transform level
-                    // (e.g., in identity/transform.rs and fixed32/converters/calls.rs)
+                    // (e.g., in identity/transform.rs and q32/converters/calls.rs)
                     let new_user_ref = builder
                         .func
                         .declare_imported_user_function(user_name.clone());

@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Greater Than Equal: greaterThanEqual(vec4, vec4) -> bvec4 (component-wise)

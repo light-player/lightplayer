@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Multiply Vec: mat2 * vec2 -> vec2 (matrix-vector multiplication)

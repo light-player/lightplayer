@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Matrix Global Types: Global variables of matrix types (mat2, mat3, mat4)

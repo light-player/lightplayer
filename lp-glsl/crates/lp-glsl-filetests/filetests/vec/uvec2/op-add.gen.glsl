@@ -3,7 +3,7 @@
 //   lp-filetests-gen vec/uvec2/op-add --write
 //
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Add: uvec2 + uvec2 -> uvec2 (component-wise)

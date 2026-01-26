@@ -1,25 +1,25 @@
-# Questions for Fixed32 Transform Use Builtins Plan
+# Questions for Q32 Transform Use Builtins Plan
 
 ## Current State
 
-The fixed32 transform currently generates inline saturation code for arithmetic operations:
+The q32 transform currently generates inline saturation code for arithmetic operations:
 - `fadd`: Generates ~20 instructions with inline saturation checks
 - `fsub`: Generates ~20 instructions with inline saturation checks  
 - `fdiv`: Generates ~30 instructions with inline division logic (handles edge cases like small divisors < 2^16)
-- `fmul`: Already uses builtin `__lp_fixed32_mul` ✅
+- `fmul`: Already uses builtin `__lp_q32_mul` ✅
 
-The `__lp_fixed32_div` builtin exists but is intentionally NOT used by the transform because:
+The `__lp_q32_div` builtin exists but is intentionally NOT used by the transform because:
 - The inline code handles edge cases that the builtin may not handle correctly
 - Code comment mentions "bug fix for small divisors < 2^16"
 - Test for `fdiv` is currently ignored due to "known issue with the division algorithm"
 
 ## Goal
 
-Update the fixed32 transform to use builtins for `add`, `sub`, and `div` operations, following the same pattern as `mul`. This will reduce code bloat from ~20-30 instructions per operation to a single function call.
+Update the q32 transform to use builtins for `add`, `sub`, and `div` operations, following the same pattern as `mul`. This will reduce code bloat from ~20-30 instructions per operation to a single function call.
 
 ## Questions
 
-1. **Division Builtin Edge Cases**: ✅ **ANSWERED** - Option B: Verify that `__lp_fixed32_div` already handles edge cases correctly, then use it.
+1. **Division Builtin Edge Cases**: ✅ **ANSWERED** - Option B: Verify that `__lp_q32_div` already handles edge cases correctly, then use it.
    - We absolutely want to use the builtin - that's why it exists
    - Need to verify it handles small divisors (< 2^16) correctly
    - If verification shows issues, we'll fix the builtin to match inline code behavior
@@ -34,9 +34,9 @@ Update the fixed32 transform to use builtins for `add`, `sub`, and `div` operati
    - Unit tests in arithmetic.rs are just sanity tests
    - Add and sub tests already pass fully
    - Div has one bug - hopefully using the builtin will fix it
-   - Unignore the `test_fixed32_fdiv` test - it should work now with the builtin
+   - Unignore the `test_q32_fdiv` test - it should work now with the builtin
    - Filetests provide comprehensive coverage
 
-4. **Code Size Verification**: ✅ **ANSWERED** - Run fixed32-metrics script after changes to compare with before.
-   - Before state already captured in `docs/reports/fixed32/2026-01-24T01.26.02-pre-ops-builtins`
+4. **Code Size Verification**: ✅ **ANSWERED** - Run q32-metrics script after changes to compare with before.
+   - Before state already captured in `docs/reports/q32/2026-01-24T01.26.02-pre-ops-builtins`
    - Run script again after implementation to compare and verify code size reduction

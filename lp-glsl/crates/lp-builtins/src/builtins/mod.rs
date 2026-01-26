@@ -8,5 +8,5 @@
 //! - lower memory footprint when compiling
 //!
 
-pub mod fixed32;
 pub mod lpfx;
+pub mod q32;

@@ -16,34 +16,34 @@ Implement complex common functions: fma, frexp, ldexp, modf.
 - Uses existing mul and add operations
 - For fixed-point: can use mul + add, but may need special handling for precision
 - Reference: fpm library or standard algorithm
-- File: `lightplayer/crates/lp-builtins/src/fixed32/fma.rs` (new file)
+- File: `lightplayer/crates/lp-builtins/src/q32/fma.rs` (new file)
 
 ### frexp
 - Formula: `frexp(x) = (mantissa, exp)` where `x = mantissa * 2^exp`, `0.5 <= |mantissa| < 1.0`
 - Returns mantissa, sets exp via output parameter
 - For fixed-point: extract exponent from bit pattern, normalize mantissa
 - Reference: libfixmath or fpm library
-- File: `lightplayer/crates/lp-builtins/src/fixed32/frexp.rs` (new file)
+- File: `lightplayer/crates/lp-builtins/src/q32/frexp.rs` (new file)
 - Note: GLSL frexp uses output parameter - may need special handling
 
 ### ldexp
 - Formula: `ldexp(x, exp) = x * 2^exp`
 - For fixed-point: shift left/right by exp bits
 - Simple implementation: shift operations
-- File: `lightplayer/crates/lp-builtins/src/fixed32/ldexp.rs` (new file)
+- File: `lightplayer/crates/lp-builtins/src/q32/ldexp.rs` (new file)
 
 ### modf
 - Formula: `modf(x) = (fractional, integer)` where both have same sign as x
 - Split into integer and fractional parts
 - Uses floor for integer part, subtract for fractional
-- File: `lightplayer/crates/lp-builtins/src/fixed32/modf.rs` (new file)
+- File: `lightplayer/crates/lp-builtins/src/q32/modf.rs` (new file)
 - Note: GLSL modf uses output parameter - may need special handling
 
 ## Files to Create/Modify
-- `lightplayer/crates/lp-builtins/src/fixed32/fma.rs` - new file
-- `lightplayer/crates/lp-builtins/src/fixed32/frexp.rs` - new file
-- `lightplayer/crates/lp-builtins/src/fixed32/ldexp.rs` - new file
-- `lightplayer/crates/lp-builtins/src/fixed32/modf.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/fma.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/frexp.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/ldexp.rs` - new file
+- `lightplayer/crates/lp-builtins/src/q32/modf.rs` - new file
 - Run builtin generator to update boilerplate
 
 ## Success Criteria

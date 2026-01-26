@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // Phase 6: Verify All Operators - Increment/decrement, compound assignment, binary/unary ops
 

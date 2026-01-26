@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Uniform Global Initialization: Global variables with uniform qualifier initialized

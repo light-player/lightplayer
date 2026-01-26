@@ -6,12 +6,12 @@ Create a wrapper script in `scripts/` that runs the app with good defaults for t
 
 ## Implementation
 
-- Create `scripts/fixed32-metrics.sh`
+- Create `scripts/q32-metrics.sh`
 - Script should:
-  - Set default `--tests-dir` to `lp-glsl/apps/fixed32-metrics/glsl` (relative to workspace root)
-  - Set default `--output-dir` to `docs/reports/fixed32` (relative to workspace root)
+  - Set default `--tests-dir` to `lp-glsl/apps/q32-metrics/glsl` (relative to workspace root)
+  - Set default `--output-dir` to `docs/reports/q32` (relative to workspace root)
   - Set default `--format` to `Fixed16x16`
-  - Run `cargo run --bin fixed32-metrics` with the arguments
+  - Run `cargo run --bin q32-metrics` with the arguments
   - Handle workspace root detection (find Cargo.toml or use current directory)
 - Make script executable
 

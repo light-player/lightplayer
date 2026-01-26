@@ -49,7 +49,7 @@ Each test file should follow the pattern from other test suites:
 
 ```glsl
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Description of what is being tested

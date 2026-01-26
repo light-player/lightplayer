@@ -1,16 +1,16 @@
-# Questions for Fixed32 Math Library - Remaining Functions
+# Questions for Q32 Math Library - Remaining Functions
 
 ## Current State
 
 We have:
-- ✅ Infrastructure for fixed32 math builtins (test helpers, registry, transform conversion)
+- ✅ Infrastructure for q32 math builtins (test helpers, registry, transform conversion)
 - ✅ `sin` and `cos` implemented using libfixmath's Taylor series
 - ✅ Transform conversion working for both TestCase and User function names
 - ✅ Test infrastructure with tolerance support
 
 ## Goal
 
-Implement the remaining fixed32 math functions following the same infrastructure pattern, reordered to respect dependencies:
+Implement the remaining q32 math functions following the same infrastructure pattern, reordered to respect dependencies:
 - **Phase 3**: Tangent (tan) - depends on sin/cos, simplest to implement first
 - **Phase 4**: Inverse trig (asin, acos, atan, atan2) - no new dependencies
 - **Phase 5**: Exponential base functions (exp, log, exp2, log2) - needed by hyperbolic and pow

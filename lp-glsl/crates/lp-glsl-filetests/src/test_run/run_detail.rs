@@ -39,7 +39,7 @@ pub fn run(
     let test_line_filter = line_filter;
 
     // Determine target and options
-    let target_str = test_file.target.as_deref().unwrap_or("riscv32.fixed32");
+    let target_str = test_file.target.as_deref().unwrap_or("riscv32.q32");
     let (run_mode, decimal_format) = target::parse_target(target_str)?;
 
     let options = GlslOptions {

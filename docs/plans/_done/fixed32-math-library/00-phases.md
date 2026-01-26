@@ -1,4 +1,4 @@
-# Fixed32 Math Library - Phases
+# Q32 Math Library - Phases
 
 1. Infrastructure Setup
 2. Implement Sin and Cos

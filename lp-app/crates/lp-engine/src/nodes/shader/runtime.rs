@@ -298,7 +298,7 @@ impl ShaderRuntime {
     fn compile_shader(&mut self, glsl_source: &str) -> Result<(), Error> {
         let options = GlslOptions {
             run_mode: RunMode::HostJit,
-            decimal_format: DecimalFormat::Fixed32,
+            decimal_format: DecimalFormat::Q32,
         };
 
         match glsl_jit(glsl_source, options) {

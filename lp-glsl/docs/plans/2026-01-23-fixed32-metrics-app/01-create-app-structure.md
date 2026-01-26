@@ -6,9 +6,9 @@ Create the basic app structure with `Cargo.toml` and directory layout. Set up de
 
 ## Implementation
 
-- Create `lp-glsl/apps/fixed32-metrics/` directory
+- Create `lp-glsl/apps/q32-metrics/` directory
 - Create `Cargo.toml` with:
-  - Package name: `fixed32-metrics`
+  - Package name: `q32-metrics`
   - Dependencies: `lp-glsl-compiler` (with `std` feature), `serde`, `toml`, `clap`
 - Create `src/` directory
 - Create `glsl/` directory for test files

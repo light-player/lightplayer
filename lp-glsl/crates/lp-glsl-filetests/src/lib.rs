@@ -94,9 +94,9 @@ pub fn run_filetest_with_line_filter(
     // TODO: Implement transform test in Phase 4
     if test_file
         .test_types
-        .contains(&parse::TestType::TransformFixed32)
+        .contains(&parse::TestType::TransformQ32)
     {
-        // test_transform::run_transform_fixed32_test(...)?;
+        // test_transform::run_transform_q32_test(...)?;
     }
 
     // Run execution tests if requested

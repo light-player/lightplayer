@@ -7,7 +7,7 @@ Add Lightplayer-specific library functions for noise generation that can be call
 ## File Structure
 
 ```
-lp-glsl/crates/lp-builtins/src/builtins/fixed32/
+lp-glsl/crates/lp-builtins/src/builtins/q32/
 ├── lpfx_hash.rs                 # NEW: Hash function (1D, 2D, 3D overloads)
 ├── lpfx_simplex1.rs             # NEW: 1D Simplex noise
 ├── lpfx_simplex2.rs             # NEW: 2D Simplex noise
@@ -38,7 +38,7 @@ lpfx_simplex2(i32, i32, u32) -> __lpfx_simplex2(i32, i32, u32) -> i32
 lpfx_simplex3(i32, i32, i32, u32) -> __lpfx_simplex3(i32, i32, i32, u32) -> i32
 ```
 
-Internal functions (`__lp_*`) are automatically registered by `lp-builtin-gen` which scans `lp-builtins/src/builtins/fixed32/` and adds them to the `BuiltinId` enum. The builtin generator will create enum variants like `LpHash1`, `LpSimplex1`, etc.
+Internal functions (`__lp_*`) are automatically registered by `lp-builtin-gen` which scans `lp-builtins/src/builtins/q32/` and adds them to the `BuiltinId` enum. The builtin generator will create enum variants like `LpHash1`, `LpSimplex1`, etc.
 
 ### Frontend Semantic (`frontend/semantic/lp_lib_fns.rs`)
 
@@ -63,7 +63,7 @@ emit_lp_lib_fn_call() - # NEW: Generate code for LP library function call
 └── Generate function call instruction
 ```
 
-### Builtin Implementations (`lp-builtins/src/builtins/fixed32/`)
+### Builtin Implementations (`lp-builtins/src/builtins/q32/`)
 
 ```
 lpfx_hash.rs:
@@ -85,7 +85,7 @@ lpfx_simplex3.rs:
 
 ### 1. Integration with Builtin System
 
-LP library functions are implemented as internal builtins (`__lp_*` functions) in `lp-builtins/src/builtins/fixed32/`, similar to existing `__lp_fixed32_*` functions. The user-facing `lp_*` names are mapped to these internal implementations during semantic checking and codegen.
+LP library functions are implemented as internal builtins (`__lp_*` functions) in `lp-builtins/src/builtins/q32/`, similar to existing `__lp_q32_*` functions. The user-facing `lp_*` names are mapped to these internal implementations during semantic checking and codegen.
 
 ### 2. Function Routing Order
 

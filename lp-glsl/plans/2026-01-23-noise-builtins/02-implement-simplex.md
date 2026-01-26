@@ -8,15 +8,15 @@ Create Simplex noise implementations in three files: `lpfx_simplex1.rs`, `lpfx_s
 
 ### Files to Create
 
-1. **`lp-builtins/src/builtins/fixed32/lpfx_simplex1.rs`**
+1. **`lp-builtins/src/builtins/q32/lpfx_simplex1.rs`**
    - `__lpfx_simplex1(x: i32, seed: u32) -> i32`
    - 1D Simplex noise
 
-2. **`lp-builtins/src/builtins/fixed32/lpfx_simplex2.rs`**
+2. **`lp-builtins/src/builtins/q32/lpfx_simplex2.rs`**
    - `__lpfx_simplex2(x: i32, y: i32, seed: u32) -> i32`
    - 2D Simplex noise
 
-3. **`lp-builtins/src/builtins/fixed32/lpfx_simplex3.rs`**
+3. **`lp-builtins/src/builtins/q32/lpfx_simplex3.rs`**
    - `__lpfx_simplex3(x: i32, y: i32, z: i32, seed: u32) -> i32`
    - 3D Simplex noise
 
@@ -34,7 +34,7 @@ Key components:
 ### Q32 Fixed-Point Considerations
 
 - All coordinates and return values are Q32 (i32 with 16.16 format)
-- Use Q32 arithmetic operations (from `lp-builtins/src/fixed32/q32.rs`)
+- Use Q32 arithmetic operations (from `lp-builtins/src/q32/q32.rs`)
 - Skew/unskew calculations need to work with fixed-point
 - Interpolation uses fixed-point arithmetic
 - Final scaling factor accounts for Q32 format
@@ -52,5 +52,5 @@ Key components:
 
 - Place helper utility functions at the bottom of files
 - Reference noise-rs implementation but adapt for Q32 fixed-point
-- Use existing Q32 utilities from `lp-builtins/src/fixed32/q32.rs`
+- Use existing Q32 utilities from `lp-builtins/src/q32/q32.rs`
 - Include comments explaining Simplex noise algorithm steps

@@ -36,8 +36,8 @@ Evaluate complexity and implement integer bit manipulation functions as inline o
 - **usubBorrow**: Subtract with borrow - evaluate complexity
 
 ## Files to Create/Modify
-- For inline: `lightplayer/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/math.rs`
-- For builtins: `lightplayer/crates/lp-builtins/src/fixed32/` (new files as needed)
+- For inline: `lightplayer/crates/lp-glsl-compiler/src/backend/transform/q32/converters/math.rs`
+- For builtins: `lightplayer/crates/lp-builtins/src/q32/` (new files as needed)
 - Run builtin generator if any builtins are added
 
 ## Success Criteria

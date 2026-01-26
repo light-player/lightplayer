@@ -8,10 +8,10 @@ Update `convert_fadd`, `convert_fsub`, and `convert_fdiv` to use builtin functio
 
 ### 3.1 Update convert_fadd
 
-In `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/arithmetic.rs`:
+In `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/q32/converters/arithmetic.rs`:
 - Replace inline saturation code (~20 instructions) with builtin call
 - Follow the pattern from `convert_fmul`:
-  - Get FuncId from func_id_map for `"__lp_fixed32_add"`
+  - Get FuncId from func_id_map for `"__lp_q32_add"`
   - Create signature: (i32, i32) -> i32
   - Create UserExternalName with FuncId
   - Import external function (colocated: false)
@@ -23,7 +23,7 @@ In `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/ari
 In the same file:
 - Replace inline saturation code (~20 instructions) with builtin call
 - Follow the same pattern as `convert_fadd`:
-  - Get FuncId from func_id_map for `"__lp_fixed32_sub"`
+  - Get FuncId from func_id_map for `"__lp_q32_sub"`
   - Create signature: (i32, i32) -> i32
   - Create UserExternalName with FuncId
   - Import external function (colocated: false)
@@ -35,7 +35,7 @@ In the same file:
 In the same file:
 - Replace inline division code (~30 instructions) with builtin call
 - Follow the same pattern as `convert_fmul`:
-  - Get FuncId from func_id_map for `"__lp_fixed32_div"`
+  - Get FuncId from func_id_map for `"__lp_q32_div"`
   - Create signature: (i32, i32) -> i32
   - Create UserExternalName with FuncId
   - Import external function (colocated: false)
@@ -50,9 +50,9 @@ Ensure `convert_fadd` and `convert_fsub` accept `func_id_map` parameter:
 
 ## Success Criteria
 
-- `convert_fadd` uses `__lp_fixed32_add` builtin
-- `convert_fsub` uses `__lp_fixed32_sub` builtin
-- `convert_fdiv` uses `__lp_fixed32_div` builtin
+- `convert_fadd` uses `__lp_q32_add` builtin
+- `convert_fsub` uses `__lp_q32_sub` builtin
+- `convert_fdiv` uses `__lp_q32_div` builtin
 - All inline saturation/division code removed
 - Code compiles without errors
 - Code formatted with `cargo +nightly fmt`

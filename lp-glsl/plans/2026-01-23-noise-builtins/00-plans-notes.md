@@ -13,24 +13,24 @@ We want to add Lightplayer-specific builtin functions for noise generation that 
 
 ### Q1: Function Naming Convention
 
-**Context**: Current builtins use `__lp_fixed32_*` naming internally, but these are implementation details. We need user-facing names like `lp_perlin3`.
+**Context**: Current builtins use `__lp_q32_*` naming internally, but these are implementation details. We need user-facing names like `lp_perlin3`.
 
 **Question**: Should we use:
 - Option A: `lp_perlin3` (simple, user-facing name)
-- Option B: `lp_fixed32_perlin3` (explicit about fixed-point)
+- Option B: `lp_q32_perlin3` (explicit about fixed-point)
 - Option C: Something else?
 
 **Suggested Answer**: Option A (`lp_perlin3`) - simpler and cleaner. The fixed-point nature is implicit since that's the only mode.
 
-**ANSWERED**: Option B (`lp_fixed32_perlin3`) - explicit about fixed-point format, clearer and more consistent with internal naming.
+**ANSWERED**: Option B (`lp_q32_perlin3`) - explicit about fixed-point format, clearer and more consistent with internal naming.
 
 **UPDATED**: User wants `lp_` prefix for clarity to match usage in code. So user-facing names:
-- `lpfx_hash` (not `lp_fixed32_hash`)
-- `lpfx_simplex1` (not `lp_fixed32_simplex1`)
-- `lpfx_simplex2` (not `lp_fixed32_simplex2`)
-- `lpfx_simplex3` (not `lp_fixed32_simplex3`)
+- `lpfx_hash` (not `lp_q32_hash`)
+- `lpfx_simplex1` (not `lp_q32_simplex1`)
+- `lpfx_simplex2` (not `lp_q32_simplex2`)
+- `lpfx_simplex3` (not `lp_q32_simplex3`)
 
-Internal implementation functions can still use `__lp_fixed32_*` naming.
+Internal implementation functions can still use `__lp_q32_*` naming.
 
 ### Q2: Builtin Category vs User Functions
 
@@ -47,7 +47,7 @@ Internal implementation functions can still use `__lp_fixed32_*` naming.
 
 **ANSWERED**: Option A - New category called "LP Library Functions" (LpLibFn). These are Lightplayer's standard library functions for shaders, distinct from:
 - GLSL builtins (standard GLSL functions)
-- Internal builtins (`__lp_fixed32_*` implementation functions)
+- Internal builtins (`__lp_q32_*` implementation functions)
 - User-defined functions
 
 Naming:
@@ -130,9 +130,9 @@ Naming:
 **Suggested Answer**: Option A - Multiply input coordinates by frequency before hashing. This is standard and matches how noise libraries work.
 
 **ANSWERED**: Remove frequency parameter entirely. Caller can scale coordinates themselves using fixed-point multiplication. Simpler API:
-- `lp_fixed32_simplex1(i32 x, u32 seed) -> i32`
-- `lp_fixed32_simplex2(i32 x, i32 y, u32 seed) -> i32`
-- `lp_fixed32_simplex3(i32 x, i32 y, i32 z, u32 seed) -> i32`
+- `lp_q32_simplex1(i32 x, u32 seed) -> i32`
+- `lp_q32_simplex2(i32 x, i32 y, u32 seed) -> i32`
+- `lp_q32_simplex3(i32 x, i32 y, i32 z, u32 seed) -> i32`
 
 ### Q8: Seed Parameter Usage
 

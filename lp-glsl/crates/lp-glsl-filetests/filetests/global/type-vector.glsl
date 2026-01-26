@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Vector Global Types: Global variables of vector types (vec2, vec3, vec4, etc.)

@@ -8,7 +8,7 @@ Fix the critical sign errors in 2D and 3D simplex noise offset calculations that
 
 ### 1. Fix 2D Simplex Offset Calculation
 
-**File**: `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lpfx_simplex2.rs`
+**File**: `lp-glsl/crates/lp-builtins/src/builtins/q32/lpfx_simplex2.rs`
 
 **Line 98-99**: Change from:
 ```rust
@@ -24,7 +24,7 @@ let offset2_y = offset1_y - order_y + UNSKEW_FACTOR_2D;
 
 ### 2. Fix 3D Simplex Offset Calculation
 
-**File**: `lp-glsl/crates/lp-builtins/src/builtins/fixed32/lpfx_simplex3.rs`
+**File**: `lp-glsl/crates/lp-builtins/src/builtins/q32/lpfx_simplex3.rs`
 
 **Line 163-165**: Change from:
 ```rust

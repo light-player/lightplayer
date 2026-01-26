@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Max: max(ivec3, ivec3) -> ivec3 (component-wise maximum)

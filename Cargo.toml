@@ -19,7 +19,7 @@ members = [
     "lp-glsl/apps/lp-builtins-app",
     "lp-glsl/apps/lp-test",
     "lp-glsl/apps/esp32-glsl-jit",
-    "lp-glsl/apps/fixed32-metrics",
+    "lp-glsl/apps/q32-metrics",
 ]
 resolver = "2"
 
@@ -44,7 +44,7 @@ default-members = [
     "lp-glsl/crates/lp-riscv-tools",
     "lp-glsl/apps/lp-builtin-gen",
     "lp-glsl/apps/lp-test",
-    "lp-glsl/apps/fixed32-metrics",
+    "lp-glsl/apps/q32-metrics",
 ]
 
 [workspace.package]

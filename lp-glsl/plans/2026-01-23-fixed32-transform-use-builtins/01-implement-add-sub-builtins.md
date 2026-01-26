@@ -2,14 +2,14 @@
 
 ## Goal
 
-Create `__lp_fixed32_add` and `__lp_fixed32_sub` builtin functions following the pattern established by `__lp_fixed32_mul`.
+Create `__lp_q32_add` and `__lp_q32_sub` builtin functions following the pattern established by `__lp_q32_mul`.
 
 ## Tasks
 
 ### 1.1 Create add.rs
 
-Create `lp-glsl/crates/lp-builtins/src/builtins/fixed32/add.rs`:
-- Implement `__lp_fixed32_add(a: i32, b: i32) -> i32`
+Create `lp-glsl/crates/lp-builtins/src/builtins/q32/add.rs`:
+- Implement `__lp_q32_add(a: i32, b: i32) -> i32`
 - Use i64 for intermediate calculation to avoid overflow
 - Clamp result to [MIN_FIXED, MAX_FIXED]
 - Add tests similar to `mul.rs` tests
@@ -17,8 +17,8 @@ Create `lp-glsl/crates/lp-builtins/src/builtins/fixed32/add.rs`:
 
 ### 1.2 Create sub.rs
 
-Create `lp-glsl/crates/lp-builtins/src/builtins/fixed32/sub.rs`:
-- Implement `__lp_fixed32_sub(a: i32, b: i32) -> i32`
+Create `lp-glsl/crates/lp-builtins/src/builtins/q32/sub.rs`:
+- Implement `__lp_q32_sub(a: i32, b: i32) -> i32`
 - Use i64 for intermediate calculation to avoid overflow
 - Clamp result to [MIN_FIXED, MAX_FIXED]
 - Add tests similar to `mul.rs` tests
@@ -29,7 +29,7 @@ Create `lp-glsl/crates/lp-builtins/src/builtins/fixed32/sub.rs`:
 Both functions must have:
 - `#[unsafe(no_mangle)]` attribute
 - `pub extern "C"` calling convention
-- Function names starting with `__lp_fixed32_`
+- Function names starting with `__lp_q32_`
 
 ## Success Criteria
 

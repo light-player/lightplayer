@@ -2,21 +2,21 @@
 
 ## Goal
 
-Run the fixed32-metrics script to compare code sizes before and after the changes, verifying that we've achieved the expected code size reduction.
+Run the q32-metrics script to compare code sizes before and after the changes, verifying that we've achieved the expected code size reduction.
 
 ## Tasks
 
-### 6.1 Run Fixed32 Metrics Script
+### 6.1 Run Q32 Metrics Script
 
-Execute `scripts/fixed32-metrics.sh`:
-- This will generate a new report in `docs/reports/fixed32/`
+Execute `scripts/q32-metrics.sh`:
+- This will generate a new report in `docs/reports/q32/`
 - Report will include pre and post transform CLIF files
 - Statistics will show instruction counts and code sizes
 
 ### 6.2 Compare with Baseline
 
 Compare new report with baseline:
-- Baseline: `docs/reports/fixed32/2026-01-24T01.26.02-pre-ops-builtins`
+- Baseline: `docs/reports/q32/2026-01-24T01.26.02-pre-ops-builtins`
 - Compare instruction counts for:
   - `test-add.glsl` functions (should see reduction in add operations)
   - `test-sub.glsl` functions (should see reduction in sub operations)
@@ -33,7 +33,7 @@ Expected reductions:
 
 ## Success Criteria
 
-- Fixed32-metrics script runs successfully
+- Q32-metrics script runs successfully
 - New report generated with post-builtin code
 - Code size reduction verified in comparison
 - Instruction counts reduced as expected

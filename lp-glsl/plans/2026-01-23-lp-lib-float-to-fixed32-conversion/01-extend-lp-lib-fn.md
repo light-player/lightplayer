@@ -1,39 +1,39 @@
-# Phase 1: Extend LpLibFn with Fixed32 Mapping Methods
+# Phase 1: Extend LpLibFn with Q32 Mapping Methods
 
 ## Goal
 
-Add methods to `LpLibFn` enum to determine if a function needs fixed32 mapping and what the mapped name is. This keeps the source of truth in `LpLibFn` for conversion requirements.
+Add methods to `LpLibFn` enum to determine if a function needs q32 mapping and what the mapped name is. This keeps the source of truth in `LpLibFn` for conversion requirements.
 
 ## Tasks
 
-### 1.1 Add `fixed32_name()` Method
+### 1.1 Add `q32_name()` Method
 
 In `lp-glsl/crates/lp-glsl-compiler/src/frontend/semantic/lp_lib_fns.rs`:
-- Add `fixed32_name(&self) -> Option<&'static str>` method to `LpLibFn` impl
-- Return `Some("__lp_fixed32_lpfx_simplex1")` for `Simplex1`
-- Return `Some("__lp_fixed32_lpfx_simplex2")` for `Simplex2`
-- Return `Some("__lp_fixed32_lpfx_simplex3")` for `Simplex3`
-- Return `None` for hash functions (they don't need fixed32 conversion)
+- Add `q32_name(&self) -> Option<&'static str>` method to `LpLibFn` impl
+- Return `Some("__lp_q32_lpfx_simplex1")` for `Simplex1`
+- Return `Some("__lp_q32_lpfx_simplex2")` for `Simplex2`
+- Return `Some("__lp_q32_lpfx_simplex3")` for `Simplex3`
+- Return `None` for hash functions (they don't need q32 conversion)
 
-### 1.2 Add `needs_fixed32_mapping()` Method
+### 1.2 Add `needs_q32_mapping()` Method
 
 In the same file:
-- Add `needs_fixed32_mapping(&self) -> bool` method
-- Delegate to `fixed32_name().is_some()` to keep a single source of truth
+- Add `needs_q32_mapping(&self) -> bool` method
+- Delegate to `q32_name().is_some()` to keep a single source of truth
 - This returns `true` for simplex functions, `false` for hash functions
 
 ### 1.3 Add Tests
 
 Add tests to verify:
-- `LpLibFn::Simplex1.needs_fixed32_mapping()` returns `true`
-- `LpLibFn::Simplex1.fixed32_name()` returns `Some("__lp_fixed32_lpfx_simplex1")`
-- `LpLibFn::Hash1.needs_fixed32_mapping()` returns `false`
-- `LpLibFn::Hash1.fixed32_name()` returns `None`
+- `LpLibFn::Simplex1.needs_q32_mapping()` returns `true`
+- `LpLibFn::Simplex1.q32_name()` returns `Some("__lp_q32_lpfx_simplex1")`
+- `LpLibFn::Hash1.needs_q32_mapping()` returns `false`
+- `LpLibFn::Hash1.q32_name()` returns `None`
 
 ## Success Criteria
 
-- `fixed32_name()` method exists and returns correct values
-- `needs_fixed32_mapping()` delegates to `fixed32_name().is_some()`
+- `q32_name()` method exists and returns correct values
+- `needs_q32_mapping()` delegates to `q32_name().is_some()`
 - Tests pass
 - Code compiles without warnings
 - Code formatted with `cargo +nightly fmt`

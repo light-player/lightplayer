@@ -1,8 +1,8 @@
-# Plan: Fix SSA Dominance Violation in Fixed32 Transform
+# Plan: Fix SSA Dominance Violation in Q32 Transform
 
 ## Problem Summary
 
-The Fixed32 transform is creating constants in blocks where they're first encountered, rather than in blocks that dominate all their uses. This causes SSA dominance violations when constants are used in blocks that can be reached via paths that don't go through the block where the constant was created.
+The Q32 transform is creating constants in blocks where they're first encountered, rather than in blocks that dominate all their uses. This causes SSA dominance violations when constants are used in blocks that can be reached via paths that don't go through the block where the constant was created.
 
 **Example:**
 - `v108 = iconst.i8 1` is created in `block9`
@@ -106,5 +106,5 @@ The `map_value()` function in `instruction_copy.rs` has a critical bug:
 
 - The bug was exposed by recent changes that removed inline constant creation from arithmetic operations
 - The underlying issue existed before but wasn't triggered because constants were created in the same blocks where they were used
-- The fix needs to be in the shared transform infrastructure, not just the Fixed32 transform
+- The fix needs to be in the shared transform infrastructure, not just the Q32 transform
 - Need to ensure the fix doesn't break other transforms (identity transform, etc.)

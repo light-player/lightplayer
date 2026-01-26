@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Out Write-Only: Output global variables are write-only (may be read-write depending on stage)

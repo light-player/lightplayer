@@ -67,7 +67,7 @@ All signature conversion and type checking is done dynamically based on `Functio
 
 - Vectors are expanded to their components (vec2 → 2 scalars, vec3 → 3 scalars)
 - Types are converted to int based on `DecimalFormat`:
-  - Float → i32 (fixed32 representation)
+  - Float → i32 (q32 representation)
   - UInt → i32 (Cranelift representation)
   - Int → i32
 - Unsupported types panic (no other types allowed)
@@ -96,7 +96,7 @@ Replace `LpfxFnId` enum entirely. All lookups are by name. If we need an identif
    - `frontend/semantic/type_check/inference.rs` - Use `check_lpfx_fn_call`
    - `frontend/codegen/expr/function.rs` - Use `is_lpfx_fn` and `find_lpfx_fn`
    - `frontend/codegen/lp_lib_fns.rs` - Use registry for all function info
-   - `backend/transform/fixed32/converters/math.rs` - Use registry for testcase mapping
+   - `backend/transform/q32/converters/math.rs` - Use registry for testcase mapping
    - `backend/builtins/registry.rs` - Use registry for builtin name mapping
    - `apps/lp-builtin-gen/src/main.rs` - Use registry instead of `LpfxFnId::all()`
 5. Remove `LpfxFnId` enum and all its methods

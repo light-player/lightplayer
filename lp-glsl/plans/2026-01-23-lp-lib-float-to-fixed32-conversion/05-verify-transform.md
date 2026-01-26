@@ -2,13 +2,13 @@
 
 ## Goal
 
-Verify that `map_testcase_to_builtin()` correctly maps TestCase names to `BuiltinId` variants, and that the transform correctly converts TestCase calls to fixed32 builtin calls.
+Verify that `map_testcase_to_builtin()` correctly maps TestCase names to `BuiltinId` variants, and that the transform correctly converts TestCase calls to q32 builtin calls.
 
 ## Tasks
 
 ### 5.1 Verify TestCase Mapping
 
-Check `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/math.rs`:
+Check `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/q32/converters/math.rs`:
 - `map_testcase_to_builtin("__lpfx_simplex1")` should return `Some((BuiltinId::LpSimplex1, 2))`
 - `map_testcase_to_builtin("__lpfx_simplex2")` should return `Some((BuiltinId::LpSimplex2, 3))`
 - `map_testcase_to_builtin("__lpfx_simplex3")` should return `Some((BuiltinId::LpSimplex3, 4))`
@@ -16,12 +16,12 @@ Check `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/
 
 ### 5.2 Verify Transform Conversion Logic
 
-Check `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/calls.rs`:
+Check `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/q32/converters/calls.rs`:
 - `convert_call()` should detect TestCase calls to `"__lpfx_simplex3"`
 - Should map to `BuiltinId::LpSimplex3` via `map_testcase_to_builtin()`
-- Should use `BuiltinId::LpSimplex3.name()` to get `"__lp_fixed32_lpfx_simplex3"`
-- Should look up `"__lp_fixed32_lpfx_simplex3"` in `func_id_map`
-- Should create call to the fixed32 function
+- Should use `BuiltinId::LpSimplex3.name()` to get `"__lp_q32_lpfx_simplex3"`
+- Should look up `"__lp_q32_lpfx_simplex3"` in `func_id_map`
+- Should create call to the q32 function
 
 ### 5.3 Add Tests if Needed
 
@@ -33,7 +33,7 @@ If transform logic needs verification:
 ## Success Criteria
 
 - `map_testcase_to_builtin()` correctly maps simplex TestCase names
-- Transform correctly converts TestCase calls to fixed32 builtin calls
+- Transform correctly converts TestCase calls to q32 builtin calls
 - All code compiles without warnings
 - Code formatted with `cargo +nightly fmt`
 

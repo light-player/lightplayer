@@ -2282,22 +2282,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8591b0bcc8a98a64310a2fae1bb3e9b8564dd10e381e6e28010fde8e8e8568db"
 
 [[package]]
-name = "fixed32-metrics"
-version = "40.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "cranelift-codegen",
- "cranelift-module",
- "cranelift-object",
- "hashbrown 0.15.5",
- "lp-glsl-compiler",
- "serde",
- "toml",
-]
-
-[[package]]
 name = "flate2"
 version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4185,6 +4169,22 @@ name = "profiling"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eb8486b569e12e2c32ad3e204dbaba5e4b5b216e9367044f25f1dba42341773"
+
+[[package]]
+name = "q32-metrics"
+version = "40.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "cranelift-codegen",
+ "cranelift-module",
+ "cranelift-object",
+ "hashbrown 0.15.5",
+ "lp-glsl-compiler",
+ "serde",
+ "toml",
+]
 
 [[package]]
 name = "quick-xml"

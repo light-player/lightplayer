@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // Phase 3: Initialization - Array initializer lists, full/partial initialization, unsized arrays
 

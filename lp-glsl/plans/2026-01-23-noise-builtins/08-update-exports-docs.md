@@ -6,7 +6,7 @@ Update `mod.rs` to export new functions and add documentation. Ensure all functi
 
 ## Implementation
 
-### File: `lp-builtins/src/builtins/fixed32/mod.rs`
+### File: `lp-builtins/src/builtins/q32/mod.rs`
 
 The builtin generator should have already updated this file, but verify:
 - `mod lpfx_hash;` is included

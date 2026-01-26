@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Scalar Global Types: Global variables of scalar types (float, int, uint, bool)

@@ -9,16 +9,16 @@ Run the builtin generator to auto-generate registry entries, mod.rs exports, and
 ### 4.1 Run Builtin Generator
 
 Execute `scripts/build-builtins.sh`:
-- This will scan `lp-builtins/src/builtins/fixed32/` for new builtins
+- This will scan `lp-builtins/src/builtins/q32/` for new builtins
 - Auto-generate `mod.rs` with exports for add and sub
-- Auto-generate `registry.rs` with `Fixed32Add` and `Fixed32Sub` enum variants
+- Auto-generate `registry.rs` with `Q32Add` and `Q32Sub` enum variants
 - Auto-generate `builtin_refs.rs` with function references
 
 ### 4.2 Verify Generated Files
 
 Check that:
-- `mod.rs` includes `pub use add::__lp_fixed32_add;` and `pub use sub::__lp_fixed32_sub;`
-- `registry.rs` includes `Fixed32Add` and `Fixed32Sub` in the enum
+- `mod.rs` includes `pub use add::__lp_q32_add;` and `pub use sub::__lp_q32_sub;`
+- `registry.rs` includes `Q32Add` and `Q32Sub` in the enum
 - `builtin_refs.rs` includes references to the new builtins
 - All generated files compile without errors
 
@@ -27,7 +27,7 @@ Check that:
 - Builtin generator runs successfully
 - All generated files updated with new builtins
 - Code compiles without errors
-- Registry includes `Fixed32Add` and `Fixed32Sub`
+- Registry includes `Q32Add` and `Q32Sub`
 
 ## Code Organization
 

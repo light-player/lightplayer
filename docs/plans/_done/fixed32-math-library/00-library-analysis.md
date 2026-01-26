@@ -10,7 +10,7 @@
 
 ### Format
 
-- **Q16.16** fixed-point format (matches our fixed32 format!)
+- **Q16.16** fixed-point format (matches our q32 format!)
 - Uses `int32_t` (typedef'd as `fix16_t`)
 - `fix16_one = 0x00010000` (65536)
 
@@ -27,7 +27,7 @@
 
 ### Pros
 
-- ✅ **Perfect format match**: Q16.16 exactly matches our fixed32 format
+- ✅ **Perfect format match**: Q16.16 exactly matches our q32 format
 - ✅ **No dependencies**: Pure C, no-std compatible
 - ✅ **Multiple accuracy/speed options**: Can choose based on needs
 - ✅ **Well-tested**: Has benchmarks and tests
@@ -154,7 +154,7 @@
 
 **Use libfixmath as primary reference** for the following reasons:
 
-1. **Perfect format match**: Q16.16 exactly matches our fixed32 format
+1. **Perfect format match**: Q16.16 exactly matches our q32 format
 2. **Simple to port**: Pure C, straightforward code
 3. **No dependencies**: Works in no-std Rust
 4. **Multiple options**: Can choose accuracy vs speed

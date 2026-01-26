@@ -1,4 +1,4 @@
-# Plan Phases: Fixed32 Math Library - Remaining Functions
+# Plan Phases: Q32 Math Library - Remaining Functions
 
 1. Phase 3: Tangent Function (tan)
 2. Phase 4: Inverse Trig Functions (asin, acos, atan, atan2)

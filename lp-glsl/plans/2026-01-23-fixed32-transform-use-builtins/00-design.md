@@ -1,24 +1,24 @@
-# Design: Make Fixed32 Transform Use Builtins for Add, Sub, and Div
+# Design: Make Q32 Transform Use Builtins for Add, Sub, and Div
 
 ## Overview
 
-Update the fixed32 transform to use builtin functions for `add`, `sub`, and `div` operations instead of generating inline saturation code. This will reduce code bloat from ~20-30 instructions per operation to a single function call, following the same pattern already established for `mul`.
+Update the q32 transform to use builtin functions for `add`, `sub`, and `div` operations instead of generating inline saturation code. This will reduce code bloat from ~20-30 instructions per operation to a single function call, following the same pattern already established for `mul`.
 
 ## File Structure
 
 ```
-lp-glsl/crates/lp-builtins/src/builtins/fixed32/
-├── add.rs                    # NEW: __lp_fixed32_add builtin implementation
-├── sub.rs                    # NEW: __lp_fixed32_sub builtin implementation
+lp-glsl/crates/lp-builtins/src/builtins/q32/
+├── add.rs                    # NEW: __lp_q32_add builtin implementation
+├── sub.rs                    # NEW: __lp_q32_sub builtin implementation
 ├── div.rs                    # EXISTS: Verify edge case handling
 ├── mul.rs                    # EXISTS: Reference implementation pattern
 └── mod.rs                    # AUTO-GENERATED: Will include add/sub exports
 
-lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/
+lp-glsl/crates/lp-glsl-compiler/src/backend/transform/q32/converters/
 └── arithmetic.rs             # UPDATE: convert_fadd, convert_fsub, convert_fdiv to use builtins
 
 lp-glsl/crates/lp-glsl-compiler/src/backend/builtins/
-└── registry.rs               # AUTO-GENERATED: Will include Fixed32Add, Fixed32Sub
+└── registry.rs               # AUTO-GENERATED: Will include Q32Add, Q32Sub
 
 lp-glsl/apps/lp-builtins-app/src/
 └── builtin_refs.rs           # AUTO-GENERATED: Will include add/sub references
@@ -28,21 +28,21 @@ lp-glsl/apps/lp-builtins-app/src/
 
 ### New Builtin Functions
 
-**__lp_fixed32_add(a: i32, b: i32) -> i32**
+**__lp_q32_add(a: i32, b: i32) -> i32**
 - Fixed-point addition with saturation
 - Use i64 for intermediate calculation to avoid overflow
 - Clamp result to [MIN_FIXED, MAX_FIXED]
 - Return saturated i32
-- Pattern: Similar to `__lp_fixed32_mul` but simpler (no shift needed)
+- Pattern: Similar to `__lp_q32_mul` but simpler (no shift needed)
 
-**__lp_fixed32_sub(a: i32, b: i32) -> i32**
+**__lp_q32_sub(a: i32, b: i32) -> i32**
 - Fixed-point subtraction with saturation
 - Use i64 for intermediate calculation to avoid overflow
 - Clamp result to [MIN_FIXED, MAX_FIXED]
 - Return saturated i32
-- Pattern: Similar to `__lp_fixed32_add` but subtract instead of add
+- Pattern: Similar to `__lp_q32_add` but subtract instead of add
 
-**__lp_fixed32_div(dividend: i32, divisor: i32) -> i32**
+**__lp_q32_div(dividend: i32, divisor: i32) -> i32**
 - EXISTS: Already implemented
 - Verify it handles edge cases correctly (division-by-zero, small divisors)
 - If issues found, fix before using
@@ -79,7 +79,7 @@ Both `add` and `sub` will follow this pattern (similar to `mul`):
 
 ```rust
 #[unsafe(no_mangle)]
-pub extern "C" fn __lp_fixed32_add(a: i32, b: i32) -> i32 {
+pub extern "C" fn __lp_q32_add(a: i32, b: i32) -> i32 {
     // Use i64 for intermediate calculation
     let a_wide = a as i64;
     let b_wide = b as i64;
@@ -121,9 +121,9 @@ After creating `add.rs` and `sub.rs`:
 
 ### Testing
 
-1. Unignore `test_fixed32_fdiv` test in `arithmetic.rs`
+1. Unignore `test_q32_fdiv` test in `arithmetic.rs`
 2. Run filetests to verify correctness
-3. Run fixed32-metrics script to compare code sizes
+3. Run q32-metrics script to compare code sizes
 
 ## Constants
 
@@ -132,9 +132,9 @@ After creating `add.rs` and `sub.rs`:
 
 ## Success Criteria
 
-- `__lp_fixed32_add` and `__lp_fixed32_sub` builtins implemented
+- `__lp_q32_add` and `__lp_q32_sub` builtins implemented
 - `convert_fadd`, `convert_fsub`, `convert_fdiv` use builtins instead of inline code
 - Builtin registry auto-generated with new entries
-- All tests pass (including unignored `test_fixed32_fdiv`)
-- Code size reduction verified via fixed32-metrics comparison
+- All tests pass (including unignored `test_q32_fdiv`)
+- Code size reduction verified via q32-metrics comparison
 - Code formatted with `cargo +nightly fmt`

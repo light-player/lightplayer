@@ -2,7 +2,7 @@
 
 ## Description
 
-Implement the core compilation logic that compiles GLSL files to CLIF IR, applies the fixed32 transform, and manages the before/after module states.
+Implement the core compilation logic that compiles GLSL files to CLIF IR, applies the q32 transform, and manages the before/after module states.
 
 ## Implementation
 
@@ -13,7 +13,7 @@ Implement the core compilation logic that compiles GLSL files to CLIF IR, applie
   - Returns `GlModule` (before transform)
 - Implement `apply_transform()` function:
   - Takes `GlModule` and `FixedPointFormat`
-  - Creates `Fixed32Transform` with the format
+  - Creates `Q32Transform` with the format
   - Applies transform using `apply_transform()`
   - Returns transformed `GlModule`
 - Handle errors and abort on failure
@@ -21,6 +21,6 @@ Implement the core compilation logic that compiles GLSL files to CLIF IR, applie
 ## Success Criteria
 
 - GLSL compilation works correctly
-- Fixed32 transform is applied successfully
+- Q32 transform is applied successfully
 - Errors are handled and reported clearly
 - Code compiles without errors

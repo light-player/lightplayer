@@ -6,11 +6,11 @@
 
 **Context**: All JIT tests (`test_jit_int_literal`, `test_jit_int_addition`, `test_jit_float_literal`, `test_jit_bool_literal`) are failing because they use `DecimalFormat::Float`, which is explicitly rejected in `compile_glsl_to_gl_module_jit()` (line 92-97 of `frontend/mod.rs`).
 
-**Error**: `"Float format is not yet supported. Only Fixed32 format is currently supported. Float format will cause TestCase relocation errors. Use Fixed32 format instead."`
+**Error**: `"Float format is not yet supported. Only Q32 format is currently supported. Float format will cause TestCase relocation errors. Use Q32 format instead."`
 
-**Suggested Answer**: Update all JIT tests to use `DecimalFormat::Fixed32` instead of `DecimalFormat::Float`. For integer and bool tests, this should work fine. For float tests, we'll need to convert expected values to fixed-point format.
+**Suggested Answer**: Update all JIT tests to use `DecimalFormat::Q32` instead of `DecimalFormat::Float`. For integer and bool tests, this should work fine. For float tests, we'll need to convert expected values to fixed-point format.
 
-**Decision**: Update all JIT tests to use `DecimalFormat::Fixed32` instead of `DecimalFormat::Float`. This is the correct format for the current implementation. Float format support is a future TODO.
+**Decision**: Update all JIT tests to use `DecimalFormat::Q32` instead of `DecimalFormat::Float`. This is the correct format for the current implementation. Float format support is a future TODO.
 
 ### Q2: Emulator Tests Returning Zero
 
@@ -18,7 +18,7 @@
 - `test_build_emu_executable`: expects 42, gets 0
 - `test_emu_int_literal`: expects 42, gets 0
 - `test_emu_int_addition`: expects 30, likely gets 0
-- All fixed32 arithmetic tests: expect various values, get 0
+- All q32 arithmetic tests: expect various values, get 0
 
 **Pattern**: The tests compile successfully, but function execution returns 0 instead of the expected value.
 
@@ -50,9 +50,9 @@
 
 **Next Steps**: Add debug logging to trace execution, check if function actually executes, verify return value in a0 register.
 
-### Q3: Fixed32 Arithmetic Tests
+### Q3: Q32 Arithmetic Tests
 
-**Context**: All fixed32 converter tests (`test_fixed32_fadd`, `test_fixed32_fsub`, `test_fixed32_fmul`, `test_fixed32_fneg`, `test_fixed32_fabs`, etc.) are returning 0 instead of expected fixed-point values.
+**Context**: All q32 converter tests (`test_q32_fadd`, `test_q32_fsub`, `test_q32_fmul`, `test_q32_fneg`, `test_q32_fabs`, etc.) are returning 0 instead of expected fixed-point values.
 
 **Observation**: The CLIF IR transformation looks correct (we can see the transformed IR in test output), but execution returns 0.
 
@@ -63,10 +63,10 @@
 ### Q4: Test Categorization
 
 **Context**: We have 24 failing tests total. Need to categorize them:
-1. **JIT Float Format Tests** (4 tests): `test_jit_*` - Need to change to Fixed32
+1. **JIT Float Format Tests** (4 tests): `test_jit_*` - Need to change to Q32
 2. **Emulator Basic Execution** (3 tests): `test_build_emu_executable`, `test_emu_int_*` - Core execution broken
-3. **Fixed32 Transform Tests** (13 tests): All `test_fixed32_*` - Likely same as #2
-4. **Other** (4 tests): `test_do_while`, `test_emu_builtin_sqrt_linked`, `test_emu_float_*`, `test_emu_user_fn_fixed32` - Need investigation
+3. **Q32 Transform Tests** (13 tests): All `test_q32_*` - Likely same as #2
+4. **Other** (4 tests): `test_do_while`, `test_emu_builtin_sqrt_linked`, `test_emu_float_*`, `test_emu_user_fn_q32` - Need investigation
 
 **Suggested Answer**: 
 - Category 1: Simple fix (change DecimalFormat)
@@ -77,7 +77,7 @@
 **Decision**: Fix in order:
 1. Category 1 (JIT Float Format) - Simple fix, change DecimalFormat
 2. Category 2 (Emulator Basic Execution) - Core bug, needs investigation
-3. Category 3 (Fixed32 Tests) - Should fix automatically once #2 is fixed
+3. Category 3 (Q32 Tests) - Should fix automatically once #2 is fixed
 4. Category 4 (Other Tests) - Investigate individually after #2 is fixed
 
 No tests should be marked `#[ignore]` unless they're testing future features that aren't implemented yet.

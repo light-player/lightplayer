@@ -65,7 +65,7 @@ Each test file should follow the pattern from `vec4/` and `bool/` tests:
 
 ```glsl
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Description of what is being tested

@@ -8,55 +8,55 @@ Implement hyperbolic trigonometric functions using mathematical formulas with ex
 
 ### 6.1 Implement Sinh
 
-In `lp-builtins/src/fixed32/sinh.rs`:
+In `lp-builtins/src/q32/sinh.rs`:
 - Implement using: `sinh(x) = (exp(x) - exp(-x)) / 2`
-- Use `__lp_fixed32_exp` and `__lp_fixed32_div`
+- Use `__lp_q32_exp` and `__lp_q32_div`
 - Handle overflow cases
-- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_fixed32_sinh(x: i32) -> i32`
+- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_q32_sinh(x: i32) -> i32`
 
 ### 6.2 Implement Cosh
 
-In `lp-builtins/src/fixed32/cosh.rs`:
+In `lp-builtins/src/q32/cosh.rs`:
 - Implement using: `cosh(x) = (exp(x) + exp(-x)) / 2`
-- Use `__lp_fixed32_exp` and `__lp_fixed32_div`
+- Use `__lp_q32_exp` and `__lp_q32_div`
 - Handle overflow cases
-- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_fixed32_cosh(x: i32) -> i32`
+- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_q32_cosh(x: i32) -> i32`
 
 ### 6.3 Implement Tanh
 
-In `lp-builtins/src/fixed32/tanh.rs`:
+In `lp-builtins/src/q32/tanh.rs`:
 - Implement using: `tanh(x) = sinh(x) / cosh(x)`
-- Use `__lp_fixed32_sinh` and `__lp_fixed32_cosh`
+- Use `__lp_q32_sinh` and `__lp_q32_cosh`
 - Handle edge cases (cosh(x) = 0, etc.)
-- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_fixed32_tanh(x: i32) -> i32`
+- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_q32_tanh(x: i32) -> i32`
 
 ### 6.4 Implement Asinh
 
-In `lp-builtins/src/fixed32/asinh.rs`:
+In `lp-builtins/src/q32/asinh.rs`:
 - Implement using: `asinh(x) = log(x + sqrt(x² + 1))`
-- Use `__lp_fixed32_log`, `__lp_fixed32_sqrt`, `__lp_fixed32_mul`, `__lp_fixed32_add`
+- Use `__lp_q32_log`, `__lp_q32_sqrt`, `__lp_q32_mul`, `__lp_q32_add`
 - Handle domain restrictions
-- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_fixed32_asinh(x: i32) -> i32`
+- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_q32_asinh(x: i32) -> i32`
 
 ### 6.5 Implement Acosh
 
-In `lp-builtins/src/fixed32/acosh.rs`:
+In `lp-builtins/src/q32/acosh.rs`:
 - Implement using: `acosh(x) = log(x + sqrt(x² - 1))` for x >= 1
-- Use `__lp_fixed32_log`, `__lp_fixed32_sqrt`, `__lp_fixed32_mul`, `__lp_fixed32_sub`
+- Use `__lp_q32_log`, `__lp_q32_sqrt`, `__lp_q32_mul`, `__lp_q32_sub`
 - Handle domain restrictions (x >= 1)
-- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_fixed32_acosh(x: i32) -> i32`
+- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_q32_acosh(x: i32) -> i32`
 
 ### 6.6 Implement Atanh
 
-In `lp-builtins/src/fixed32/atanh.rs`:
+In `lp-builtins/src/q32/atanh.rs`:
 - Implement using: `atanh(x) = (1/2) * log((1+x)/(1-x))` for |x| < 1
-- Use `__lp_fixed32_log`, `__lp_fixed32_div`, `__lp_fixed32_add`, `__lp_fixed32_sub`
+- Use `__lp_q32_log`, `__lp_q32_div`, `__lp_q32_add`, `__lp_q32_sub`
 - Handle domain restrictions (|x| < 1)
-- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_fixed32_atanh(x: i32) -> i32`
+- Export as `#[unsafe(no_mangle)] pub extern "C" fn __lp_q32_atanh(x: i32) -> i32`
 
 ### 6.7 Add to Module
 
-In `lp-builtins/src/fixed32/mod.rs`:
+In `lp-builtins/src/q32/mod.rs`:
 - Add all hyperbolic modules
 - Export all functions
 
@@ -74,13 +74,13 @@ In `lp-glsl-compiler/src/backend/builtins/registry.rs`:
 
 ### 6.10 Add Transform Conversion
 
-In `lp-glsl-compiler/src/backend/transform/fixed32/converters/math.rs`:
+In `lp-glsl-compiler/src/backend/transform/q32/converters/math.rs`:
 - Add mappings for all hyperbolic functions (sinhf, coshf, tanhf, asinhf, acoshf, atanhf and __lp_* versions)
 - All map to 1-arg functions
 
 ### 6.11 Add Tests
 
-- Add tests for each function using `test_fixed32_function_relative()` helper
+- Add tests for each function using `test_q32_function_relative()` helper
 - Source test cases from mathematical reference or create based on known values
 - Use 0.01 tolerance initially, may need adjustment
 

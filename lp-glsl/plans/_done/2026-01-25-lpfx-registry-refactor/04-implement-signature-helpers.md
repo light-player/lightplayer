@@ -15,7 +15,7 @@ Implement functions:
 
 Rules:
 - Vectors expand to components (vec2 → 2 scalars, vec3 → 3 scalars)
-- Float → i32 (fixed32)
+- Float → i32 (q32)
 - UInt → i32 (Cranelift representation)
 - Int → i32
 - Panic on unsupported types

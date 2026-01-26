@@ -53,7 +53,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
         // Handle Decimal vs NonDecimal implementations
         match &func.impls {
             crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::Decimal { float_impl, .. } => {
-                // Always use float implementation in frontend - transform will convert to fixed32
+                // Always use float implementation in frontend - transform will convert to q32
                 // Generate TestCase call with float signature (f32 args, f32 return)
                 let func_ref = self.get_lpfx_testcase_call(func, *float_impl, &param_types)?;
 
@@ -104,10 +104,10 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
     /// Helper to declare and get FuncRef for LPFX function TestCase call.
     ///
     /// Creates external function calls using TestCase names (e.g., "__lpfx_simplex3").
-    /// These are converted to fixed32 builtins by the transform.
+    /// These are converted to q32 builtins by the transform.
     ///
     /// Always uses float signature (f32 args, f32 return) - the transform will handle
-    /// conversion to fixed32 when processing the TestCase call.
+    /// conversion to q32 when processing the TestCase call.
     fn get_lpfx_testcase_call(
         &mut self,
         func: &'static crate::frontend::semantic::lpfx::lpfx_fn::LpfxFn,
@@ -118,7 +118,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
         let testcase_name = format!("__{}", func.glsl_sig.name);
 
         // Build signature with Float format (f32 args, f32 return)
-        // The transform will convert this to fixed32 when processing the call
+        // The transform will convert this to q32 when processing the call
         let sig = build_call_signature(func, builtin_id, DecimalFormat::Float);
 
         // Create TestCase name for external function call

@@ -1,7 +1,7 @@
 # Phase 8: Frontend Codegen for Missing Functions
 
 ## Goal
-Implement frontend codegen for functions that don't need fixed32 implementations.
+Implement frontend codegen for functions that don't need q32 implementations.
 
 ## Functions to Implement
 - **Integer bit functions** that are pure integer operations (tests referenced in Phase 7)
@@ -13,7 +13,7 @@ Implement frontend codegen for functions that don't need fixed32 implementations
 
 ### floatBitsToInt / intBitsToFloat
 - Convert between float bit patterns and integers
-- For fixed-point: may need special handling since we're using fixed32
+- For fixed-point: may need special handling since we're using q32
 - These are bit-pattern conversions, not value conversions
 - File: `lightplayer/crates/lp-glsl-compiler/src/frontend/codegen/builtins/common.rs`
 

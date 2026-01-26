@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Divide Assign: mat4 /= mat4 (component-wise division) or mat4 /= float (component-wise)

@@ -9,7 +9,7 @@ Investigate why emulator tests are returning 0 instead of expected values. The f
 - `backend::codegen::emu::tests::test_build_emu_executable` - expects 42, gets 0
 - `exec::emu::tests::test_emu_int_literal` - expects 42, gets 0
 - `exec::emu::tests::test_emu_int_addition` - expects 30, likely gets 0
-- All fixed32 arithmetic tests (13 tests) - all return 0
+- All q32 arithmetic tests (13 tests) - all return 0
 
 ## Investigation Steps
 

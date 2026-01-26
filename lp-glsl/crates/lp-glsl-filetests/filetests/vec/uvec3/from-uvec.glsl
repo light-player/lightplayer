@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // From uvec: uvec3(uvec3) - identity constructor, uvec3(uvec4) - shortening constructor, uvec3(uvec2, uint) - lengthening constructor

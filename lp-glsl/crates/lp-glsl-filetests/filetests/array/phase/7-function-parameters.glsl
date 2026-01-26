@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // Phase 7: Function Parameters - Arrays as function parameters and return values
 

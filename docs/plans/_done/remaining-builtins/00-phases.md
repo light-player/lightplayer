@@ -12,7 +12,7 @@ Implement inline conversions for simple functions (< 10 instructions):
 - Code compiles without warnings
 
 ## Phase 2: Common Builtin Functions
-Implement fixed32 builtins for common functions:
+Implement q32 builtins for common functions:
 - mod (uses div builtin) - tests: `builtins/common-mod.glsl`
 - round (complex rounding algorithm) - tests: `builtins/common-round.glsl`
 - roundeven (round to nearest even) - tests: `builtins/common-roundeven.glsl`
@@ -62,7 +62,7 @@ Implement pack/unpack builtins:
 - packHalf2x16, packDouble2x32, packUnorm4x8 - tests: `builtins/pack-half.glsl`, `builtins/pack-double.glsl`, `builtins/pack-unorm.glsl`
 - unpackHalf2x16, unpackDouble2x32, unpackUnorm4x8 - tests: `builtins/unpack-half.glsl`, `builtins/unpack-double.glsl`, `builtins/unpack-unorm.glsl`
 
-**Status:** Deferred - requires frontend codegen for bit manipulation (not fixed32 math)
+**Status:** Deferred - requires frontend codegen for bit manipulation (not q32 math)
 
 **Success criteria:**
 - All pack/unpack functions implemented
@@ -77,7 +77,7 @@ Evaluate complexity and implement integer bit manipulation functions:
 - Implement bitfieldExtract and bitfieldInsert as inline (already determined < 10 instructions)
 - Tests: `builtins/integer-bitcount.glsl`, `builtins/integer-bitfieldextract.glsl`, `builtins/integer-bitfieldinsert.glsl`, `builtins/integer-bitfieldreverse.glsl`, `builtins/integer-findlsb.glsl`, `builtins/integer-findmsb.glsl`, `builtins/integer-imulextended.glsl`, `builtins/integer-uaddcarry.glsl`, `builtins/integer-umulextended.glsl`, `builtins/integer-usubborrow.glsl`
 
-**Status:** Deferred - requires frontend codegen for pure integer operations (not fixed32 math)
+**Status:** Deferred - requires frontend codegen for pure integer operations (not q32 math)
 
 **Success criteria:**
 - All functions evaluated and implemented appropriately
@@ -86,13 +86,13 @@ Evaluate complexity and implement integer bit manipulation functions:
 - Code compiles without warnings
 
 ## Phase 8: Frontend Codegen for Missing Functions ⏸️ **DEFERRED**
-Implement frontend codegen for functions that don't need fixed32:
+Implement frontend codegen for functions that don't need q32:
 - Integer bit functions that are pure integer operations (tests referenced in Phase 7)
 - floatBitsToInt, intBitsToFloat - tests: `builtins/common-floatbitstoint.glsl`, `builtins/common-intbitstofloat.glsl`
 - Output parameter support for frexp/modf
 - Any other missing frontend implementations
 
-**Status:** Deferred - frontend codegen work separate from fixed32 math library
+**Status:** Deferred - frontend codegen work separate from q32 math library
 
 **Success criteria:**
 - All frontend codegen functions implemented

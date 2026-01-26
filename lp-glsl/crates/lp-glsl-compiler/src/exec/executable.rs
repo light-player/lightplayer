@@ -145,7 +145,7 @@ pub enum DecimalFormat {
     /// Native floating-point (f32/f64)
     Float,
     /// Fixed-point 32-bit (Q format)
-    Fixed32,
+    Q32,
 }
 
 /// Compilation options
@@ -202,12 +202,12 @@ impl GlslOptions {
                 stack_size,
                 max_instructions: 10_000,
             },
-            decimal_format: DecimalFormat::Fixed32,
+            decimal_format: DecimalFormat::Q32,
         }
     }
 
     /// Convenience constructor for RISC-V 32-bit IMA(C) emulator
-    /// Uses 1MB RAM, 64KB stack, and Fixed32 format
+    /// Uses 1MB RAM, 64KB stack, and Q32 format
     #[cfg(feature = "emulator")]
     pub fn emu_riscv32_imac() -> Self {
         Self {
@@ -216,7 +216,7 @@ impl GlslOptions {
                 stack_size: 64 * 1024,   // 64KB
                 max_instructions: 10_000,
             },
-            decimal_format: DecimalFormat::Fixed32,
+            decimal_format: DecimalFormat::Q32,
         }
     }
 }

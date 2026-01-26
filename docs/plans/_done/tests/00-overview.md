@@ -171,7 +171,7 @@ Each test file follows the standard GLSL filetest format:
 
 ```glsl
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Description of what is being tested

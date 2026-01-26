@@ -1,13 +1,13 @@
-# Design: Add VCode and Assembly Generation to Fixed32 Metrics
+# Design: Add VCode and Assembly Generation to Q32 Metrics
 
 ## Overview
 
-Extend the `fixed32-metrics` app to generate vcode and assembly files in addition to CLIF files, enabling size comparison at multiple compilation stages. The app will switch from `JITModule` to `ObjectModule` to access compiled code, use RISC-V 32-bit target, and add vcode/assembly size metrics to statistics.
+Extend the `q32-metrics` app to generate vcode and assembly files in addition to CLIF files, enabling size comparison at multiple compilation stages. The app will switch from `JITModule` to `ObjectModule` to access compiled code, use RISC-V 32-bit target, and add vcode/assembly size metrics to statistics.
 
 ## File Structure
 
 ```
-lp-glsl/apps/fixed32-metrics/
+lp-glsl/apps/q32-metrics/
 ├── src/
 │   ├── main.rs                    # UPDATE: Change to use ObjectModule
 │   ├── cli.rs                     # No changes
@@ -107,10 +107,10 @@ pub fn compile_and_transform(
         .compile_to_gl_module_object(glsl_source, target)
         .map_err(|e| anyhow::anyhow!("Failed to compile GLSL (for transform): {}", e))?;
 
-    let transform = Fixed32Transform::new(format);
+    let transform = Q32Transform::new(format);
     let module_after = module_for_transform
         .apply_transform(transform)
-        .map_err(|e| anyhow::anyhow!("Failed to apply fixed32 transform: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Failed to apply q32 transform: {}", e))?;
 
     Ok((module_before, module_after))
 }

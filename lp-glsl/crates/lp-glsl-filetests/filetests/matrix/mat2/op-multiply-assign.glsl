@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Multiply Assign: mat2 *= mat2 (matrix multiplication) or mat2 *= float (component-wise)

@@ -4,7 +4,7 @@
 Complete implementation of all remaining GLSL builtin functions to achieve 100% test pass rate (currently 24/64 tests passing).
 
 ## Current State
-- **Framework:** Fixed32 builtin infrastructure with auto-generated boilerplate is in place
+- **Framework:** Q32 builtin infrastructure with auto-generated boilerplate is in place
 - **Tests:** 24 passing, 40 failing
 - **Already implemented:** 
   - Trig functions (sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh)
@@ -15,7 +15,7 @@ Complete implementation of all remaining GLSL builtin functions to achieve 100% 
 ## Approach
 - **Inline vs Builtin:** Use 10-instruction threshold
   - Simple operations (< 10 instructions) → inline conversion in transform
-  - Complex operations or those calling other builtins → fixed32 builtin functions
+  - Complex operations or those calling other builtins → q32 builtin functions
 - **Implementation pattern:** Follow existing trig function patterns (sin.rs, exp.rs, log2.rs)
   - Port algorithms from reference libraries (libfixmath primary, fpm secondary)
   - Cite sources in comments
@@ -30,7 +30,7 @@ Complete implementation of all remaining GLSL builtin functions to achieve 100% 
 5. **Matrix Complex Functions** - determinant, inverse ✅
 6. **Pack/Unpack Functions** - all pack/unpack variants ⏸️ (deferred - frontend codegen)
 7. **Integer Bit Functions** - evaluate and implement case-by-case ⏸️ (deferred - frontend codegen)
-8. **Frontend Codegen** - missing frontend implementations ⏸️ (deferred - separate from fixed32 work)
+8. **Frontend Codegen** - missing frontend implementations ⏸️ (deferred - separate from q32 work)
 9. **Integration Testing and Cleanup** - final verification
 
 ## Success Criteria

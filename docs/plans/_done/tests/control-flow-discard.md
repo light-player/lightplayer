@@ -33,7 +33,7 @@ Each test file should follow the pattern from other test suites. Note that disca
 
 ```glsl
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 // shader-type fragment
 
 // ============================================================================

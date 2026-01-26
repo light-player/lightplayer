@@ -6,7 +6,7 @@ Update `Cargo.toml` to enable the `emulator` feature for `lp-glsl-compiler`, and
 
 ## Implementation
 
-- Update `lp-glsl/apps/fixed32-metrics/Cargo.toml`:
+- Update `lp-glsl/apps/q32-metrics/Cargo.toml`:
   - Add `emulator` feature to `lp-glsl-compiler` dependency
 - Update imports in `src/main.rs`:
   - Change from `cranelift_jit::JITModule` to `cranelift_object::ObjectModule`

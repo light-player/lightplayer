@@ -1,8 +1,8 @@
-# Plan: Add VCode and Assembly Generation to Fixed32 Metrics
+# Plan: Add VCode and Assembly Generation to Q32 Metrics
 
 ## Overview
 
-Extend the `fixed32-metrics` app to generate vcode and assembly files in addition to CLIF files, enabling size comparison at multiple compilation stages (CLIF → VCode → Assembly). The app will switch from `JITModule` to `ObjectModule` to access compiled code, use RISC-V 32-bit target, and add vcode/assembly size metrics to statistics.
+Extend the `q32-metrics` app to generate vcode and assembly files in addition to CLIF files, enabling size comparison at multiple compilation stages (CLIF → VCode → Assembly). The app will switch from `JITModule` to `ObjectModule` to access compiled code, use RISC-V 32-bit target, and add vcode/assembly size metrics to statistics.
 
 ## Phases
 

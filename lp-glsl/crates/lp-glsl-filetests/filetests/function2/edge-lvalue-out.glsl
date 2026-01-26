@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Lvalue Required for Out/Inout: out/inout require lvalues (variables)

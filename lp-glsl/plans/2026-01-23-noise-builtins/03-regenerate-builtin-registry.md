@@ -21,7 +21,7 @@ scripts/build-builtins.sh
 ### Expected Changes
 
 The generator will:
-1. Scan `lp-builtins/src/builtins/fixed32/` for new functions
+1. Scan `lp-builtins/src/builtins/q32/` for new functions
 2. Detect `__lpfx_hash_1`, `__lpfx_hash_2`, `__lpfx_hash_3`, `__lpfx_simplex1`, `__lpfx_simplex2`, `__lpfx_simplex3`
 3. Add enum variants to `BuiltinId`: `LpHash1`, `LpHash2`, `LpHash3`, `LpSimplex1`, `LpSimplex2`, `LpSimplex3`
 4. Generate `name()` method returning symbol names

@@ -8,19 +8,19 @@ Unignore the div test and verify all tests pass, including filetests.
 
 ### 5.1 Unignore Div Test
 
-In `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/arithmetic.rs`:
-- Remove `#[ignore]` attribute from `test_fixed32_fdiv`
+In `lp-glsl/crates/lp-glsl-compiler/src/backend/transform/q32/converters/arithmetic.rs`:
+- Remove `#[ignore]` attribute from `test_q32_fdiv`
 - Test should now pass with the builtin
 
 ### 5.2 Run Unit Tests
 
 Execute tests for arithmetic converters:
-- `cargo test --package lp-glsl-compiler --lib backend::transform::fixed32::converters::arithmetic`
+- `cargo test --package lp-glsl-compiler --lib backend::transform::q32::converters::arithmetic`
 - Verify all tests pass:
-  - `test_fixed32_fadd`
-  - `test_fixed32_fsub`
-  - `test_fixed32_fmul`
-  - `test_fixed32_fdiv` (now unignored)
+  - `test_q32_fadd`
+  - `test_q32_fsub`
+  - `test_q32_fmul`
+  - `test_q32_fdiv` (now unignored)
 
 ### 5.3 Run Filetests
 
@@ -40,7 +40,7 @@ Test that the transform correctly uses builtins:
 
 ## Success Criteria
 
-- `test_fixed32_fdiv` unignored and passing
+- `test_q32_fdiv` unignored and passing
 - All unit tests pass
 - All relevant filetests pass
 - Transform correctly generates builtin calls

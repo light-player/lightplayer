@@ -1,8 +1,8 @@
-# Planning Notes: Fixed32 Metrics App
+# Planning Notes: Q32 Metrics App
 
 ## Overview
 
-Create a new app `fixed32-metrics` in `lp-glsl/apps/` that tracks the effects of fixed32 transform optimizations by generating detailed before/after reports for GLSL test files.
+Create a new app `q32-metrics` in `lp-glsl/apps/` that tracks the effects of q32 transform optimizations by generating detailed before/after reports for GLSL test files.
 
 ## Questions
 
@@ -11,7 +11,7 @@ Create a new app `fixed32-metrics` in `lp-glsl/apps/` that tracks the effects of
 **Context:**
 The app needs to:
 - Compile GLSL files to CLIF IR (before transform)
-- Apply fixed32 transform
+- Apply q32 transform
 - Generate CLIF IR (after transform)
 - Collect statistics (blocks, instructions, values, CLIF text size)
 - Generate reports in markdown and JSON formats
@@ -35,14 +35,14 @@ The app needs a directory of GLSL test files. The user mentioned starting with G
 
 **Question:**
 Where should the test GLSL files live? Options:
-- `tests/` directory in the app (like `lp-glsl/apps/fixed32-metrics/tests/`)
-- Separate directory like `lp-glsl/apps/fixed32-metrics/test-shaders/`
+- `tests/` directory in the app (like `lp-glsl/apps/q32-metrics/tests/`)
+- Separate directory like `lp-glsl/apps/q32-metrics/test-shaders/`
 - Configurable via command-line argument
 
 **Suggested Answer:**
-Use `tests/` directory in the app root (`lp-glsl/apps/fixed32-metrics/tests/`). Allow override via command-line argument `--tests-dir` or `-t`. Start with GLSL files extracted from `tests.rs` and add basic math operator test cases.
+Use `tests/` directory in the app root (`lp-glsl/apps/q32-metrics/tests/`). Allow override via command-line argument `--tests-dir` or `-t`. Start with GLSL files extracted from `tests.rs` and add basic math operator test cases.
 
-**Answer:** Use `lp-glsl/apps/fixed32-metrics/glsl/` directory. Allow override via `--tests-dir` or `-t` command-line argument. Start with GLSL files extracted from `tests.rs` and add basic math operator test cases.
+**Answer:** Use `lp-glsl/apps/q32-metrics/glsl/` directory. Allow override via `--tests-dir` or `-t` command-line argument. Start with GLSL files extracted from `tests.rs` and add basic math operator test cases.
 
 ### Q3: Report Directory Structure
 
@@ -186,8 +186,8 @@ Start simple:
 - `-h, --help` - help message
 
 **Answer:** Directories should be required options (no defaults). Create a wrapper script in `scripts/` that runs the app with good defaults:
-- `--tests-dir` defaults to `lp-glsl/apps/fixed32-metrics/glsl`
-- `--output-dir` defaults to `docs/reports/fixed32`
+- `--tests-dir` defaults to `lp-glsl/apps/q32-metrics/glsl`
+- `--output-dir` defaults to `docs/reports/q32`
 - `--format` defaults to `Fixed16x16`
 
 ### Q10: Dependencies
@@ -198,7 +198,7 @@ The app needs to use `lp-glsl-compiler` and related crates.
 **Question:**
 What features should we enable? The app needs:
 - Compilation to CLIF IR
-- Fixed32 transform
+- Q32 transform
 - CLIF formatting utilities
 - Standard library features (file I/O, JSON serialization)
 

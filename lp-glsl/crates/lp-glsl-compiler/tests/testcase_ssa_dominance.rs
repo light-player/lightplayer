@@ -48,12 +48,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {
@@ -88,12 +88,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {
@@ -122,12 +122,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {
@@ -175,12 +175,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {
@@ -207,7 +207,7 @@ fn test_arithmetic_with_constants_in_branches() {
 vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     float x;
     if (time < 0.5) {
-        x = 1.0 + 0.0;  // Creates constants and calls __lp_fixed32_add
+        x = 1.0 + 0.0;  // Creates constants and calls __lp_q32_add
     } else {
         x = 0.0 + 1.0;  // Uses constants 0.0 and 1.0 that may have been created in the other branch
     }
@@ -215,12 +215,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {
@@ -260,12 +260,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {
@@ -315,12 +315,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {
@@ -387,12 +387,12 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
 }
 "#;
 
-    let options_fixed32 = GlslOptions {
+    let options_q32 = GlslOptions {
         run_mode: RunMode::HostJit,
-        decimal_format: DecimalFormat::Fixed32,
+        decimal_format: DecimalFormat::Q32,
     };
 
-    let result = glsl_jit(glsl, options_fixed32);
+    let result = glsl_jit(glsl, options_q32);
 
     match result {
         Ok(_executable) => {

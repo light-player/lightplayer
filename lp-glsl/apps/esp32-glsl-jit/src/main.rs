@@ -23,7 +23,7 @@ use cranelift_codegen::isa::riscv32::isa_builder;
 use cranelift_codegen::settings::{self, Configurable};
 use lp_builtins::util::q32::Q32;
 use lp_glsl_compiler::Compiler;
-use lp_glsl_compiler::backend::transform::fixed32::{Fixed32Transform, FixedPointFormat};
+use lp_glsl_compiler::backend::transform::q32::{FixedPointFormat, Q32Transform};
 use target_lexicon::Triple;
 
 use esp_println::println;
@@ -257,23 +257,23 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     drop(compiler);
     print_memory_stats("After Dropping Compiler");
 
-    // Apply fixed32 transform to convert f32 operations to fixed-point (i32)
-    println!("Step 2b: Applying fixed32 transform...");
-    print_memory_stats("Before Fixed32 Transform");
+    // Apply q32 transform to convert f32 operations to fixed-point (i32)
+    println!("Step 2b: Applying q32 transform...");
+    print_memory_stats("Before Q32 Transform");
 
     // Explicitly drop the old module after transform by moving it into the function
     // The transform consumes gl_module and creates a new one, but both may exist temporarily
     let q32_module =
-        match gl_module.apply_transform(Fixed32Transform::new(FixedPointFormat::Fixed16x16)) {
+        match gl_module.apply_transform(Q32Transform::new(FixedPointFormat::Fixed16x16)) {
             Ok(module) => {
-                println!("  ✓ Fixed32 transform applied");
+                println!("  ✓ Q32 transform applied");
                 // The old gl_module should be dropped now, but let's verify
-                print_memory_stats("After Fixed32 Transform");
+                print_memory_stats("After Q32 Transform");
                 module
             }
             Err(e) => {
-                println!("Failed to apply fixed32 transform: {}", e.message.as_str());
-                panic!("Fixed32 transform failed");
+                println!("Failed to apply q32 transform: {}", e.message.as_str());
+                panic!("Q32 transform failed");
             }
         };
 
@@ -318,10 +318,10 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     const IMAGE_HEIGHT: i32 = 32;
     const PIXELS_PER_FRAME: u32 = (IMAGE_WIDTH * IMAGE_HEIGHT) as u32;
 
-    // Convert to fixed32 using Q32
+    // Convert to q32 using Q32
     let output_size = [
-        Q32::from_i32(IMAGE_WIDTH).to_fixed(),  // width in fixed32
-        Q32::from_i32(IMAGE_HEIGHT).to_fixed(), // height in fixed32
+        Q32::from_i32(IMAGE_WIDTH).to_fixed(),  // width in q32
+        Q32::from_i32(IMAGE_HEIGHT).to_fixed(), // height in q32
     ];
 
     println!(
@@ -333,8 +333,8 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     let mut frame_count: u32 = 0;
     let mut last_fps_report = Instant::now();
     const FPS_REPORT_INTERVAL_MS: u64 = 2000; // Report FPS every 2 seconds
-    let mut time = Q32::ZERO; // Time in fixed32
-    // TIME_STEP = 0.016 seconds (~60 FPS) in fixed32
+    let mut time = Q32::ZERO; // Time in q32
+    // TIME_STEP = 0.016 seconds (~60 FPS) in q32
     // Using Q32::from_f32 would require f32, so we construct directly
     // 0.016 * 65536 = 1048.576, rounded to 1049
     const TIME_STEP: Q32 = Q32(1049);
@@ -349,7 +349,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
             for x in 0..IMAGE_WIDTH {
                 // Call shader main function directly
                 // Signature: vec4 main(vec2 fragCoord, vec2 outputSize, float time)
-                // All values are in fixed32 format (i32)
+                // All values are in q32 format (i32)
                 let frag_coord = [Q32::from_i32(x).to_fixed(), Q32::from_i32(y).to_fixed()];
                 let [r, g, b, a] = unsafe {
                     shader_call::call_vec4_shader(
@@ -364,7 +364,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
                     })
                 };
 
-                // r, g, b, a are fixed32 (i32) values
+                // r, g, b, a are q32 (i32) values
                 // In a real implementation, we would store these in a framebuffer
                 // For now, we just compute it to test the shader
                 let _ = (r, g, b, a);

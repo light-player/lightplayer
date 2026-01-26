@@ -27,7 +27,7 @@ pub fn run(
         .to_string();
 
     // Determine target and options
-    let target_str = test_file.target.as_deref().unwrap_or("riscv32.fixed32");
+    let target_str = test_file.target.as_deref().unwrap_or("riscv32.q32");
     let (run_mode, decimal_format) = target::parse_target(target_str)?;
 
     let options = GlslOptions {

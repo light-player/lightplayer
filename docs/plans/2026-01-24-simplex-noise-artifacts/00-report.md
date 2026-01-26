@@ -8,7 +8,7 @@ The simplex noise implementation exhibits visible artifacts including diagonal l
 
 ### 1. **Sign Error in 2D Offset Calculation** (CRITICAL)
 
-**Location**: `lp-builtins/src/builtins/fixed32/lpfx_simplex2.rs:98-99`
+**Location**: `lp-builtins/src/builtins/q32/lpfx_simplex2.rs:98-99`
 
 **Current (WRONG)**:
 ```rust
@@ -31,7 +31,7 @@ let offset2 = offset1 - order + unskew_factor;
 
 ### 2. **Sign Error in 3D Offset Calculations** (CRITICAL)
 
-**Location**: `lp-builtins/src/builtins/fixed32/lpfx_simplex3.rs:163-165`
+**Location**: `lp-builtins/src/builtins/q32/lpfx_simplex3.rs:163-165`
 
 **Current (WRONG)**:
 ```rust

@@ -24,10 +24,10 @@ struct BuiltinInfo {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let workspace_root = find_workspace_root().expect("Failed to find workspace root");
-    let fixed32_dir = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/fixed32");
+    let q32_dir = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/q32");
     let lpfx_dir = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/lpfx");
 
-    let mut builtins = discover_builtins(&fixed32_dir).expect("Failed to discover builtins");
+    let mut builtins = discover_builtins(&q32_dir).expect("Failed to discover builtins");
     let lpfx_builtins = discover_builtins(&lpfx_dir).expect("Failed to discover lpfx builtins");
     builtins.extend(lpfx_builtins);
 
@@ -40,18 +40,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let builtin_refs_path = workspace_root.join("lp-glsl/apps/lp-builtins-app/src/builtin_refs.rs");
     generate_builtin_refs(&builtin_refs_path, &builtins);
 
-    // Generate mod.rs (only fixed32 functions, not lpfx functions)
-    let fixed32_builtins: Vec<BuiltinInfo> = builtins
+    // Generate mod.rs (only q32 functions, not lpfx functions)
+    let q32_builtins: Vec<BuiltinInfo> = builtins
         .iter()
         .filter(|b| !b.function_name.starts_with("__lpfx_"))
         .cloned()
         .collect();
-    let mod_rs_path = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/fixed32/mod.rs");
-    generate_mod_rs(&mod_rs_path, &fixed32_builtins);
+    let mod_rs_path = workspace_root.join("lp-glsl/crates/lp-builtins/src/builtins/q32/mod.rs");
+    generate_mod_rs(&mod_rs_path, &q32_builtins);
 
     // Generate testcase mapping in math.rs
     let math_rs_path = workspace_root
-        .join("lp-glsl/crates/lp-glsl-compiler/src/backend/transform/fixed32/converters/math.rs");
+        .join("lp-glsl/crates/lp-glsl-compiler/src/backend/transform/q32/converters/math.rs");
     generate_testcase_mapping(&math_rs_path, &builtins);
 
     // Generate lpfx_fns.rs
@@ -185,7 +185,7 @@ fn extract_builtin(func: &ItemFn, file_name: &str) -> Option<BuiltinInfo> {
     // 2. Split by _ and capitalize each word
     // 3. Join together
     // Examples:
-    // __lp_fixed32_sqrt -> LpFixed32Sqrt
+    // __lp_q32_sqrt -> LpQ32Sqrt
     // __lpfx_hash_1 -> LpfxHash1
     // __lpfx_simplex1_q32 -> LpfxSimplex1Q32
     let name_without_prefix = func_name.strip_prefix("__").unwrap();
@@ -439,14 +439,14 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
     let has_simplex = builtins
         .iter()
         .any(|b| b.function_name.contains("lpfx_simplex"));
-    let has_fixed32 = builtins
+    let has_q32 = builtins
         .iter()
         .any(|b| !b.function_name.starts_with("__lpfx_"));
 
     // Generate imports
     let mut imports = Vec::new();
-    if has_fixed32 {
-        imports.push("fixed32".to_string());
+    if has_q32 {
+        imports.push("q32".to_string());
     }
     if has_hash || has_simplex {
         let mut lpfx_imports = Vec::new();
@@ -481,7 +481,7 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
                 // Simplex functions are in simplex::simplex1_q32::__lpfx_simplex1_q32
                 &format!("simplex::{}", builtin.file_name)
             } else {
-                "fixed32"
+                "q32"
             };
             output.push_str(&format!(
                 "        BuiltinId::{} => {}::{} as *const u8,\n",
@@ -565,8 +565,8 @@ fn generate_builtin_refs(path: &Path, builtins: &[BuiltinInfo]) {
     if builtins.is_empty() {
         output.push_str("// No builtins to import\n\n");
     } else {
-        // Split builtins by module (fixed32 vs lpfx)
-        let fixed32_builtins: Vec<_> = builtins
+        // Split builtins by module (q32 vs lpfx)
+        let q32_builtins: Vec<_> = builtins
             .iter()
             .filter(|b| !b.function_name.starts_with("__lpfx_"))
             .collect();
@@ -579,10 +579,10 @@ fn generate_builtin_refs(path: &Path, builtins: &[BuiltinInfo]) {
             .filter(|b| b.function_name.contains("lpfx_simplex"))
             .collect();
 
-        // Generate imports for fixed32 functions
-        if !fixed32_builtins.is_empty() {
-            output.push_str("use lp_builtins::builtins::fixed32::{\n");
-            for (i, builtin) in fixed32_builtins.iter().enumerate() {
+        // Generate imports for q32 functions
+        if !q32_builtins.is_empty() {
+            output.push_str("use lp_builtins::builtins::q32::{\n");
+            for (i, builtin) in q32_builtins.iter().enumerate() {
                 if i > 0 {
                     output.push_str(",\n");
                 }
@@ -777,7 +777,7 @@ fn generate_testcase_mapping(path: &Path, builtins: &[BuiltinInfo]) {
         for builtin in builtins {
             // Check if this is an LPFX function by checking if symbol name starts with __lpfx_
             if builtin.symbol_name.starts_with("__lpfx_") {
-                // For Fixed32 transform, skip f32 variants - only generate Q32 mappings
+                // For Q32 transform, skip f32 variants - only generate Q32 mappings
                 if builtin.symbol_name.ends_with("_f32") {
                     continue;
                 }
@@ -811,28 +811,28 @@ fn generate_testcase_mapping(path: &Path, builtins: &[BuiltinInfo]) {
                     continue;
                 }
             }
-            // Not an LPFX function or lookup failed - treat as regular fixed32 function
-            // Regular fixed32 functions
+            // Not an LPFX function or lookup failed - treat as regular q32 function
+            // Regular q32 functions
             let base_name = strip_function_prefix(&builtin.symbol_name);
 
-            // Generate C math function name (e.g., lp_fixed32_sinf)
+            // Generate C math function name (e.g., lp_q32_sinf)
             let c_name = format!("{}f", base_name);
 
-            // Generate intrinsic name - for fixed32 functions, use the symbol name directly
-            // (e.g., __lp_fixed32_sin)
+            // Generate intrinsic name - for q32 functions, use the symbol name directly
+            // (e.g., __lp_q32_sin)
             let intrinsic_name = builtin.symbol_name.clone();
 
-            // Extract standard C math function name (e.g., "sinf" from "__lp_fixed32_sin")
-            // Pattern: __lp_fixed32_<name> -> <name>f
+            // Extract standard C math function name (e.g., "sinf" from "__lp_q32_sin")
+            // Pattern: __lp_q32_<name> -> <name>f
             let standard_c_name =
-                if let Some(name_part) = builtin.symbol_name.strip_prefix("__lp_fixed32_") {
+                if let Some(name_part) = builtin.symbol_name.strip_prefix("__lp_q32_") {
                     format!("{}f", name_part)
                 } else {
                     String::new()
                 };
 
             // Special case: GLSL's mod() compiles to fmodf, not modf
-            // Check if function name ends with _mod (e.g., __lp_fixed32_mod)
+            // Check if function name ends with _mod (e.g., __lp_q32_mod)
             let additional_names = if builtin.symbol_name.ends_with("_mod")
                 || builtin.symbol_name.ends_with("_mod\"")
             {

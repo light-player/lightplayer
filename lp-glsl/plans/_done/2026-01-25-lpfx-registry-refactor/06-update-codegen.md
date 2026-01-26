@@ -18,7 +18,7 @@ Replace:
 - `LpfxFnId::from_name_and_args` with `find_lpfx_fn`
 - `lp_fn.builtin_id()` with registry lookup
 - `lp_fn.symbol_name()` with `impl.rust_fn_name`
-- `lp_fn.needs_fixed32_mapping()` with checking `impl.decimal_format`
+- `lp_fn.needs_q32_mapping()` with checking `impl.decimal_format`
 - `lp_fn.return_type()` with `fn.glsl_sig.return_type`
 - Use signature helpers for argument expansion and type conversion
 - Use `get_impl_for_format` to find correct implementation

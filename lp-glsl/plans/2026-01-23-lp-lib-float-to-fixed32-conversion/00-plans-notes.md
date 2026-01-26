@@ -1,4 +1,4 @@
-# Questions for LP Library Float-to-Fixed32 Conversion Plan
+# Questions for LP Library Float-to-Q32 Conversion Plan
 
 ## Context
 
@@ -6,16 +6,16 @@ We implemented LP library functions (`lpfx_simplex1`, `lpfx_simplex2`, `lpfx_sim
 
 - **LP library functions are semantically float functions** - they operate on float types in GLSL
 - **Eventually we'll have float implementations** - when native float support is added
-- **Currently we only support fixed32** - so we have `__lp_fixed32_lpfx_simplex3` implementations
-- **The compiler should generate float calls** - which the fixed32 transform then converts
+- **Currently we only support q32** - so we have `__lp_q32_lpfx_simplex3` implementations
+- **The compiler should generate float calls** - which the q32 transform then converts
 
 This matches the pattern used for `sin`/`cos`:
 - Codegen generates TestCase calls to `"sinf"` or `"__lp_sin"` (float semantics)
-- Fixed32 transform converts `"sinf"` → `__lp_fixed32_sin` via `map_testcase_to_builtin()`
+- Q32 transform converts `"sinf"` → `__lp_q32_sin` via `map_testcase_to_builtin()`
 
 Currently, `lp_lib` functions bypass this pattern:
 - Codegen directly calls builtins via `get_builtin_func_ref()` 
-- This skips the float → fixed32 conversion step
+- This skips the float → q32 conversion step
 
 ## Questions
 
@@ -52,23 +52,23 @@ Currently, `lp_lib` functions bypass this pattern:
 
 ### Q3: BuiltinId Mapping Strategy
 
-**Context**: The registry has been regenerated. `BuiltinId::LpSimplex3.name()` should now return `"__lp_fixed32_lpfx_simplex3"` (the actual function name). The mapping table maps `"__lpfx_simplex3"` (semantic/float name from `LpLibFn::symbol_name()`) → `BuiltinId::LpSimplex3`.
+**Context**: The registry has been regenerated. `BuiltinId::LpSimplex3.name()` should now return `"__lp_q32_lpfx_simplex3"` (the actual function name). The mapping table maps `"__lpfx_simplex3"` (semantic/float name from `LpLibFn::symbol_name()`) → `BuiltinId::LpSimplex3`.
 
 **Question**: How should the transform convert TestCase calls?
 
 **Suggested Answer**: The transform should:
 1. Map `"__lpfx_simplex3"` → `BuiltinId::LpSimplex3` via `map_testcase_to_builtin()`
-2. Use `BuiltinId::LpSimplex3.name()` to get `"__lp_fixed32_lpfx_simplex3"`
-3. Look up `"__lp_fixed32_lpfx_simplex3"` in `func_id_map` to get the FuncId
+2. Use `BuiltinId::LpSimplex3.name()` to get `"__lp_q32_lpfx_simplex3"`
+3. Look up `"__lp_q32_lpfx_simplex3"` in `func_id_map` to get the FuncId
 4. Create call to that function
 
-This matches how `sin` works: `"sinf"` → `BuiltinId::Fixed32Sin` → `"__lp_fixed32_sin"`.
+This matches how `sin` works: `"sinf"` → `BuiltinId::Q32Sin` → `"__lp_q32_sin"`.
 
 **Note**: The generator should be driven by `LpLibFn` enum, not prefix matching. It should:
 - Read `LpLibFn` enum to know what LP library functions exist
 - Match discovered function names to `LpLibFn::symbol_name()` values
 - Use `LpLibFn::builtin_id()` to determine the `BuiltinId` variant
-- Generate registry entries based on actual function names (which may be `__lp_fixed32_lpfx_simplex3`)
+- Generate registry entries based on actual function names (which may be `__lp_q32_lpfx_simplex3`)
 
 ### Q4: Hash Function Handling
 
@@ -77,16 +77,16 @@ This matches how `sin` works: `"sinf"` → `BuiltinId::Fixed32Sin` → `"__lp_fi
 **Question**: Should hash functions follow the same pattern, or stay as-is?
 
 **Suggested Answer**: `LpLibFn` should be the source of truth for determining:
-1. Whether a function needs fixed32 mapping (simplex functions do, hash functions don't)
-2. What the fixed32 implementation name is (e.g., `__lp_fixed32_lpfx_simplex3` for simplex functions)
+1. Whether a function needs q32 mapping (simplex functions do, hash functions don't)
+2. What the q32 implementation name is (e.g., `__lp_q32_lpfx_simplex3` for simplex functions)
 
 Hash functions don't need conversion, so they can stay as direct builtin calls. But `LpLibFn` should have methods to determine this programmatically.
 
-**ANSWERED**: Option A - Keep hash functions as direct builtin calls, but extend `LpLibFn` with methods to determine if a function needs fixed32 mapping and what the mapped name is. This keeps the source of truth in `LpLibFn`.
+**ANSWERED**: Option A - Keep hash functions as direct builtin calls, but extend `LpLibFn` with methods to determine if a function needs q32 mapping and what the mapped name is. This keeps the source of truth in `LpLibFn`.
 
 **Implementation Note**: Add methods to `LpLibFn`:
-- `fixed32_name(&self) -> Option<&'static str>` - returns `Some("__lp_fixed32_lpfx_simplex3")` for simplex functions, `None` for hash functions (single source of truth)
-- `needs_fixed32_mapping(&self) -> bool` - delegates to `fixed32_name().is_some()` to keep a single source of truth
+- `q32_name(&self) -> Option<&'static str>` - returns `Some("__lp_q32_lpfx_simplex3")` for simplex functions, `None` for hash functions (single source of truth)
+- `needs_q32_mapping(&self) -> bool` - delegates to `q32_name().is_some()` to keep a single source of truth
 
 This allows codegen to check if a function needs TestCase conversion or can be called directly.
 
@@ -98,8 +98,8 @@ This allows codegen to check if a function needs TestCase conversion or can be c
 
 **Suggested Answer**: Generator should:
 1. Read `LpLibFn` enum to know what functions exist
-2. For each variant, look for matching function name (e.g., `__lp_fixed32_lpfx_simplex3` for simplex, `__lpfx_hash_*` for hash)
-3. Use `LpLibFn::builtin_id()` to determine `BuiltinId` variant name (e.g., `LpSimplex3`, not `Fixed32LpSimplex3`)
+2. For each variant, look for matching function name (e.g., `__lp_q32_lpfx_simplex3` for simplex, `__lpfx_hash_*` for hash)
+3. Use `LpLibFn::builtin_id()` to determine `BuiltinId` variant name (e.g., `LpSimplex3`, not `Q32LpSimplex3`)
 4. Map `BuiltinId::LpSimplex3.name()` to actual function name found
 
 **ANSWERED**: Confirmed by user. Generator should use `LpLibFn` enum as source of truth and match discovered functions to expected names.
@@ -120,12 +120,12 @@ This allows codegen to check if a function needs TestCase conversion or can be c
 
 **Question**: Should we create placeholder float implementations, or just assume they'll be added later?
 
-**Suggested Answer**: No placeholder needed. The architecture should support float implementations, but we don't need to implement them now. When float support is added, we'll add `__lp_float_lpfx_simplex3` (or similar) implementations, and the codegen will generate calls to those instead of the fixed32 versions.
+**Suggested Answer**: No placeholder needed. The architecture should support float implementations, but we don't need to implement them now. When float support is added, we'll add `__lp_float_lpfx_simplex3` (or similar) implementations, and the codegen will generate calls to those instead of the q32 versions.
 
-Actually, wait - if we're generating TestCase calls to `__lpfx_simplex3`, and there's no float implementation yet, what happens? The transform will convert `__lpfx_simplex3` → `__lp_fixed32_lpfx_simplex3`, which exists. So the current flow is:
+Actually, wait - if we're generating TestCase calls to `__lpfx_simplex3`, and there's no float implementation yet, what happens? The transform will convert `__lpfx_simplex3` → `__lp_q32_lpfx_simplex3`, which exists. So the current flow is:
 - Codegen: `lpfx_simplex3(...)` → TestCase call to `__lpfx_simplex3`
-- Transform: `__lpfx_simplex3` → `__lp_fixed32_lpfx_simplex3` (via mapping)
-- Runtime: Calls `__lp_fixed32_lpfx_simplex3`
+- Transform: `__lpfx_simplex3` → `__lp_q32_lpfx_simplex3` (via mapping)
+- Runtime: Calls `__lp_q32_lpfx_simplex3`
 
 When float support is added:
 - Codegen: `lpfx_simplex3(...)` → TestCase call to `__lpfx_simplex3` (same)
@@ -139,23 +139,23 @@ So the TestCase name `__lpfx_simplex3` represents the "semantic" function, and t
 ### Current State Analysis
 
 1. **Registry Mismatch**:
-   - Registry has `Fixed32LpSimplex1/2/3` (generated from prefix matching)
+   - Registry has `Q32LpSimplex1/2/3` (generated from prefix matching)
    - `lp_lib_fns.rs` expects `LpSimplex1/2/3` (semantic names)
    - Generator needs to use `LpLibFn` enum as source of truth
 
 2. **Codegen** (`lp_lib_fns.rs`):
    - Currently calls `get_builtin_func_ref(builtin_id)` directly
-   - This bypasses the TestCase → fixed32 conversion pattern
+   - This bypasses the TestCase → q32 conversion pattern
    - Should emit TestCase calls using `LpLibFn::symbol_name()` (e.g., `"__lpfx_simplex3"`)
 
 3. **Transform** (`calls.rs`):
    - `map_testcase_to_builtin()` should map `"__lpfx_simplex3"` → `BuiltinId::LpSimplex3`
-   - `BuiltinId::LpSimplex3.name()` should return `"__lp_fixed32_lpfx_simplex3"` (actual function)
-   - Transform looks up `"__lp_fixed32_lpfx_simplex3"` in `func_id_map`
+   - `BuiltinId::LpSimplex3.name()` should return `"__lp_q32_lpfx_simplex3"` (actual function)
+   - Transform looks up `"__lp_q32_lpfx_simplex3"` in `func_id_map`
 
 4. **Hash Functions**:
    - In `builtins/shared/` (correct - not float-specific)
-   - Use `__lpfx_hash_*` naming (no `fixed32` prefix)
+   - Use `__lpfx_hash_*` naming (no `q32` prefix)
    - Should continue to work, but verify codegen path
 
 ### Architecture
@@ -168,15 +168,15 @@ So the TestCase name `__lpfx_simplex3` represents the "semantic" function, and t
 **Generator Should**:
 - Read `LpLibFn` enum to know what functions exist
 - Match discovered function names to `LpLibFn::symbol_name()` values
-- Generate `BuiltinId` variants matching `LpLibFn::builtin_id()` (e.g., `LpSimplex3`, not `Fixed32LpSimplex3`)
-- Map `BuiltinId::LpSimplex3.name()` to actual function name (`__lp_fixed32_lpfx_simplex3`)
+- Generate `BuiltinId` variants matching `LpLibFn::builtin_id()` (e.g., `LpSimplex3`, not `Q32LpSimplex3`)
+- Map `BuiltinId::LpSimplex3.name()` to actual function name (`__lp_q32_lpfx_simplex3`)
 
 **Flow**:
 1. Codegen: `lpfx_simplex3(...)` → TestCase call to `LpLibFn::Simplex3.symbol_name()` = `"__lpfx_simplex3"`
 2. Transform: `"__lpfx_simplex3"` → `BuiltinId::LpSimplex3` (via `map_testcase_to_builtin()`)
-3. Transform: `BuiltinId::LpSimplex3.name()` → `"__lp_fixed32_lpfx_simplex3"`
-4. Transform: Look up `"__lp_fixed32_lpfx_simplex3"` in `func_id_map` → create call
-5. Runtime: Calls `__lp_fixed32_lpfx_simplex3`
+3. Transform: `BuiltinId::LpSimplex3.name()` → `"__lp_q32_lpfx_simplex3"`
+4. Transform: Look up `"__lp_q32_lpfx_simplex3"` in `func_id_map` → create call
+5. Runtime: Calls `__lp_q32_lpfx_simplex3`
 
 ### Implementation Strategy
 
@@ -184,21 +184,21 @@ So the TestCase name `__lpfx_simplex3` represents the "semantic" function, and t
    - Read `LpLibFn` enum from `lp_lib_fns.rs` 
    - Match discovered functions to `LpLibFn::symbol_name()` values
    - Use `LpLibFn::builtin_id()` to determine `BuiltinId` variant
-   - Generate registry with actual function names (e.g., `__lp_fixed32_lpfx_simplex3`)
+   - Generate registry with actual function names (e.g., `__lp_q32_lpfx_simplex3`)
 
 2. **Fix Codegen** - Change `emit_lp_lib_fn_call()` to emit TestCase calls:
    - Use `LpLibFn::symbol_name()` to get TestCase name (e.g., `"__lpfx_simplex3"`)
    - Emit TestCase call instead of direct builtin call
-   - Let fixed32 transform handle conversion
+   - Let q32 transform handle conversion
 
 3. **Verify Transform** - Ensure `map_testcase_to_builtin()` correctly maps:
    - `"__lpfx_simplex3"` → `BuiltinId::LpSimplex3`
-   - Transform uses `BuiltinId::LpSimplex3.name()` → `"__lp_fixed32_lpfx_simplex3"`
-   - Looks up `"__lp_fixed32_lpfx_simplex3"` in `func_id_map`
+   - Transform uses `BuiltinId::LpSimplex3.name()` → `"__lp_q32_lpfx_simplex3"`
+   - Looks up `"__lp_q32_lpfx_simplex3"` in `func_id_map`
 
 4. **Test** - Verify end-to-end flow:
    - Codegen emits TestCase call to `"__lpfx_simplex3"`
-   - Transform converts to `__lp_fixed32_lpfx_simplex3` call
+   - Transform converts to `__lp_q32_lpfx_simplex3` call
    - Runtime calls correct function
 
 5. **Hash Functions** - Verify hash functions still work (they're not float-specific, so may not need conversion)

@@ -2,7 +2,7 @@
 
 ## Description
 
-Update all JIT tests to use `DecimalFormat::Fixed32` instead of `DecimalFormat::Float`. The Float format is explicitly rejected in `compile_glsl_to_gl_module_jit()` and is not yet supported.
+Update all JIT tests to use `DecimalFormat::Q32` instead of `DecimalFormat::Float`. The Float format is explicitly rejected in `compile_glsl_to_gl_module_jit()` and is not yet supported.
 
 ## Tests to Fix
 
@@ -13,7 +13,7 @@ Update all JIT tests to use `DecimalFormat::Fixed32` instead of `DecimalFormat::
 
 ## Implementation
 
-1. Update each test to use `DecimalFormat::Fixed32` instead of `DecimalFormat::Float`
+1. Update each test to use `DecimalFormat::Q32` instead of `DecimalFormat::Float`
 2. For `test_jit_float_literal`: Convert expected float value to fixed-point format for comparison
 3. Run tests to verify they pass
 

@@ -1,17 +1,17 @@
 /// Direct shader function calling without abstraction overhead
 use lp_jit_util::call_structreturn_with_args;
 
-/// Call a vec4 shader function directly using fixed32 format
+/// Call a vec4 shader function directly using q32 format
 ///
 /// # Arguments
 /// - `func_ptr`: Function pointer to the compiled shader
-/// - `frag_coord`: Fragment coordinates [x, y] as fixed32 (i32)
-/// - `output_size`: Output size [width, height] as fixed32 (i32)
-/// - `time`: Time value as fixed32 (i32)
+/// - `frag_coord`: Fragment coordinates [x, y] as q32 (i32)
+/// - `output_size`: Output size [width, height] as q32 (i32)
+/// - `time`: Time value as q32 (i32)
 /// - `isa`: ISA for calling convention and pointer type
 ///
 /// # Returns
-/// Returns [r, g, b, a] as fixed32 (i32) values
+/// Returns [r, g, b, a] as q32 (i32) values
 pub unsafe fn call_vec4_shader(
     func_ptr: *const u8,
     frag_coord: [i32; 2],
@@ -44,7 +44,7 @@ pub unsafe fn call_vec4_shader(
         )?;
     }
 
-    // Extract vec4 result (r, g, b, a) as i32 fixed32 values from buffer
+    // Extract vec4 result (r, g, b, a) as i32 q32 values from buffer
     let r = i32::from_le_bytes([
         result_buffer[0],
         result_buffer[1],

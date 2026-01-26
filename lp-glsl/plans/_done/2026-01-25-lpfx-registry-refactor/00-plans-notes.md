@@ -91,7 +91,7 @@ The user has started sketching an idea in `/Users/yona/dev/photomancer/lp2025/lp
 ## Notes
 
 - Current hardcoded checks are in:
-  - `backend/transform/fixed32/converters/math.rs` - `map_testcase_to_builtin` function
+  - `backend/transform/q32/converters/math.rs` - `map_testcase_to_builtin` function
   - `backend/builtins/registry.rs` - `BuiltinId::name()` and signature methods
   - `frontend/codegen/lp_lib_fns.rs` - Uses `LpfxFnId` methods
   - `frontend/semantic/type_check/inference.rs` - Checks for lpfx functions

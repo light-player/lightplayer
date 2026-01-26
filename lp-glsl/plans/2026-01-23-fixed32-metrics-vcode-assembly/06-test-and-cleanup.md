@@ -6,7 +6,7 @@ Run the app, verify all files are generated correctly, check that statistics and
 
 ## Implementation
 
-- Run `./scripts/fixed32-metrics.sh` to generate a report
+- Run `./scripts/q32-metrics.sh` to generate a report
 - Verify vcode files (`.pre.vcode`, `.post.vcode`) are generated for all functions
 - Verify assembly files (`.pre.s`, `.post.s`) are generated for all functions
 - Check that `stats.toml` includes vcode_size and assembly_size fields

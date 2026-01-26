@@ -119,7 +119,7 @@ impl FileUpdate {
         Ok(())
     }
 
-    /// Update CLIF expectations for a test type (compile or transform.fixed32).
+    /// Update CLIF expectations for a test type (compile or transform.q32).
     /// TODO: Implement when CLIF tests are implemented.
     pub fn update_clif_expectations(&self, _test_type: &str, _new_clif: &str) -> Result<()> {
         // TODO: Implement CLIF expectation updates when CLIF tests are implemented

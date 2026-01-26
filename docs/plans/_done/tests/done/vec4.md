@@ -82,7 +82,7 @@ Each test file should follow the pattern from `vec2/`, `vec3/`, and `bvec2/` tes
 
 ```glsl
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Description of what is being tested

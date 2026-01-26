@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // Phase 8: Constant Expression Array Sizes - Support constant expressions for array sizes
 

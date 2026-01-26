@@ -1,10 +1,10 @@
-# Plan: Add VCode and Assembly Generation to Fixed32 Metrics
+# Plan: Add VCode and Assembly Generation to Q32 Metrics
 
 ## Questions
 
 ### Q1: When should we compile functions to get vcode/assembly?
 
-**Context**: Currently, `fixed32-metrics` compiles GLSL to CLIF IR (before and after transform) but doesn't actually compile the functions to machine code. To get vcode and assembly, we need to actually compile the functions using `define_function`, which generates the compiled code.
+**Context**: Currently, `q32-metrics` compiles GLSL to CLIF IR (before and after transform) but doesn't actually compile the functions to machine code. To get vcode and assembly, we need to actually compile the functions using `define_function`, which generates the compiled code.
 
 **Answer**: We should compile functions after we have the CLIF IR but before we write the CLIF files. This means:
 - Compile functions in `module_before` to get vcode/assembly before transform
@@ -14,7 +14,7 @@
 
 ### Q2: How do we access compiled_code from JITModule?
 
-**Context**: Looking at `build_emu_executable` in `emu.rs`, it accesses `ctx.compiled_code()` after calling `define_function`. However, `fixed32-metrics` uses `JITModule`, not `ObjectModule`. The JIT codegen in `jit.rs` doesn't currently capture vcode/disassembly.
+**Context**: Looking at `build_emu_executable` in `emu.rs`, it accesses `ctx.compiled_code()` after calling `define_function`. However, `q32-metrics` uses `JITModule`, not `ObjectModule`. The JIT codegen in `jit.rs` doesn't currently capture vcode/disassembly.
 
 **Answer**: We should **switch from JITModule to ObjectModule**. The emulator already does this correctly:
 - Use `compile_to_gl_module_object()` instead of `compile_to_gl_module_jit()`
@@ -42,7 +42,7 @@
 **Answer**: Capstone should be available (via the `emulator` feature). We'll use the same pattern as `build_emu_executable`:
 - Try to generate real assembly using Capstone disassembler (preferred)
 - If Capstone fails for some reason, fall back to vcode (same pattern as emulator code)
-- The `emulator` feature will be required for the fixed32-metrics app
+- The `emulator` feature will be required for the q32-metrics app
 
 ### Q5: Should we add vcode/assembly sizes to the statistics?
 

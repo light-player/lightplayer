@@ -3,7 +3,7 @@
 ## Context
 
 The builtins directory was reorganized:
-- Functions moved to `glsl/fixed32/`, `internal/fixed32/`, and `lpfx/` directories
+- Functions moved to `glsl/q32/`, `internal/q32/`, and `lpfx/` directories
 - `lp_simplex` and `lp_noise` renamed to use `__lpfx` prefix
 - In GLSL usage: functions use `lpfx_` prefix (already correct)
 - In implementations: functions named `__lpfx_name_<decimal-format>` (e.g., `__lpfx_simplex1_q32`)
@@ -24,7 +24,7 @@ The code is doing direct string checks against function names instead of using `
    - Generator creates mappings based on string checks instead of `LpfxFnId`
 
 3. **Module path determination**:
-   - Generator determines module paths (`fixed32` vs `shared`) based on string checks
+   - Generator determines module paths (`q32` vs `shared`) based on string checks
    - Should use `LpfxFnId` to determine correct module
 
 4. **Function type determination**:
@@ -35,11 +35,11 @@ The code is doing direct string checks against function names instead of using `
 
 ### Q1: Should we update `LpfxFnId` to provide module path information?
 
-**Context**: The generator needs to know which module (`glsl::fixed32`, `lpfx::hash`, `lpfx::simplex`) a function belongs to.
+**Context**: The generator needs to know which module (`glsl::q32`, `lpfx::hash`, `lpfx::simplex`) a function belongs to.
 
 **Suggestion**: Add a method like `module_path()` that returns the module path for the function implementation.
 
-**Answer**: Add `module_name()` function similar to `symbol_name()` that returns the module name (e.g., "lpfx::hash", "glsl::fixed32").
+**Answer**: Add `module_name()` function similar to `symbol_name()` that returns the module name (e.g., "lpfx::hash", "glsl::q32").
 
 ### Q2: Should we update `LpfxFnId` to provide the actual implementation function name?
 

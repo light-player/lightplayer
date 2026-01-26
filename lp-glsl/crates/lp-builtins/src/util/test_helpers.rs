@@ -1,4 +1,4 @@
-//! Test helper functions for fixed32 math functions.
+//! Test helper functions for q32 math functions.
 
 #[cfg(test)]
 extern crate std;
@@ -23,14 +23,14 @@ pub fn fixed_to_float(fixed: i32) -> f32 {
     fixed as f32 / 65536.0
 }
 
-/// Test a fixed32 function with a list of (input, expected_output) pairs.
+/// Test a q32 function with a list of (input, expected_output) pairs.
 ///
 /// # Arguments
 /// * `func` - The function to test (takes i32, returns i32)
 /// * `test_cases` - Array of (input_float, expected_output_float) pairs
 /// * `tolerance` - Maximum allowed absolute error between expected and actual
 #[allow(dead_code, reason = "Test helper function")]
-pub fn test_fixed32_function<F>(func: F, test_cases: &[(f32, f32)], tolerance: f32)
+pub fn test_q32_function<F>(func: F, test_cases: &[(f32, f32)], tolerance: f32)
 where
     F: Fn(i32) -> i32 + Copy,
 {
@@ -58,7 +58,7 @@ where
     }
 }
 
-/// Test a fixed32 function with relative tolerance.
+/// Test a q32 function with relative tolerance.
 ///
 /// Uses relative tolerance: `|actual - expected| < max(expected.abs() * tolerance, min_tolerance)`
 ///
@@ -67,7 +67,7 @@ where
 /// * `test_cases` - Array of (input_float, expected_output_float) pairs
 /// * `tolerance` - Relative tolerance (e.g., 0.02 for 2%)
 /// * `min_tolerance` - Minimum absolute tolerance for values near zero
-pub fn test_fixed32_function_relative<F>(
+pub fn test_q32_function_relative<F>(
     func: F,
     test_cases: &[(f32, f32)],
     tolerance: f32,

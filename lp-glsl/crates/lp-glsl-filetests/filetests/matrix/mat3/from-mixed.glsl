@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // From Mixed: mat3(vec3, vec3, float, float, float) etc. - construct from mixed types

@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // From Mixed: uvec4(int, float, bool, ivec4, bvec4, vec4) - type conversions

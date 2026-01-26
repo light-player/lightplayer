@@ -8,7 +8,7 @@ Add tests and verify the implementation works end-to-end.
 
 ### 3.1 Add Unit Tests
 
-In `lp-builtins/src/fixed32/sin.rs`:
+In `lp-builtins/src/q32/sin.rs`:
 - Add tests using the test helper functions from phase 1
 - Test cases:
   - Basic values: sin(0) = 0, sin(π/2) ≈ 1, sin(π) ≈ 0
@@ -16,7 +16,7 @@ In `lp-builtins/src/fixed32/sin.rs`:
   - Range reduction: sin(2π) ≈ 0, sin(3π/2) ≈ -1
 - Use ~2-3% tolerance for assertions
 
-In `lp-builtins/src/fixed32/cos.rs`:
+In `lp-builtins/src/q32/cos.rs`:
 - Add tests using test helper functions
 - Test cases:
   - Basic values: cos(0) = 1, cos(π/2) ≈ 0, cos(π) ≈ -1

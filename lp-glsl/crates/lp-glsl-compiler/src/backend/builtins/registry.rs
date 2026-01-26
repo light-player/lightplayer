@@ -22,35 +22,35 @@ use alloc::format;
 /// Enum identifying builtin functions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BuiltinId {
-    LpFixed32Acos,
-    LpFixed32Acosh,
-    LpFixed32Add,
-    LpFixed32Asin,
-    LpFixed32Asinh,
-    LpFixed32Atan,
-    LpFixed32Atan2,
-    LpFixed32Atanh,
-    LpFixed32Cos,
-    LpFixed32Cosh,
-    LpFixed32Div,
-    LpFixed32Exp,
-    LpFixed32Exp2,
-    LpFixed32Fma,
-    LpFixed32Inversesqrt,
-    LpFixed32Ldexp,
-    LpFixed32Log,
-    LpFixed32Log2,
-    LpFixed32Mod,
-    LpFixed32Mul,
-    LpFixed32Pow,
-    LpFixed32Round,
-    LpFixed32Roundeven,
-    LpFixed32Sin,
-    LpFixed32Sinh,
-    LpFixed32Sqrt,
-    LpFixed32Sub,
-    LpFixed32Tan,
-    LpFixed32Tanh,
+    LpQ32Acos,
+    LpQ32Acosh,
+    LpQ32Add,
+    LpQ32Asin,
+    LpQ32Asinh,
+    LpQ32Atan,
+    LpQ32Atan2,
+    LpQ32Atanh,
+    LpQ32Cos,
+    LpQ32Cosh,
+    LpQ32Div,
+    LpQ32Exp,
+    LpQ32Exp2,
+    LpQ32Fma,
+    LpQ32Inversesqrt,
+    LpQ32Ldexp,
+    LpQ32Log,
+    LpQ32Log2,
+    LpQ32Mod,
+    LpQ32Mul,
+    LpQ32Pow,
+    LpQ32Round,
+    LpQ32Roundeven,
+    LpQ32Sin,
+    LpQ32Sinh,
+    LpQ32Sqrt,
+    LpQ32Sub,
+    LpQ32Tan,
+    LpQ32Tanh,
     LpfxHash1,
     LpfxHash2,
     LpfxHash3,
@@ -66,35 +66,35 @@ impl BuiltinId {
     /// Get the symbol name for this builtin function.
     pub fn name(&self) -> &'static str {
         match self {
-            BuiltinId::LpFixed32Acos => "__lp_fixed32_acos",
-            BuiltinId::LpFixed32Acosh => "__lp_fixed32_acosh",
-            BuiltinId::LpFixed32Add => "__lp_fixed32_add",
-            BuiltinId::LpFixed32Asin => "__lp_fixed32_asin",
-            BuiltinId::LpFixed32Asinh => "__lp_fixed32_asinh",
-            BuiltinId::LpFixed32Atan => "__lp_fixed32_atan",
-            BuiltinId::LpFixed32Atan2 => "__lp_fixed32_atan2",
-            BuiltinId::LpFixed32Atanh => "__lp_fixed32_atanh",
-            BuiltinId::LpFixed32Cos => "__lp_fixed32_cos",
-            BuiltinId::LpFixed32Cosh => "__lp_fixed32_cosh",
-            BuiltinId::LpFixed32Div => "__lp_fixed32_div",
-            BuiltinId::LpFixed32Exp => "__lp_fixed32_exp",
-            BuiltinId::LpFixed32Exp2 => "__lp_fixed32_exp2",
-            BuiltinId::LpFixed32Fma => "__lp_fixed32_fma",
-            BuiltinId::LpFixed32Inversesqrt => "__lp_fixed32_inversesqrt",
-            BuiltinId::LpFixed32Ldexp => "__lp_fixed32_ldexp",
-            BuiltinId::LpFixed32Log => "__lp_fixed32_log",
-            BuiltinId::LpFixed32Log2 => "__lp_fixed32_log2",
-            BuiltinId::LpFixed32Mod => "__lp_fixed32_mod",
-            BuiltinId::LpFixed32Mul => "__lp_fixed32_mul",
-            BuiltinId::LpFixed32Pow => "__lp_fixed32_pow",
-            BuiltinId::LpFixed32Round => "__lp_fixed32_round",
-            BuiltinId::LpFixed32Roundeven => "__lp_fixed32_roundeven",
-            BuiltinId::LpFixed32Sin => "__lp_fixed32_sin",
-            BuiltinId::LpFixed32Sinh => "__lp_fixed32_sinh",
-            BuiltinId::LpFixed32Sqrt => "__lp_fixed32_sqrt",
-            BuiltinId::LpFixed32Sub => "__lp_fixed32_sub",
-            BuiltinId::LpFixed32Tan => "__lp_fixed32_tan",
-            BuiltinId::LpFixed32Tanh => "__lp_fixed32_tanh",
+            BuiltinId::LpQ32Acos => "__lp_q32_acos",
+            BuiltinId::LpQ32Acosh => "__lp_q32_acosh",
+            BuiltinId::LpQ32Add => "__lp_q32_add",
+            BuiltinId::LpQ32Asin => "__lp_q32_asin",
+            BuiltinId::LpQ32Asinh => "__lp_q32_asinh",
+            BuiltinId::LpQ32Atan => "__lp_q32_atan",
+            BuiltinId::LpQ32Atan2 => "__lp_q32_atan2",
+            BuiltinId::LpQ32Atanh => "__lp_q32_atanh",
+            BuiltinId::LpQ32Cos => "__lp_q32_cos",
+            BuiltinId::LpQ32Cosh => "__lp_q32_cosh",
+            BuiltinId::LpQ32Div => "__lp_q32_div",
+            BuiltinId::LpQ32Exp => "__lp_q32_exp",
+            BuiltinId::LpQ32Exp2 => "__lp_q32_exp2",
+            BuiltinId::LpQ32Fma => "__lp_q32_fma",
+            BuiltinId::LpQ32Inversesqrt => "__lp_q32_inversesqrt",
+            BuiltinId::LpQ32Ldexp => "__lp_q32_ldexp",
+            BuiltinId::LpQ32Log => "__lp_q32_log",
+            BuiltinId::LpQ32Log2 => "__lp_q32_log2",
+            BuiltinId::LpQ32Mod => "__lp_q32_mod",
+            BuiltinId::LpQ32Mul => "__lp_q32_mul",
+            BuiltinId::LpQ32Pow => "__lp_q32_pow",
+            BuiltinId::LpQ32Round => "__lp_q32_round",
+            BuiltinId::LpQ32Roundeven => "__lp_q32_roundeven",
+            BuiltinId::LpQ32Sin => "__lp_q32_sin",
+            BuiltinId::LpQ32Sinh => "__lp_q32_sinh",
+            BuiltinId::LpQ32Sqrt => "__lp_q32_sqrt",
+            BuiltinId::LpQ32Sub => "__lp_q32_sub",
+            BuiltinId::LpQ32Tan => "__lp_q32_tan",
+            BuiltinId::LpQ32Tanh => "__lp_q32_tanh",
             BuiltinId::LpfxHash1 => "__lpfx_hash_1",
             BuiltinId::LpfxHash2 => "__lpfx_hash_2",
             BuiltinId::LpfxHash3 => "__lpfx_hash_3",
@@ -119,7 +119,7 @@ impl BuiltinId {
                 sig.params.push(AbiParam::new(types::I32));
                 sig.returns.push(AbiParam::new(types::I32));
             }
-            BuiltinId::LpFixed32Fma
+            BuiltinId::LpQ32Fma
             | BuiltinId::LpfxHash2
             | BuiltinId::LpfxSimplex2F32
             | BuiltinId::LpfxSimplex2Q32 => {
@@ -129,14 +129,14 @@ impl BuiltinId {
                 sig.params.push(AbiParam::new(types::I32));
                 sig.returns.push(AbiParam::new(types::I32));
             }
-            BuiltinId::LpFixed32Add
-            | BuiltinId::LpFixed32Atan2
-            | BuiltinId::LpFixed32Div
-            | BuiltinId::LpFixed32Ldexp
-            | BuiltinId::LpFixed32Mod
-            | BuiltinId::LpFixed32Mul
-            | BuiltinId::LpFixed32Pow
-            | BuiltinId::LpFixed32Sub
+            BuiltinId::LpQ32Add
+            | BuiltinId::LpQ32Atan2
+            | BuiltinId::LpQ32Div
+            | BuiltinId::LpQ32Ldexp
+            | BuiltinId::LpQ32Mod
+            | BuiltinId::LpQ32Mul
+            | BuiltinId::LpQ32Pow
+            | BuiltinId::LpQ32Sub
             | BuiltinId::LpfxHash1
             | BuiltinId::LpfxSimplex1F32
             | BuiltinId::LpfxSimplex1Q32 => {
@@ -145,26 +145,26 @@ impl BuiltinId {
                 sig.params.push(AbiParam::new(types::I32));
                 sig.returns.push(AbiParam::new(types::I32));
             }
-            BuiltinId::LpFixed32Acos
-            | BuiltinId::LpFixed32Acosh
-            | BuiltinId::LpFixed32Asin
-            | BuiltinId::LpFixed32Asinh
-            | BuiltinId::LpFixed32Atan
-            | BuiltinId::LpFixed32Atanh
-            | BuiltinId::LpFixed32Cos
-            | BuiltinId::LpFixed32Cosh
-            | BuiltinId::LpFixed32Exp
-            | BuiltinId::LpFixed32Exp2
-            | BuiltinId::LpFixed32Inversesqrt
-            | BuiltinId::LpFixed32Log
-            | BuiltinId::LpFixed32Log2
-            | BuiltinId::LpFixed32Round
-            | BuiltinId::LpFixed32Roundeven
-            | BuiltinId::LpFixed32Sin
-            | BuiltinId::LpFixed32Sinh
-            | BuiltinId::LpFixed32Sqrt
-            | BuiltinId::LpFixed32Tan
-            | BuiltinId::LpFixed32Tanh => {
+            BuiltinId::LpQ32Acos
+            | BuiltinId::LpQ32Acosh
+            | BuiltinId::LpQ32Asin
+            | BuiltinId::LpQ32Asinh
+            | BuiltinId::LpQ32Atan
+            | BuiltinId::LpQ32Atanh
+            | BuiltinId::LpQ32Cos
+            | BuiltinId::LpQ32Cosh
+            | BuiltinId::LpQ32Exp
+            | BuiltinId::LpQ32Exp2
+            | BuiltinId::LpQ32Inversesqrt
+            | BuiltinId::LpQ32Log
+            | BuiltinId::LpQ32Log2
+            | BuiltinId::LpQ32Round
+            | BuiltinId::LpQ32Roundeven
+            | BuiltinId::LpQ32Sin
+            | BuiltinId::LpQ32Sinh
+            | BuiltinId::LpQ32Sqrt
+            | BuiltinId::LpQ32Tan
+            | BuiltinId::LpQ32Tanh => {
                 // (i32) -> i32
                 sig.params.push(AbiParam::new(types::I32));
                 sig.returns.push(AbiParam::new(types::I32));
@@ -176,35 +176,35 @@ impl BuiltinId {
     /// Get all builtin IDs.
     pub fn all() -> &'static [BuiltinId] {
         &[
-            BuiltinId::LpFixed32Acos,
-            BuiltinId::LpFixed32Acosh,
-            BuiltinId::LpFixed32Add,
-            BuiltinId::LpFixed32Asin,
-            BuiltinId::LpFixed32Asinh,
-            BuiltinId::LpFixed32Atan,
-            BuiltinId::LpFixed32Atan2,
-            BuiltinId::LpFixed32Atanh,
-            BuiltinId::LpFixed32Cos,
-            BuiltinId::LpFixed32Cosh,
-            BuiltinId::LpFixed32Div,
-            BuiltinId::LpFixed32Exp,
-            BuiltinId::LpFixed32Exp2,
-            BuiltinId::LpFixed32Fma,
-            BuiltinId::LpFixed32Inversesqrt,
-            BuiltinId::LpFixed32Ldexp,
-            BuiltinId::LpFixed32Log,
-            BuiltinId::LpFixed32Log2,
-            BuiltinId::LpFixed32Mod,
-            BuiltinId::LpFixed32Mul,
-            BuiltinId::LpFixed32Pow,
-            BuiltinId::LpFixed32Round,
-            BuiltinId::LpFixed32Roundeven,
-            BuiltinId::LpFixed32Sin,
-            BuiltinId::LpFixed32Sinh,
-            BuiltinId::LpFixed32Sqrt,
-            BuiltinId::LpFixed32Sub,
-            BuiltinId::LpFixed32Tan,
-            BuiltinId::LpFixed32Tanh,
+            BuiltinId::LpQ32Acos,
+            BuiltinId::LpQ32Acosh,
+            BuiltinId::LpQ32Add,
+            BuiltinId::LpQ32Asin,
+            BuiltinId::LpQ32Asinh,
+            BuiltinId::LpQ32Atan,
+            BuiltinId::LpQ32Atan2,
+            BuiltinId::LpQ32Atanh,
+            BuiltinId::LpQ32Cos,
+            BuiltinId::LpQ32Cosh,
+            BuiltinId::LpQ32Div,
+            BuiltinId::LpQ32Exp,
+            BuiltinId::LpQ32Exp2,
+            BuiltinId::LpQ32Fma,
+            BuiltinId::LpQ32Inversesqrt,
+            BuiltinId::LpQ32Ldexp,
+            BuiltinId::LpQ32Log,
+            BuiltinId::LpQ32Log2,
+            BuiltinId::LpQ32Mod,
+            BuiltinId::LpQ32Mul,
+            BuiltinId::LpQ32Pow,
+            BuiltinId::LpQ32Round,
+            BuiltinId::LpQ32Roundeven,
+            BuiltinId::LpQ32Sin,
+            BuiltinId::LpQ32Sinh,
+            BuiltinId::LpQ32Sqrt,
+            BuiltinId::LpQ32Sub,
+            BuiltinId::LpQ32Tan,
+            BuiltinId::LpQ32Tanh,
             BuiltinId::LpfxHash1,
             BuiltinId::LpfxHash2,
             BuiltinId::LpfxHash3,
@@ -223,39 +223,39 @@ impl BuiltinId {
 /// Returns the function pointer that can be registered with JITModule.
 pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
     use lp_builtins::builtins::{
-        fixed32,
         lpfx::{hash, simplex},
+        q32,
     };
     match builtin {
-        BuiltinId::LpFixed32Acos => fixed32::__lp_fixed32_acos as *const u8,
-        BuiltinId::LpFixed32Acosh => fixed32::__lp_fixed32_acosh as *const u8,
-        BuiltinId::LpFixed32Add => fixed32::__lp_fixed32_add as *const u8,
-        BuiltinId::LpFixed32Asin => fixed32::__lp_fixed32_asin as *const u8,
-        BuiltinId::LpFixed32Asinh => fixed32::__lp_fixed32_asinh as *const u8,
-        BuiltinId::LpFixed32Atan => fixed32::__lp_fixed32_atan as *const u8,
-        BuiltinId::LpFixed32Atan2 => fixed32::__lp_fixed32_atan2 as *const u8,
-        BuiltinId::LpFixed32Atanh => fixed32::__lp_fixed32_atanh as *const u8,
-        BuiltinId::LpFixed32Cos => fixed32::__lp_fixed32_cos as *const u8,
-        BuiltinId::LpFixed32Cosh => fixed32::__lp_fixed32_cosh as *const u8,
-        BuiltinId::LpFixed32Div => fixed32::__lp_fixed32_div as *const u8,
-        BuiltinId::LpFixed32Exp => fixed32::__lp_fixed32_exp as *const u8,
-        BuiltinId::LpFixed32Exp2 => fixed32::__lp_fixed32_exp2 as *const u8,
-        BuiltinId::LpFixed32Fma => fixed32::__lp_fixed32_fma as *const u8,
-        BuiltinId::LpFixed32Inversesqrt => fixed32::__lp_fixed32_inversesqrt as *const u8,
-        BuiltinId::LpFixed32Ldexp => fixed32::__lp_fixed32_ldexp as *const u8,
-        BuiltinId::LpFixed32Log => fixed32::__lp_fixed32_log as *const u8,
-        BuiltinId::LpFixed32Log2 => fixed32::__lp_fixed32_log2 as *const u8,
-        BuiltinId::LpFixed32Mod => fixed32::__lp_fixed32_mod as *const u8,
-        BuiltinId::LpFixed32Mul => fixed32::__lp_fixed32_mul as *const u8,
-        BuiltinId::LpFixed32Pow => fixed32::__lp_fixed32_pow as *const u8,
-        BuiltinId::LpFixed32Round => fixed32::__lp_fixed32_round as *const u8,
-        BuiltinId::LpFixed32Roundeven => fixed32::__lp_fixed32_roundeven as *const u8,
-        BuiltinId::LpFixed32Sin => fixed32::__lp_fixed32_sin as *const u8,
-        BuiltinId::LpFixed32Sinh => fixed32::__lp_fixed32_sinh as *const u8,
-        BuiltinId::LpFixed32Sqrt => fixed32::__lp_fixed32_sqrt as *const u8,
-        BuiltinId::LpFixed32Sub => fixed32::__lp_fixed32_sub as *const u8,
-        BuiltinId::LpFixed32Tan => fixed32::__lp_fixed32_tan as *const u8,
-        BuiltinId::LpFixed32Tanh => fixed32::__lp_fixed32_tanh as *const u8,
+        BuiltinId::LpQ32Acos => q32::__lp_q32_acos as *const u8,
+        BuiltinId::LpQ32Acosh => q32::__lp_q32_acosh as *const u8,
+        BuiltinId::LpQ32Add => q32::__lp_q32_add as *const u8,
+        BuiltinId::LpQ32Asin => q32::__lp_q32_asin as *const u8,
+        BuiltinId::LpQ32Asinh => q32::__lp_q32_asinh as *const u8,
+        BuiltinId::LpQ32Atan => q32::__lp_q32_atan as *const u8,
+        BuiltinId::LpQ32Atan2 => q32::__lp_q32_atan2 as *const u8,
+        BuiltinId::LpQ32Atanh => q32::__lp_q32_atanh as *const u8,
+        BuiltinId::LpQ32Cos => q32::__lp_q32_cos as *const u8,
+        BuiltinId::LpQ32Cosh => q32::__lp_q32_cosh as *const u8,
+        BuiltinId::LpQ32Div => q32::__lp_q32_div as *const u8,
+        BuiltinId::LpQ32Exp => q32::__lp_q32_exp as *const u8,
+        BuiltinId::LpQ32Exp2 => q32::__lp_q32_exp2 as *const u8,
+        BuiltinId::LpQ32Fma => q32::__lp_q32_fma as *const u8,
+        BuiltinId::LpQ32Inversesqrt => q32::__lp_q32_inversesqrt as *const u8,
+        BuiltinId::LpQ32Ldexp => q32::__lp_q32_ldexp as *const u8,
+        BuiltinId::LpQ32Log => q32::__lp_q32_log as *const u8,
+        BuiltinId::LpQ32Log2 => q32::__lp_q32_log2 as *const u8,
+        BuiltinId::LpQ32Mod => q32::__lp_q32_mod as *const u8,
+        BuiltinId::LpQ32Mul => q32::__lp_q32_mul as *const u8,
+        BuiltinId::LpQ32Pow => q32::__lp_q32_pow as *const u8,
+        BuiltinId::LpQ32Round => q32::__lp_q32_round as *const u8,
+        BuiltinId::LpQ32Roundeven => q32::__lp_q32_roundeven as *const u8,
+        BuiltinId::LpQ32Sin => q32::__lp_q32_sin as *const u8,
+        BuiltinId::LpQ32Sinh => q32::__lp_q32_sinh as *const u8,
+        BuiltinId::LpQ32Sqrt => q32::__lp_q32_sqrt as *const u8,
+        BuiltinId::LpQ32Sub => q32::__lp_q32_sub as *const u8,
+        BuiltinId::LpQ32Tan => q32::__lp_q32_tan as *const u8,
+        BuiltinId::LpQ32Tanh => q32::__lp_q32_tanh as *const u8,
         BuiltinId::LpfxHash1 => hash::__lpfx_hash_1 as *const u8,
         BuiltinId::LpfxHash2 => hash::__lpfx_hash_2 as *const u8,
         BuiltinId::LpfxHash3 => hash::__lpfx_hash_3 as *const u8,

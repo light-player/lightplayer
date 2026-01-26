@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Despite reducing code size through fixed32 transform optimizations, compilation is still failing due to memory allocation errors. The panic occurs in `regalloc2::ion::Env::init` when trying to allocate a BTreeMap (140 bytes), indicating that the compilation process itself is running out of memory, not just the generated code.
+Despite reducing code size through q32 transform optimizations, compilation is still failing due to memory allocation errors. The panic occurs in `regalloc2::ion::Env::init` when trying to allocate a BTreeMap (140 bytes), indicating that the compilation process itself is running out of memory, not just the generated code.
 
 **Key Finding:** The issue is not the size of generated code, but the memory required during compilation, specifically during register allocation.
 

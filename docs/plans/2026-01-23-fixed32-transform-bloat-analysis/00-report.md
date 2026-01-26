@@ -1,8 +1,8 @@
-# Fixed32 Transform Code Bloat Analysis Report
+# Q32 Transform Code Bloat Analysis Report
 
 ## Executive Summary
 
-The fixed32 transform is causing massive code bloat, increasing instruction counts by 3-4x. Analysis of the `hash` and `hsv_to_rgb` functions shows that simple operations like addition and subtraction generate 20+ instructions each due to inline saturation checks. This bloat is causing memory allocation failures on ESP32 targets.
+The q32 transform is causing massive code bloat, increasing instruction counts by 3-4x. Analysis of the `hash` and `hsv_to_rgb` functions shows that simple operations like addition and subtraction generate 20+ instructions each due to inline saturation checks. This bloat is causing memory allocation failures on ESP32 targets.
 
 **Key Findings:**
 - `hash` function: 15 → 51 instructions (+240%)
@@ -12,7 +12,7 @@ The fixed32 transform is causing massive code bloat, increasing instruction coun
 
 ## Problem Statement
 
-The fixed32 transform converts floating-point operations to fixed-point arithmetic, but generates excessive code due to inline saturation checks. This causes:
+The q32 transform converts floating-point operations to fixed-point arithmetic, but generates excessive code due to inline saturation checks. This causes:
 
 1. **Memory pressure**: 3-4x increase in CLIF IR size leads to allocation failures
 2. **Compilation slowdown**: More instructions to process during Cranelift compilation
@@ -63,7 +63,7 @@ v14 = band v13, v12
   - Saturation logic
 
 **Issue:**
-- `__lp_fixed32_div` builtin exists but is intentionally NOT used
+- `__lp_q32_div` builtin exists but is intentionally NOT used
 - Transform generates inline code to handle edge cases that the builtin may not handle correctly
 - Code comment mentions "bug fix for small divisors < 2^16"
 - Test for `fdiv` is currently ignored due to "known issue with the division algorithm"
@@ -98,15 +98,15 @@ v22 = imul v20, v21
 ### 4. Missing Builtin Functions for Basic Arithmetic
 
 **Current State:**
-- Only `fmul` uses a builtin (`__lp_fixed32_mul`)
+- Only `fmul` uses a builtin (`__lp_q32_mul`)
 - `fadd`, `fsub`, `fdiv` generate inline code
 - Builtins exist for math functions (sin, cos, etc.) but not for basic arithmetic
 
 **Available Builtins:**
-- `__lp_fixed32_mul` ✅ (used)
-- `__lp_fixed32_div` ✅ (exists but intentionally not used - inline code handles edge cases)
-- `__lp_fixed32_add` ❌ (does not exist)
-- `__lp_fixed32_sub` ❌ (does not exist)
+- `__lp_q32_mul` ✅ (used)
+- `__lp_q32_div` ✅ (exists but intentionally not used - inline code handles edge cases)
+- `__lp_q32_add` ❌ (does not exist)
+- `__lp_q32_sub` ❌ (does not exist)
 
 ### 5. Vector Operations Are Unoptimized
 
@@ -166,7 +166,7 @@ vec2 c = a + b;  // Generates 2 separate fadd operations, each with 20+ instruct
 
 ### Builtin Pattern
 Builtins handle saturation internally, reducing code size:
-- `__lp_fixed32_mul`: Single call replaces inline multiplication + saturation
+- `__lp_q32_mul`: Single call replaces inline multiplication + saturation
 - Builtins are optimized implementations that handle edge cases efficiently
 
 ## Proposed Solutions
@@ -174,7 +174,7 @@ Builtins handle saturation internally, reducing code size:
 ### Solution 1: Create Builtin Functions for `fadd` and `fsub` (High Priority)
 
 **Approach:**
-- Implement `__lp_fixed32_add` and `__lp_fixed32_sub` builtins
+- Implement `__lp_q32_add` and `__lp_q32_sub` builtins
 - Move saturation logic into builtins
 - Update transform to call builtins instead of generating inline code
 
@@ -184,20 +184,20 @@ Builtins handle saturation internally, reducing code size:
 - Immediate fix for the most common operations
 
 **Implementation:**
-- Add builtin implementations in `lp-builtins/src/builtins/fixed32/`
+- Add builtin implementations in `lp-builtins/src/builtins/q32/`
 - Register in builtin registry
 - Update `convert_fadd` and `convert_fsub` to use builtins
 
 ### Solution 2: Use Builtin for `fdiv` OR Improve Builtin (Medium-High Priority)
 
 **Current Situation:**
-- `__lp_fixed32_div` exists but is intentionally not used
+- `__lp_q32_div` exists but is intentionally not used
 - Inline code handles edge cases: division-by-zero, small divisors (< 2^16)
 - Test is ignored due to "known issue with the division algorithm"
 
 **Approach A: Fix Builtin and Use It**
 - Investigate why builtin has issues with edge cases
-- Fix `__lp_fixed32_div` to handle division-by-zero and small divisors correctly
+- Fix `__lp_q32_div` to handle division-by-zero and small divisors correctly
 - Update `convert_fdiv` to use builtin (like `convert_fmul`)
 
 **Approach B: Optimize Inline Code**
@@ -265,7 +265,7 @@ Builtins handle saturation internally, reducing code size:
 - Requires careful analysis of overflow behavior
 
 **Implementation:**
-- Add `saturate` flag to `Fixed32Transform`
+- Add `saturate` flag to `Q32Transform`
 - Update arithmetic converters to check flag
 - Use wrapping arithmetic when flag is false
 
@@ -299,12 +299,12 @@ Builtins handle saturation internally, reducing code size:
 ## Recommendations
 
 ### Immediate Actions (High Priority)
-1. **Implement `__lp_fixed32_add` and `__lp_fixed32_sub` builtins**
+1. **Implement `__lp_q32_add` and `__lp_q32_sub` builtins**
    - Highest impact, addresses most common operations
    - Follows existing pattern (like `mul`)
    - Estimated effort: 1-2 days
 
-2. **Investigate and fix `__lp_fixed32_div` builtin OR optimize inline division code**
+2. **Investigate and fix `__lp_q32_div` builtin OR optimize inline division code**
    - Builtin exists but has known issues with edge cases
    - Option A: Fix builtin to handle edge cases, then use it (highest impact)
    - Option B: Optimize inline code to reduce bloat (lower impact but safer)
@@ -329,6 +329,6 @@ Builtins handle saturation internally, reducing code size:
 
 ## Conclusion
 
-The fixed32 transform's code bloat is primarily caused by inline saturation checks on every arithmetic operation. Moving this logic to builtin functions (following the pattern already established for `mul`) will significantly reduce code size and memory pressure. The highest-impact solutions are implementing builtins for `add` and `sub`, and using the existing `div` builtin.
+The q32 transform's code bloat is primarily caused by inline saturation checks on every arithmetic operation. Moving this logic to builtin functions (following the pattern already established for `mul`) will significantly reduce code size and memory pressure. The highest-impact solutions are implementing builtins for `add` and `sub`, and using the existing `div` builtin.
 
 These changes should reduce the 3-4x bloat to approximately 1.5-2x, making the transform viable for memory-constrained targets like ESP32.

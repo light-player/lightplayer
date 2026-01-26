@@ -1,8 +1,8 @@
-# Plan: Fixed32 Metrics App
+# Plan: Q32 Metrics App
 
 ## Overview
 
-Create a new app `fixed32-metrics` in `lp-glsl/apps/` that tracks the effects of fixed32 transform optimizations by generating detailed before/after reports for GLSL test files. The app compiles GLSL files, applies the fixed32 transform, collects statistics, and generates TOML reports with per-function CLIF IR files.
+Create a new app `q32-metrics` in `lp-glsl/apps/` that tracks the effects of q32 transform optimizations by generating detailed before/after reports for GLSL test files. The app compiles GLSL files, applies the q32 transform, collects statistics, and generates TOML reports with per-function CLIF IR files.
 
 ## Phases
 
@@ -18,7 +18,7 @@ Create a new app `fixed32-metrics` in `lp-glsl/apps/` that tracks the effects of
 
 ## Success Criteria
 
-- App successfully compiles GLSL files and applies fixed32 transform
+- App successfully compiles GLSL files and applies q32 transform
 - Statistics are collected accurately (blocks, instructions, values, CLIF size)
 - Per-function CLIF files are generated correctly
 - TOML reports are generated with proper structure

@@ -313,7 +313,7 @@ block0(v0: i32, v1: i32, v2: i8):
 
 - ✅ i64 add/sub: Supported (uses two-register pattern)
 - ✅ i64 mul: Supported (requires M extension)
-- ✅ i64 div/rem: Partially supported (fixed32-specific optimizations exist)
+- ✅ i64 div/rem: Partially supported (q32-specific optimizations exist)
 
 **Validation Rules**:
 
@@ -331,7 +331,7 @@ fn validate_i64_arithmetic(&self, func: &Function, inst: Inst, opcode: Opcode) -
             match opcode {
                 Opcode::Iadd | Opcode::Isub | Opcode::Imul => Ok(()),
                 Opcode::Sdiv | Opcode::Udiv | Opcode::Srem | Opcode::Urem => {
-                    // i64 division is partially supported (fixed32-specific)
+                    // i64 division is partially supported (q32-specific)
                     // For now, we allow it but document limitations
                     Ok(())
                 },
@@ -364,7 +364,7 @@ i64 arithmetic on RISC-V32 uses a two-register pattern (high and low 32-bit part
 - **Addition/Subtraction**: Fully supported using two-register operations
 - **Multiplication**: Supported (requires M extension)
 - **Division/Remainder**: Partially supported
-  - Fixed32-specific optimizations exist for `(i32 << 16) / i32` patterns
+  - Q32-specific optimizations exist for `(i32 << 16) / i32` patterns
   - General i64 division may not be fully optimized
   - Use with caution for general-purpose i64 division
 
@@ -372,7 +372,7 @@ i64 arithmetic on RISC-V32 uses a two-register pattern (high and low 32-bit part
 
 - i64 operations use two registers (64 bits total)
 - Some optimizations may require Zba extension (address generation)
-- i64 division is optimized for fixed32 patterns, not general-purpose
+- i64 division is optimized for q32 patterns, not general-purpose
 ```
 
 **Test File**: `32bit/runtests/i64-arithmetic.clif`
@@ -584,7 +584,7 @@ pub fn opcode_base_extensions(opcode: Opcode) -> Option<Vec<RiscvExtension>> {
 
 - **Overflow Instructions**: These return two values (result + overflow flag). For i64, this means 3 total values (2 for result, 1 for flag). Ensure the validator handles multi-return values correctly.
 
-- **i64 Division**: Current implementation has fixed32-specific optimizations. Document this limitation clearly.
+- **i64 Division**: Current implementation has q32-specific optimizations. Document this limitation clearly.
 
 - **Zba Extension**: Some i64 optimizations may use Zba, but this is an optimization, not a requirement. Validation should not require Zba for basic i64 operations.
 

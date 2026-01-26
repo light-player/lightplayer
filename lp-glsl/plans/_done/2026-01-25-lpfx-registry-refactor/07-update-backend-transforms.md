@@ -6,7 +6,7 @@ Update backend transform code to use the registry for testcase name mapping.
 
 ## Implementation
 
-### File: `backend/transform/fixed32/converters/math.rs`
+### File: `backend/transform/q32/converters/math.rs`
 
 Replace:
 - Hardcoded `map_testcase_to_builtin` function with registry lookup

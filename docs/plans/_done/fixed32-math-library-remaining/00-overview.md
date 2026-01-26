@@ -1,19 +1,19 @@
-# Plan: Fixed32 Math Library - Remaining Functions
+# Plan: Q32 Math Library - Remaining Functions
 
 ## Overview
 
-This plan implements the remaining fixed32 math builtin functions following the infrastructure established in the previous plan. We'll implement tan, inverse trig, exponential, hyperbolic, and power functions using reference implementations from libfixmath, fr_math, and fpm libraries.
+This plan implements the remaining q32 math builtin functions following the infrastructure established in the previous plan. We'll implement tan, inverse trig, exponential, hyperbolic, and power functions using reference implementations from libfixmath, fr_math, and fpm libraries.
 
 ## Current State
 
-- ✅ Infrastructure for fixed32 math builtins (test helpers, registry, transform conversion)
+- ✅ Infrastructure for q32 math builtins (test helpers, registry, transform conversion)
 - ✅ `sin` and `cos` implemented using libfixmath's Taylor series
 - ✅ Transform conversion working for both TestCase and User function names
 - ✅ Test infrastructure with tolerance support
 
 ## Goal
 
-Implement the remaining fixed32 math functions:
+Implement the remaining q32 math functions:
 - **Phase 3**: Tangent (tan) - simplest, depends on sin/cos
 - **Phase 4**: Inverse trig (asin, acos, atan, atan2)
 - **Phase 5**: Exponential base (exp, log, exp2, log2)

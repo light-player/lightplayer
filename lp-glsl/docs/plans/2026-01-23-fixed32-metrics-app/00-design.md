@@ -1,13 +1,13 @@
-# Design: Fixed32 Metrics App
+# Design: Q32 Metrics App
 
 ## Overview
 
-Create a new app `fixed32-metrics` in `lp-glsl/apps/` that tracks the effects of fixed32 transform optimizations by generating detailed before/after reports for GLSL test files. The app compiles GLSL files, applies the fixed32 transform, collects statistics, and generates TOML reports with per-function CLIF IR files.
+Create a new app `q32-metrics` in `lp-glsl/apps/` that tracks the effects of q32 transform optimizations by generating detailed before/after reports for GLSL test files. The app compiles GLSL files, applies the q32 transform, collects statistics, and generates TOML reports with per-function CLIF IR files.
 
 ## File Structure
 
 ```
-lp-glsl/apps/fixed32-metrics/
+lp-glsl/apps/q32-metrics/
 ├── Cargo.toml                 # NEW: App dependencies
 ├── src/
 │   ├── main.rs                # NEW: Entry point, CLI parsing, orchestration
@@ -22,7 +22,7 @@ lp-glsl/apps/fixed32-metrics/
 └── README.md                  # NEW: App documentation
 
 scripts/
-└── fixed32-metrics.sh         # NEW: Wrapper script with defaults
+└── q32-metrics.sh         # NEW: Wrapper script with defaults
 ```
 
 ## Report Structure
@@ -137,8 +137,8 @@ pub struct FunctionReport {
 
 **compiler.rs:**
 - `compile_glsl()` - Compile GLSL source to GlModule (before transform)
-- `apply_transform()` - Apply fixed32 transform to GlModule
-- Uses `GlslCompiler` and `Fixed32Transform` from `lp-glsl-compiler`
+- `apply_transform()` - Apply q32 transform to GlModule
+- Uses `GlslCompiler` and `Q32Transform` from `lp-glsl-compiler`
 
 **stats.rs:**
 - `collect_function_stats()` - Collect stats from a single Function
@@ -166,9 +166,9 @@ Optional arguments:
 - `-v, --verbose` - Verbose output
 - `-h, --help` - Help message
 
-Wrapper script (`scripts/fixed32-metrics.sh`):
-- Defaults `--tests-dir` to `lp-glsl/apps/fixed32-metrics/glsl`
-- Defaults `--output-dir` to `docs/reports/fixed32`
+Wrapper script (`scripts/q32-metrics.sh`):
+- Defaults `--tests-dir` to `lp-glsl/apps/q32-metrics/glsl`
+- Defaults `--output-dir` to `docs/reports/q32`
 - Defaults `--format` to `Fixed16x16`
 
 ## Error Handling

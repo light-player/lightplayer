@@ -1,5 +1,5 @@
 // test run
-// target riscv32.fixed32
+// target riscv32.q32
 
 // ============================================================================
 // Edge Multiple Qualifiers Error: Multiple storage qualifiers are not allowed

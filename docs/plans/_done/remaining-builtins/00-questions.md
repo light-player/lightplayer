@@ -2,18 +2,18 @@
 
 ## Current State
 
-- Framework is in place: fixed32 builtin infrastructure exists with auto-generation of boilerplate
+- Framework is in place: q32 builtin infrastructure exists with auto-generation of boilerplate
 - 24 tests passing, 40 tests failing
 - Already implemented: trig functions (sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh), exp/log functions (exp, exp2, log, log2, pow), basic arithmetic (mul, div, sqrt)
 - Reference libraries available: libfixmath, fpm, fr_math
 
 ## Questions
 
-1. **Which functions need fixed32 implementations vs inline conversion?** ✅ ANSWERED
+1. **Which functions need q32 implementations vs inline conversion?** ✅ ANSWERED
    - Floor/ceil/trunc are already converted inline in the transform
-   - **Fixed32 function implementations needed:** fract, mod, sign, round, roundeven, fma, frexp, ldexp, modf, inversesqrt
+   - **Q32 function implementations needed:** fract, mod, sign, round, roundeven, fma, frexp, ldexp, modf, inversesqrt
    - **Inline conversion:** isinf, isnan (simple checks - always false for fixed-point since no NaN/Inf)
-   - **Pure integer operations (no fixed32 needed):** Integer bit manipulation functions (bitcount, bitfieldextract, etc.) - these operate on int/uint types directly
+   - **Pure integer operations (no q32 needed):** Integer bit manipulation functions (bitcount, bitfieldextract, etc.) - these operate on int/uint types directly
 
 2. **What's the priority/grouping for implementation?** ✅ ANSWERED
    - **Criteria for inline vs builtin:**
@@ -32,7 +32,7 @@
      - Port to Rust following existing patterns
      - Add comments citing source: "Algorithm ported from libfixmath" or similar
      - Use existing builtin functions (mul, div, etc.) where possible
-     - Include tests using `test_fixed32_function_relative` helper
+     - Include tests using `test_q32_function_relative` helper
    - **Licensing:** All libraries have permissive licenses (MIT/BSD-like), safe to use
 
 4. **Special cases and edge cases:**
@@ -49,7 +49,7 @@
 
 6. **Testing strategy:** ✅ ANSWERED
    - **Pattern:** Follow existing test patterns (see sin.rs, exp.rs)
-   - **Unit tests:** Yes, implement tests in each function file using `test_fixed32_function_relative`
+   - **Unit tests:** Yes, implement tests in each function file using `test_q32_function_relative`
    - **Tolerance:** Use 3% relative tolerance for complex functions, 1% for simpler ones (match existing patterns)
    - **Edge cases:** Test special cases (zero, one, negative, overflow) like existing functions do
 

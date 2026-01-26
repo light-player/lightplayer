@@ -2,14 +2,14 @@
 
 ## Goal
 
-Change `emit_lp_lib_fn_call()` to emit TestCase calls for functions that need fixed32 mapping, instead of directly calling builtins. This allows the fixed32 transform to handle the conversion.
+Change `emit_lp_lib_fn_call()` to emit TestCase calls for functions that need q32 mapping, instead of directly calling builtins. This allows the q32 transform to handle the conversion.
 
 ## Tasks
 
 ### 2.1 Update `emit_lp_lib_fn_call()` Logic
 
 In `lp-glsl/crates/lp-glsl-compiler/src/frontend/codegen/lp_lib_fns.rs`:
-- Check `needs_fixed32_mapping()` to determine if function needs TestCase conversion
+- Check `needs_q32_mapping()` to determine if function needs TestCase conversion
 - If `true` (simplex functions):
   - Get TestCase name from `symbol_name()` (e.g., `"__lpfx_simplex3"`)
   - Flatten vector arguments (already done)

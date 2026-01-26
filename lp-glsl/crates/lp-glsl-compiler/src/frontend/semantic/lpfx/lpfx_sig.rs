@@ -62,8 +62,8 @@ pub fn expand_vector_args(
 
 /// Convert GLSL types to Cranelift types based on decimal format
 ///
-/// For Fixed32 format, all numeric types are converted to i32.
-/// Float → i32 (fixed32 representation)
+/// For Q32 format, all numeric types are converted to i32.
+/// Float → i32 (q32 representation)
 /// UInt → i32 (Cranelift representation)
 /// Int → i32
 ///
@@ -80,7 +80,7 @@ pub fn convert_to_cranelift_types(
             Type::Vec2 | Type::IVec2 | Type::UVec2 => {
                 // Vec2 expands to 2 components
                 match format {
-                    DecimalFormat::Fixed32 => {
+                    DecimalFormat::Q32 => {
                         cranelift_types.push(types::I32);
                         cranelift_types.push(types::I32);
                     }
@@ -93,7 +93,7 @@ pub fn convert_to_cranelift_types(
             Type::Vec3 | Type::IVec3 | Type::UVec3 => {
                 // Vec3 expands to 3 components
                 match format {
-                    DecimalFormat::Fixed32 => {
+                    DecimalFormat::Q32 => {
                         cranelift_types.push(types::I32);
                         cranelift_types.push(types::I32);
                         cranelift_types.push(types::I32);
@@ -106,7 +106,7 @@ pub fn convert_to_cranelift_types(
                 }
             }
             Type::Float => match format {
-                DecimalFormat::Fixed32 => cranelift_types.push(types::I32),
+                DecimalFormat::Q32 => cranelift_types.push(types::I32),
                 DecimalFormat::Float => cranelift_types.push(types::F32),
             },
             Type::UInt | Type::Int => {
@@ -150,7 +150,7 @@ pub fn build_call_signature(
     // Return type
     match func.glsl_sig.return_type {
         Type::Float => match format {
-            DecimalFormat::Fixed32 => sig.returns.push(AbiParam::new(types::I32)),
+            DecimalFormat::Q32 => sig.returns.push(AbiParam::new(types::I32)),
             DecimalFormat::Float => sig.returns.push(AbiParam::new(types::F32)),
         },
         Type::UInt | Type::Int => {

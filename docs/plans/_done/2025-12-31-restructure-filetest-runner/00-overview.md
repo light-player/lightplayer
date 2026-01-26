@@ -53,7 +53,7 @@ src/
 ├── parse/                          # Test file parsing
 │   ├── mod.rs                      # Re-exports only
 │   ├── parse_test_type.rs          # Parse "// test run", "// test compile", etc.
-│   ├── parse_target.rs             # Parse "// target riscv32.fixed32" directive
+│   ├── parse_target.rs             # Parse "// target riscv32.q32" directive
 │   ├── parse_run.rs                # Parse "// run:" directives
 │   ├── parse_trap.rs               # Parse trap expectations
 │   ├── parse_source.rs             # Extract GLSL source and CLIF expectations
@@ -66,7 +66,7 @@ src/
 │   ├── run_detail.rs               # Detail mode (compile per test case, includes error formatting)
 │   ├── test_glsl.rs                # Generating isolated test GLSL code (includes function filtering)
 │   ├── execution.rs                # Executing functions in emulator
-│   ├── target.rs                   # Target value parsing (riscv32.fixed32 -> RunMode/DecimalFormat)
+│   ├── target.rs                   # Target value parsing (riscv32.q32 -> RunMode/DecimalFormat)
 │   └── parse_assert.rs             # Parse assertions, compare values
 │
 ├── test_compile/                   # Compile test implementation (unused but kept for future)

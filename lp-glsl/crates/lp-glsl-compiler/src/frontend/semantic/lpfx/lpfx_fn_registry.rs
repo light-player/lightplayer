@@ -127,7 +127,7 @@ pub fn get_builtin_id_for_format(
             q32_impl,
         } => match format {
             crate::DecimalFormat::Float => Some(*float_impl),
-            crate::DecimalFormat::Fixed32 => Some(*q32_impl),
+            crate::DecimalFormat::Q32 => Some(*q32_impl),
         },
     }
 }

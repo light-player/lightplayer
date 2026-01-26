@@ -2,13 +2,13 @@
 
 ## Goal
 
-Verify that `__lp_fixed32_div` handles all edge cases correctly, especially small divisors (< 2^16) that the inline code currently handles.
+Verify that `__lp_q32_div` handles all edge cases correctly, especially small divisors (< 2^16) that the inline code currently handles.
 
 ## Tasks
 
 ### 2.1 Review div.rs Implementation
 
-Examine `lp-glsl/crates/lp-builtins/src/builtins/fixed32/div.rs`:
+Examine `lp-glsl/crates/lp-builtins/src/builtins/q32/div.rs`:
 - Verify division-by-zero handling (saturates to max/min based on sign)
 - Check if small divisors (< 2^16) are handled correctly
 - Compare with inline code logic in `convert_fdiv`
@@ -25,13 +25,13 @@ Create or update tests to verify:
 ### 2.3 Fix if Needed
 
 If the builtin doesn't handle edge cases correctly:
-- Update `__lp_fixed32_div` to match inline code behavior
+- Update `__lp_q32_div` to match inline code behavior
 - Ensure it handles small divisors correctly
 - Ensure division-by-zero saturation matches inline code
 
 ## Success Criteria
 
-- `__lp_fixed32_div` verified to handle all edge cases correctly
+- `__lp_q32_div` verified to handle all edge cases correctly
 - Tests pass for all edge cases
 - If fixes were needed, they are implemented and tested
 - Code formatted with `cargo +nightly fmt`
