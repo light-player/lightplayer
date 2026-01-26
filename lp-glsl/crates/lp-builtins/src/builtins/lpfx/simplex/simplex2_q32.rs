@@ -524,45 +524,6 @@ mod tests {
     mod visual_tests {
         use super::*;
         use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
-        use std::fs::File;
-        use std::io::Write;
-
-        #[test]
-        fn test_simplex2_generate_image() {
-            // Generate a 256x256 noise image for visual inspection
-            const WIDTH: usize = 256;
-            const HEIGHT: usize = 256;
-            const SCALE: f32 = 0.1; // Noise frequency
-
-            let mut pixels = Vec::new();
-
-            for y in 0..HEIGHT {
-                for x in 0..WIDTH {
-                    let fx = x as f32 * SCALE;
-                    let fy = y as f32 * SCALE;
-                    let noise = __lpfx_simplex2_q32(float_to_fixed(fx), float_to_fixed(fy), 0);
-                    let noise_float = fixed_to_float(noise);
-
-                    // Normalize from [-1, 1] to [0, 255]
-                    let normalized = ((noise_float + 1.0) * 127.5).clamp(0.0, 255.0) as u8;
-                    pixels.push(normalized);
-                    pixels.push(normalized);
-                    pixels.push(normalized);
-                }
-            }
-
-            // Write PPM format (simple, no dependencies)
-            let mut file = File::create("test_output_simplex2.ppm").unwrap();
-            writeln!(file, "P3").unwrap();
-            writeln!(file, "{} {}", WIDTH, HEIGHT).unwrap();
-            writeln!(file, "255").unwrap();
-
-            for chunk in pixels.chunks(3) {
-                writeln!(file, "{} {} {}", chunk[0], chunk[1], chunk[2]).unwrap();
-            }
-
-            println!("Generated test_output_simplex2.ppm for visual inspection");
-        }
 
         #[test]
         fn test_simplex2_no_discontinuities() {
