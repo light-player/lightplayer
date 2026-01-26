@@ -3,6 +3,9 @@ use std::path::{Path, PathBuf};
 use syn::{Item, ItemFn, parse_file};
 use walkdir::WalkDir;
 
+mod discovery;
+mod lpfx;
+
 #[derive(Debug, Clone)]
 struct BuiltinInfo {
     enum_variant: String,
