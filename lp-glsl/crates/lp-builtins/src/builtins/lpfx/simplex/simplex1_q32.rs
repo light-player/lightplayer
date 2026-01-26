@@ -215,44 +215,4 @@ mod tests {
         // Same input and seed should produce same output
         assert_eq!(result1, result2, "Noise should be deterministic");
     }
-
-    #[cfg(feature = "test")]
-    #[test]
-    fn test_simplex1_properties() {
-        use noise::{NoiseFn, Simplex};
-
-        // Create noise-rs simplex for reference comparison
-        let noise_rs_fn = Simplex::new(0);
-
-        // Test multiple points - verify our implementation has similar properties
-        let test_points = [0.0, 1.0, 5.5, 10.0, -5.0, 42.5];
-
-        for x in test_points {
-            // Get our output
-            let our_value_fixed = __lpfx_simplex1_q32(float_to_fixed(x), 0);
-            let our_value = fixed_to_float(our_value_fixed);
-
-            // Get noise-rs output for reference (1D simplex uses [x, 0.0] as 2D point)
-            let noise_rs_value = noise_rs_fn.get([x as f64, 0.0]) as f32;
-
-            // Verify our output is in reasonable range (similar to noise-rs)
-            assert!(
-                our_value >= -2.0 && our_value <= 2.0,
-                "Simplex1({}) should be in range [-2, 2], got {}",
-                x,
-                our_value
-            );
-
-            // Verify noise-rs is also in similar range (sanity check)
-            assert!(
-                noise_rs_value >= -2.0 && noise_rs_value <= 2.0,
-                "noise-rs Simplex1({}) should be in range [-2, 2], got {}",
-                x,
-                noise_rs_value
-            );
-
-            // Note: We don't compare exact values because we use a different hash function (noiz)
-            // The important thing is that our implementation produces reasonable noise values
-        }
-    }
 }

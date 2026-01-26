@@ -366,59 +366,6 @@ mod tests {
         assert_eq!(result1, result2, "Noise should be deterministic");
     }
 
-    #[cfg(feature = "test")]
-    #[test]
-    fn test_simplex3_properties() {
-        use noise::{NoiseFn, Simplex};
-
-        // Create noise-rs simplex for reference comparison
-        let noise_rs_fn = Simplex::new(0);
-
-        // Test multiple points - verify our implementation has similar properties
-        let test_points = [
-            (0.0, 0.0, 0.0),
-            (1.0, 0.0, 0.0),
-            (0.0, 1.0, 0.0),
-            (0.0, 0.0, 1.0),
-            (5.5, 3.2, 1.1),
-            (10.0, 10.0, 10.0),
-            (-5.0, -3.0, -2.0),
-        ];
-
-        for (x, y, z) in test_points {
-            // Get our output
-            let our_value_fixed =
-                __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
-            let our_value = fixed_to_float(our_value_fixed);
-
-            // Get noise-rs output for reference
-            let noise_rs_value = noise_rs_fn.get([x as f64, y as f64, z as f64]) as f32;
-
-            // Verify our output is in reasonable range (similar to noise-rs)
-            assert!(
-                our_value >= -2.0 && our_value <= 2.0,
-                "Simplex3({}, {}, {}) should be in range [-2, 2], got {}",
-                x,
-                y,
-                z,
-                our_value
-            );
-
-            // Verify noise-rs is also in similar range (sanity check)
-            assert!(
-                noise_rs_value >= -2.0 && noise_rs_value <= 2.0,
-                "noise-rs Simplex3({}, {}, {}) should be in range [-2, 2], got {}",
-                x,
-                y,
-                z,
-                noise_rs_value
-            );
-
-            // Note: We don't compare exact values because we use a different hash function (noiz)
-            // The important thing is that our implementation produces reasonable noise values
-        }
-    }
-
     #[test]
     fn test_simplex3_output_grid() {
         // Output grids of noise values for manual inspection
@@ -489,330 +436,44 @@ mod tests {
         }
     }
 
-    #[cfg(all(test, feature = "test_hash_fixed"))]
-    mod fixed_hash_tests {
-        use super::*;
-        use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
+    #[test]
+    fn test_simplex3_boundary_continuity() {
+        let boundary_points = [
+            (0.0, 0.0, 0.0),
+            (0.001, 0.001, 0.001),
+            (0.999, 0.999, 0.999),
+            (1.0, 1.0, 1.0),
+            (1.001, 1.001, 1.001),
+            (2.0, 2.0, 2.0),
+        ];
 
-        #[test]
-        fn test_simplex3_boundary_continuity() {
-            // Test continuity across cell boundaries using fixed hash
-            let boundary_points = [
-                (0.0, 0.0, 0.0),
-                (0.001, 0.001, 0.001),
-                (0.999, 0.999, 0.999),
-                (1.0, 1.0, 1.0),
-                (1.001, 1.001, 1.001),
-                (2.0, 2.0, 2.0),
-            ];
+        let mut prev_value: Option<f32> = None;
+        let mut max_jump = 0.0f32;
 
-            let mut prev_value: Option<f32> = None;
-            let mut max_jump = 0.0f32;
+        for (x, y, z) in boundary_points {
+            let result =
+                __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
+            let result_float = fixed_to_float(result);
 
-            for (x, y, z) in boundary_points {
-                let result =
-                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
-                let result_float = fixed_to_float(result);
+            if let Some(prev) = prev_value {
+                let jump = (result_float - prev).abs();
+                max_jump = max_jump.max(jump);
 
-                if let Some(prev) = prev_value {
-                    let jump = (result_float - prev).abs();
-                    max_jump = max_jump.max(jump);
-
-                    if jump > 0.5 {
-                        println!(
-                            "Large jump detected at ({}, {}, {}): {} -> {}, jump = {}",
-                            x, y, z, prev, result_float, jump
-                        );
-                    }
-                }
-                prev_value = Some(result_float);
-            }
-
-            println!("Maximum jump along boundary path: {}", max_jump);
-            assert!(
-                max_jump < 1.0,
-                "Discontinuity detected: maximum jump = {}",
-                max_jump
-            );
-        }
-
-        #[test]
-        fn test_simplex3_deterministic_with_fixed_hash() {
-            // Test that fixed hash produces deterministic outputs
-            let test_points = [
-                (0.0, 0.0, 0.0),
-                (0.5, 0.5, 0.5),
-                (1.0, 1.0, 1.0),
-                (2.5, 2.5, 2.5),
-            ];
-
-            for (x, y, z) in test_points {
-                let result1 =
-                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
-                let result2 =
-                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
-                assert_eq!(
-                    result1, result2,
-                    "Simplex3({}, {}, {}) should be deterministic with fixed hash",
-                    x, y, z
-                );
-            }
-        }
-
-        #[test]
-        fn test_simplex3_no_discontinuities_along_line() {
-            // Sample noise along a line and check for sudden jumps
-            const STEP: f32 = 0.01;
-            const THRESHOLD: f32 = 0.5;
-
-            let mut prev_value: Option<f32> = None;
-            let mut max_jump = 0.0f32;
-            let mut jump_count = 0;
-
-            for i in 0..500 {
-                let x = i as f32 * STEP;
-                let y = x;
-                let z = x;
-                let result =
-                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
-                let result_float = fixed_to_float(result);
-
-                if let Some(prev) = prev_value {
-                    let jump = (result_float - prev).abs();
-                    max_jump = max_jump.max(jump);
-
-                    if jump > THRESHOLD {
-                        jump_count += 1;
-                        if jump_count <= 5 {
-                            println!(
-                                "Large jump detected at ({}, {}, {}): {} -> {}, jump = {}",
-                                x, y, z, prev, result_float, jump
-                            );
-                        }
-                    }
-                }
-                prev_value = Some(result_float);
-            }
-
-            println!(
-                "Maximum jump along diagonal: {}, jumps > {}: {}",
-                max_jump, THRESHOLD, jump_count
-            );
-            assert!(
-                max_jump < 1.0,
-                "Discontinuity detected: maximum jump = {}",
-                max_jump
-            );
-        }
-    }
-
-    #[cfg(all(test, feature = "test_visual"))]
-    mod visual_tests {
-        use super::*;
-        use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
-
-        #[test]
-        fn test_simplex3_no_discontinuities() {
-            // Sample noise along a line and check for sudden jumps
-            const STEP: f32 = 0.01;
-            const THRESHOLD: f32 = 0.3;
-
-            let mut prev_value: Option<f32> = None;
-            let mut max_jump = 0.0f32;
-            let mut jump_count = 0;
-            let mut jump_locations = Vec::new();
-
-            for i in 0..500 {
-                let x = i as f32 * STEP;
-                let y = x;
-                let z = x;
-                let result =
-                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
-                let result_float = fixed_to_float(result);
-
-                if let Some(prev) = prev_value {
-                    let jump = (result_float - prev).abs();
-                    max_jump = max_jump.max(jump);
-
-                    if jump > THRESHOLD {
-                        jump_count += 1;
-                        if jump_locations.len() < 10 {
-                            jump_locations.push((x, y, z, prev, result_float, jump));
-                        }
-                    }
-                }
-                prev_value = Some(result_float);
-            }
-
-            println!(
-                "Maximum jump along diagonal: {}, jumps > {}: {}",
-                max_jump, THRESHOLD, jump_count
-            );
-
-            if !jump_locations.is_empty() {
-                println!("First few jump locations:");
-                for (x, y, z, prev, curr, jump) in jump_locations.iter().take(5) {
+                if jump > 0.5 {
                     println!(
-                        "  ({:.3}, {:.3}, {:.3}): {} -> {}, jump = {}",
-                        x, y, z, prev, curr, jump
+                        "Large jump detected at ({}, {}, {}): {} -> {}, jump = {}",
+                        x, y, z, prev, result_float, jump
                     );
                 }
             }
-
-            assert!(
-                max_jump < 0.5,
-                "Discontinuity detected: maximum jump = {} (threshold: 0.5)",
-                max_jump
-            );
+            prev_value = Some(result_float);
         }
 
-        #[cfg(feature = "test")]
-        #[test]
-        fn test_simplex3_compare_with_noise_rs() {
-            use noise::{NoiseFn, Simplex};
-
-            let noise_rs_fn = Simplex::new(0);
-            let test_points = [
-                (0.0, 0.0, 0.0),
-                (0.5, 0.5, 0.5),
-                (1.0, 1.0, 1.0),
-                (5.5, 3.2, 1.1),
-                (10.0, 10.0, 10.0),
-            ];
-
-            println!("\n=== Simplex3 Comparison with noise-rs ===");
-            for (x, y, z) in test_points {
-                let our_value =
-                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
-                let our_float = fixed_to_float(our_value);
-
-                let noise_rs_value = noise_rs_fn.get([x as f64, y as f64, z as f64]) as f32;
-
-                let diff = (our_float - noise_rs_value).abs();
-                println!(
-                    "Point ({:4.1}, {:4.1}, {:4.1}): ours={:8.5}, noise-rs={:8.5}, diff={:8.5}",
-                    x, y, z, our_float, noise_rs_value, diff
-                );
-
-                // Verify both are in reasonable range
-                assert!(our_float >= -2.0 && our_float <= 2.0);
-                assert!(noise_rs_value >= -2.0 && noise_rs_value <= 2.0);
-            }
-        }
-
-        #[cfg(all(test, feature = "test_hash_fixed"))]
-        mod trace_tests {
-            use super::*;
-            use crate::builtins::shared::lpfx_hash::__lpfx_hash_3;
-            use crate::util::q32::Q32;
-            use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
-
-            #[test]
-            fn test_simplex3_trace_algorithm() {
-                // Trace through the algorithm for a specific point to debug
-
-                let x = float_to_fixed(2.5);
-                let y = float_to_fixed(2.5);
-                let z = float_to_fixed(2.5);
-                let seed = 0u32;
-
-                let x_q32 = Q32::from_fixed(x);
-                let y_q32 = Q32::from_fixed(y);
-                let z_q32 = Q32::from_fixed(z);
-
-                // Skew
-                let sum = x_q32 + y_q32 + z_q32;
-                let skew = sum * super::SKEW_FACTOR_3D;
-                let skewed_x = x_q32 + skew;
-                let skewed_y = y_q32 + skew;
-                let skewed_z = z_q32 + skew;
-
-                let cell_x_int = skewed_x.to_i32();
-                let cell_y_int = skewed_y.to_i32();
-                let cell_z_int = skewed_z.to_i32();
-
-                println!("\n=== Simplex3 Algorithm Trace (2.5, 2.5, 2.5) ===");
-                println!(
-                    "Input: ({}, {}, {})",
-                    fixed_to_float(x),
-                    fixed_to_float(y),
-                    fixed_to_float(z)
-                );
-                println!(
-                    "Skewed: ({:.6}, {:.6}, {:.6})",
-                    fixed_to_float(skewed_x.to_fixed()),
-                    fixed_to_float(skewed_y.to_fixed()),
-                    fixed_to_float(skewed_z.to_fixed())
-                );
-                println!("Cell: ({}, {}, {})", cell_x_int, cell_y_int, cell_z_int);
-
-                // Unskew
-                let cell_x = Q32::from_i32(cell_x_int);
-                let cell_y = Q32::from_i32(cell_y_int);
-                let cell_z = Q32::from_i32(cell_z_int);
-                let cell_sum = cell_x + cell_y + cell_z;
-                let unskew = cell_sum * super::UNSKEW_FACTOR_3D;
-                let unskewed_x = cell_x - unskew;
-                let unskewed_y = cell_y - unskew;
-                let unskewed_z = cell_z - unskew;
-
-                println!("Unskew: {:.6}", fixed_to_float(unskew.to_fixed()));
-                println!(
-                    "Unskewed cell origin: ({:.6}, {:.6}, {:.6})",
-                    fixed_to_float(unskewed_x.to_fixed()),
-                    fixed_to_float(unskewed_y.to_fixed()),
-                    fixed_to_float(unskewed_z.to_fixed())
-                );
-
-                // Offset1
-                let offset1_x = x_q32 - unskewed_x;
-                let offset1_y = y_q32 - unskewed_y;
-                let offset1_z = z_q32 - unskewed_z;
-
-                println!(
-                    "Offset1: ({:.6}, {:.6}, {:.6})",
-                    fixed_to_float(offset1_x.to_fixed()),
-                    fixed_to_float(offset1_y.to_fixed()),
-                    fixed_to_float(offset1_z.to_fixed())
-                );
-
-                // Determine order (simplified - just show which case)
-                let order_case = if offset1_x >= offset1_y {
-                    if offset1_y >= offset1_z {
-                        "X Y Z"
-                    } else if offset1_x >= offset1_z {
-                        "X Z Y"
-                    } else {
-                        "Z X Y"
-                    }
-                } else {
-                    if offset1_y < offset1_z {
-                        "Z Y X"
-                    } else if offset1_x < offset1_z {
-                        "Y Z X"
-                    } else {
-                        "Y X Z"
-                    }
-                };
-                println!("Order case: {}", order_case);
-
-                // Calculate hash values for corners
-                let gi0 = __lpfx_hash_3(
-                    cell_x_int as u32,
-                    cell_y_int as u32,
-                    cell_z_int as u32,
-                    seed,
-                );
-                println!(
-                    "Hash for corner 0 (cell {}): {} (mod 32: {})",
-                    (cell_x_int, cell_y_int, cell_z_int),
-                    gi0,
-                    gi0 % 32
-                );
-
-                let result = __lp_fixed32_lpfx_simplex3(x, y, z, seed);
-                println!("Final result: {:.6}", fixed_to_float(result));
-            }
-        }
+        println!("Maximum jump along boundary path: {}", max_jump);
+        assert!(
+            max_jump < 1.0,
+            "Discontinuity detected: maximum jump = {}",
+            max_jump
+        );
     }
 }

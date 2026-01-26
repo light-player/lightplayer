@@ -73,9 +73,3 @@ esp32s3 = [
     "esp-rtos/esp32s3",
     "esp-hal/esp32s3",
 ]
-
-[profile.release]
-debug            = true
-debug-assertions = true
-lto              = "fat"
-codegen-units    = 1
