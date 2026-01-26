@@ -493,31 +493,9 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
     imports.sort();
 
     if !imports.is_empty() {
-        // Group lpfx imports together
-        let mut q32_imports = Vec::new();
-        let mut lpfx_imports = Vec::new();
-
-        for import in &imports {
-            if import == "q32" {
-                q32_imports.push(import.clone());
-            } else if import.starts_with("lpfx::") {
-                lpfx_imports.push(import.strip_prefix("lpfx::").unwrap().to_string());
-            }
-        }
-
-        let mut import_list = Vec::new();
-        import_list.extend(q32_imports);
-        if !lpfx_imports.is_empty() {
-            if lpfx_imports.len() == 1 {
-                import_list.push(format!("lpfx::{}", lpfx_imports[0]));
-            } else {
-                import_list.push(format!("lpfx::{{{}}}", lpfx_imports.join(", ")));
-            }
-        }
-
         output.push_str(&format!(
             "    use lp_builtins::builtins::{{{}}};\n",
-            import_list.join(", ")
+            imports.join(", ")
         ));
     }
 
@@ -538,6 +516,7 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
                 // e.g., "lpfx::simplex::simplex1_q32" -> "simplex::simplex1_q32"
                 components[1..].join("::")
             } else {
+                // Fallback: use module_path as-is
                 builtin.module_path.clone()
             };
 

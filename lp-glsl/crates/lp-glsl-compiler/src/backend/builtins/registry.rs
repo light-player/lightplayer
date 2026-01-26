@@ -60,6 +60,14 @@ pub enum BuiltinId {
     LpfxSimplex2Q32,
     LpfxSimplex3F32,
     LpfxSimplex3Q32,
+    LpfxWorley2F32,
+    LpfxWorley2Q32,
+    LpfxWorley2ValueF32,
+    LpfxWorley2ValueQ32,
+    LpfxWorley3F32,
+    LpfxWorley3Q32,
+    LpfxWorley3ValueF32,
+    LpfxWorley3ValueQ32,
 }
 
 impl BuiltinId {
@@ -104,6 +112,14 @@ impl BuiltinId {
             BuiltinId::LpfxSimplex2Q32 => "__lpfx_simplex2_q32",
             BuiltinId::LpfxSimplex3F32 => "__lpfx_simplex3_f32",
             BuiltinId::LpfxSimplex3Q32 => "__lpfx_simplex3_q32",
+            BuiltinId::LpfxWorley2F32 => "__lpfx_worley2_f32",
+            BuiltinId::LpfxWorley2Q32 => "__lpfx_worley2_q32",
+            BuiltinId::LpfxWorley2ValueF32 => "__lpfx_worley2_value_f32",
+            BuiltinId::LpfxWorley2ValueQ32 => "__lpfx_worley2_value_q32",
+            BuiltinId::LpfxWorley3F32 => "__lpfx_worley3_f32",
+            BuiltinId::LpfxWorley3Q32 => "__lpfx_worley3_q32",
+            BuiltinId::LpfxWorley3ValueF32 => "__lpfx_worley3_value_f32",
+            BuiltinId::LpfxWorley3ValueQ32 => "__lpfx_worley3_value_q32",
         }
     }
 
@@ -111,7 +127,13 @@ impl BuiltinId {
     pub fn signature(&self) -> Signature {
         let mut sig = Signature::new(CallConv::SystemV);
         match self {
-            BuiltinId::LpfxHash3 | BuiltinId::LpfxSimplex3F32 | BuiltinId::LpfxSimplex3Q32 => {
+            BuiltinId::LpfxHash3
+            | BuiltinId::LpfxSimplex3F32
+            | BuiltinId::LpfxSimplex3Q32
+            | BuiltinId::LpfxWorley3F32
+            | BuiltinId::LpfxWorley3Q32
+            | BuiltinId::LpfxWorley3ValueF32
+            | BuiltinId::LpfxWorley3ValueQ32 => {
                 // (i32, i32, i32, i32) -> i32
                 sig.params.push(AbiParam::new(types::I32));
                 sig.params.push(AbiParam::new(types::I32));
@@ -122,7 +144,11 @@ impl BuiltinId {
             BuiltinId::LpQ32Fma
             | BuiltinId::LpfxHash2
             | BuiltinId::LpfxSimplex2F32
-            | BuiltinId::LpfxSimplex2Q32 => {
+            | BuiltinId::LpfxSimplex2Q32
+            | BuiltinId::LpfxWorley2F32
+            | BuiltinId::LpfxWorley2Q32
+            | BuiltinId::LpfxWorley2ValueF32
+            | BuiltinId::LpfxWorley2ValueQ32 => {
                 // (i32, i32, i32) -> i32
                 sig.params.push(AbiParam::new(types::I32));
                 sig.params.push(AbiParam::new(types::I32));
@@ -214,6 +240,14 @@ impl BuiltinId {
             BuiltinId::LpfxSimplex2Q32,
             BuiltinId::LpfxSimplex3F32,
             BuiltinId::LpfxSimplex3Q32,
+            BuiltinId::LpfxWorley2F32,
+            BuiltinId::LpfxWorley2Q32,
+            BuiltinId::LpfxWorley2ValueF32,
+            BuiltinId::LpfxWorley2ValueQ32,
+            BuiltinId::LpfxWorley3F32,
+            BuiltinId::LpfxWorley3Q32,
+            BuiltinId::LpfxWorley3ValueF32,
+            BuiltinId::LpfxWorley3ValueQ32,
         ]
     }
 }
@@ -222,10 +256,7 @@ impl BuiltinId {
 ///
 /// Returns the function pointer that can be registered with JITModule.
 pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
-    use lp_builtins::builtins::{
-        lpfx::{hash, simplex},
-        q32,
-    };
+    use lp_builtins::builtins::{lpfx::hash, lpfx::simplex, lpfx::worley, q32};
     match builtin {
         BuiltinId::LpQ32Acos => q32::__lp_q32_acos as *const u8,
         BuiltinId::LpQ32Acosh => q32::__lp_q32_acosh as *const u8,
@@ -265,6 +296,22 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         BuiltinId::LpfxSimplex2Q32 => simplex::simplex2_q32::__lpfx_simplex2_q32 as *const u8,
         BuiltinId::LpfxSimplex3F32 => simplex::simplex3_f32::__lpfx_simplex3_f32 as *const u8,
         BuiltinId::LpfxSimplex3Q32 => simplex::simplex3_q32::__lpfx_simplex3_q32 as *const u8,
+        BuiltinId::LpfxWorley2F32 => worley::worley2_f32::__lpfx_worley2_f32 as *const u8,
+        BuiltinId::LpfxWorley2Q32 => worley::worley2_q32::__lpfx_worley2_q32 as *const u8,
+        BuiltinId::LpfxWorley2ValueF32 => {
+            worley::worley2_value_f32::__lpfx_worley2_value_f32 as *const u8
+        }
+        BuiltinId::LpfxWorley2ValueQ32 => {
+            worley::worley2_value_q32::__lpfx_worley2_value_q32 as *const u8
+        }
+        BuiltinId::LpfxWorley3F32 => worley::worley3_f32::__lpfx_worley3_f32 as *const u8,
+        BuiltinId::LpfxWorley3Q32 => worley::worley3_q32::__lpfx_worley3_q32 as *const u8,
+        BuiltinId::LpfxWorley3ValueF32 => {
+            worley::worley3_value_f32::__lpfx_worley3_value_f32 as *const u8
+        }
+        BuiltinId::LpfxWorley3ValueQ32 => {
+            worley::worley3_value_q32::__lpfx_worley3_value_q32 as *const u8
+        }
     }
 }
 
