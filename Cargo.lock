@@ -3280,6 +3280,7 @@ dependencies = [
 name = "lp-builtins"
 version = "40.0.0"
 dependencies = [
+ "lpfx-impl-macro",
  "noise",
 ]
 
@@ -3463,6 +3464,15 @@ dependencies = [
  "clap",
  "env_logger",
  "lp-glsl-filetests",
+]
+
+[[package]]
+name = "lpfx-impl-macro"
+version = "40.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.114",
 ]
 
 [[package]]

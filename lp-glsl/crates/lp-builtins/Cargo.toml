@@ -16,6 +16,9 @@ test = ["std"]
 test_hash_fixed = []
 test_visual = ["std"]
 
+[dependencies]
+lpfx-impl-macro = { path = "../lpfx-impl-macro" }
+
 [dev-dependencies]
 noise = "0.9"
 

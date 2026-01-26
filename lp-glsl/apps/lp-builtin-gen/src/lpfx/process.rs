@@ -39,11 +39,21 @@ pub fn process_lpfx_functions(
             }
         })?;
 
-        // Find and parse the #[lpfx_impl] attribute
+        // Find and parse the #[lpfx_impl] or #[lpfx_impl_macro::lpfx_impl] attribute
         let attr = func
             .attrs
             .iter()
-            .find(|a| a.path().is_ident("lpfx_impl"))
+            .find(|a| {
+                let path = a.path();
+                if path.is_ident("lpfx_impl") {
+                    return true;
+                }
+                // Check if last segment is "lpfx_impl"
+                if let Some(last_seg) = path.segments.last() {
+                    return last_seg.ident == "lpfx_impl";
+                }
+                false
+            })
             .ok_or_else(|| LpfxCodegenError::MissingAttribute {
                 function_name: info.rust_fn_name.clone(),
                 file_path: info.file_path.display().to_string(),

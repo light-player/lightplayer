@@ -19,8 +19,15 @@ pub fn parse_lpfx_attribute(
     function_name: &str,
     file_path: &str,
 ) -> Result<LpfxAttribute, LpfxCodegenError> {
-    // Check that this is an lpfx_impl attribute
-    if !attr.path().is_ident("lpfx_impl") {
+    // Check that this is an lpfx_impl attribute (can be lpfx_impl or lpfx_impl_macro::lpfx_impl)
+    let path = attr.path();
+    let is_lpfx_impl = path.is_ident("lpfx_impl")
+        || path
+            .segments
+            .last()
+            .map(|s| s.ident == "lpfx_impl")
+            .unwrap_or(false);
+    if !is_lpfx_impl {
         return Err(LpfxCodegenError::AttributeParseError {
             function_name: function_name.to_string(),
             file_path: file_path.to_string(),

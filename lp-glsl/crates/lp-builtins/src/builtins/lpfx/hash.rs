@@ -34,8 +34,7 @@ const KEY: u32 = 249_222_277;
 ///
 /// # Returns
 /// Hash value as u32
-#[allow(unknown_attributes)]
-#[lpfx_impl("uint lpfx_hash1(uint x, uint seed)")]
+#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash1(uint x, uint seed)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
     #[cfg(feature = "test_hash_fixed")]
@@ -57,8 +56,7 @@ pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
 ///
 /// # Returns
 /// Hash value as u32
-#[allow(unknown_attributes)]
-#[lpfx_impl("uint lpfx_hash2(uint x, uint y, uint seed)")]
+#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash2(uint x, uint y, uint seed)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_hash_2(x: u32, y: u32, seed: u32) -> u32 {
     #[cfg(feature = "test_hash_fixed")]
@@ -85,8 +83,7 @@ pub extern "C" fn __lpfx_hash_2(x: u32, y: u32, seed: u32) -> u32 {
 ///
 /// # Returns
 /// Hash value as u32
-#[allow(unknown_attributes)]
-#[lpfx_impl("uint lpfx_hash3(uint x, uint y, uint z, uint seed)")]
+#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash3(uint x, uint y, uint z, uint seed)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_hash_3(x: u32, y: u32, z: u32, seed: u32) -> u32 {
     #[cfg(feature = "test_hash_fixed")]

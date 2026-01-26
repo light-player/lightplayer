@@ -52,7 +52,9 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
         // Handle Decimal vs NonDecimal implementations
         match &func.impls {
-            crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::Decimal { float_impl, .. } => {
+            crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::Decimal {
+                float_impl, ..
+            } => {
                 // Always use float implementation in frontend - transform will convert to fixed32
                 // Generate TestCase call with float signature (f32 args, f32 return)
                 let func_ref = self.get_lpfx_testcase_call(func, *float_impl, &param_types)?;

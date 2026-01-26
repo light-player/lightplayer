@@ -17,8 +17,9 @@ use lp_builtins::builtins::fixed32::{
 };
 use lp_builtins::builtins::lpfx::hash::{__lpfx_hash_1, __lpfx_hash_2, __lpfx_hash_3};
 use lp_builtins::builtins::lpfx::simplex::{
-    simplex1_q32::__lpfx_simplex1_q32, simplex2_q32::__lpfx_simplex2_q32,
-    simplex3_q32::__lpfx_simplex3_q32,
+    simplex1_f32::__lpfx_simplex1_f32, simplex1_q32::__lpfx_simplex1_q32,
+    simplex2_f32::__lpfx_simplex2_f32, simplex2_q32::__lpfx_simplex2_q32,
+    simplex3_f32::__lpfx_simplex3_f32, simplex3_q32::__lpfx_simplex3_q32,
 };
 
 /// Reference all builtin functions to prevent dead code elimination.
@@ -59,8 +60,11 @@ pub fn ensure_builtins_referenced() {
         let __lpfx_hash_1_fn: extern "C" fn(u32, u32) -> u32 = __lpfx_hash_1;
         let __lpfx_hash_2_fn: extern "C" fn(u32, u32, u32) -> u32 = __lpfx_hash_2;
         let __lpfx_hash_3_fn: extern "C" fn(u32, u32, u32, u32) -> u32 = __lpfx_hash_3;
+        let __lpfx_simplex1_f32_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_simplex1_f32;
         let __lpfx_simplex1_q32_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_simplex1_q32;
+        let __lpfx_simplex2_f32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_simplex2_f32;
         let __lpfx_simplex2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_simplex2_q32;
+        let __lpfx_simplex3_f32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_simplex3_f32;
         let __lpfx_simplex3_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_simplex3_q32;
 
         // Force these to be included by using them in a way that can't be optimized away
@@ -97,8 +101,11 @@ pub fn ensure_builtins_referenced() {
         let _ = core::ptr::read_volatile(&__lpfx_hash_1_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_hash_2_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_hash_3_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_simplex1_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_simplex1_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_simplex2_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_simplex2_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_simplex3_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_simplex3_q32_fn as *const _);
     }
 }

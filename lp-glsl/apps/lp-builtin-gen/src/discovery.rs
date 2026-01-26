@@ -93,11 +93,18 @@ fn extract_lpfx_function(func: &ItemFn, file_path: &Path) -> Option<LpfxFunction
         return None;
     }
 
-    // Check for #[lpfx_impl] attribute
-    let has_lpfx_impl_attr = func
-        .attrs
-        .iter()
-        .any(|attr| attr.path().is_ident("lpfx_impl"));
+    // Check for #[lpfx_impl] or #[lpfx_impl_macro::lpfx_impl] attribute
+    let has_lpfx_impl_attr = func.attrs.iter().any(|attr| {
+        let path = attr.path();
+        if path.is_ident("lpfx_impl") {
+            return true;
+        }
+        // Check if last segment is "lpfx_impl"
+        if let Some(last_seg) = path.segments.last() {
+            return last_seg.ident == "lpfx_impl";
+        }
+        false
+    });
 
     // Derive BuiltinId enum variant name by:
     // 1. Strip leading __
