@@ -3269,6 +3269,7 @@ name = "lp-builtin-gen"
 version = "40.0.0"
 dependencies = [
  "lp-glsl-compiler",
+ "proc-macro2",
  "quote",
  "syn 2.0.114",
  "walkdir",
