@@ -163,14 +163,14 @@ impl ClientProjectView {
                             if let Some(entry) = self.nodes.get_mut(handle) {
                                 let old_status = entry.status.clone();
                                 let new_status = status.clone();
-                                
+
                                 // Track status changes from Ok -> Error or Error -> Ok
                                 let should_report = matches!(
                                     (&old_status, &new_status),
                                     (NodeStatus::Ok, NodeStatus::Error(_))
                                         | (NodeStatus::Error(_), NodeStatus::Ok)
                                 );
-                                
+
                                 if should_report {
                                     status_changes.push(StatusChange {
                                         path: entry.path.clone(),
@@ -178,7 +178,7 @@ impl ClientProjectView {
                                         new_status: new_status.clone(),
                                     });
                                 }
-                                
+
                                 entry.status = new_status.clone();
                                 // Update previous status for next comparison
                                 self.previous_status.insert(*handle, new_status);
@@ -237,7 +237,7 @@ impl ClientProjectView {
                             (NodeStatus::Ok, NodeStatus::Error(_))
                                 | (NodeStatus::Error(_), NodeStatus::Ok)
                         );
-                        
+
                         if should_report {
                             status_changes.push(StatusChange {
                                 path: entry.path.clone(),
@@ -245,7 +245,7 @@ impl ClientProjectView {
                                 new_status: new_status.clone(),
                             });
                         }
-                        
+
                         entry.status = new_status.clone();
                         // Update previous status
                         self.previous_status.insert(*handle, new_status);

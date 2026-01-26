@@ -41,7 +41,9 @@ pub fn map_testcase_to_builtin(testcase_name: &str) -> Option<(BuiltinId, usize)
         "lp_q32_expf" | "__lp_q32_exp" | "expf" => Some((BuiltinId::LpQ32Exp, 1)),
         "lp_q32_exp2f" | "__lp_q32_exp2" | "exp2f" => Some((BuiltinId::LpQ32Exp2, 1)),
         "lp_q32_fmaf" | "__lp_q32_fma" | "fmaf" => Some((BuiltinId::LpQ32Fma, 3)),
-        "lp_q32_inversesqrtf" | "__lp_q32_inversesqrt" | "inversesqrtf" => Some((BuiltinId::LpQ32Inversesqrt, 1)),
+        "lp_q32_inversesqrtf" | "__lp_q32_inversesqrt" | "inversesqrtf" => {
+            Some((BuiltinId::LpQ32Inversesqrt, 1))
+        }
         "lp_q32_ldexpf" | "__lp_q32_ldexp" | "ldexpf" => Some((BuiltinId::LpQ32Ldexp, 2)),
         "lp_q32_logf" | "__lp_q32_log" | "logf" => Some((BuiltinId::LpQ32Log, 1)),
         "lp_q32_log2f" | "__lp_q32_log2" | "log2f" => Some((BuiltinId::LpQ32Log2, 1)),
@@ -49,7 +51,9 @@ pub fn map_testcase_to_builtin(testcase_name: &str) -> Option<(BuiltinId, usize)
         "lp_q32_mulf" | "__lp_q32_mul" | "mulf" => Some((BuiltinId::LpQ32Mul, 2)),
         "lp_q32_powf" | "__lp_q32_pow" | "powf" => Some((BuiltinId::LpQ32Pow, 2)),
         "lp_q32_roundf" | "__lp_q32_round" | "roundf" => Some((BuiltinId::LpQ32Round, 1)),
-        "lp_q32_roundevenf" | "__lp_q32_roundeven" | "roundevenf" => Some((BuiltinId::LpQ32Roundeven, 1)),
+        "lp_q32_roundevenf" | "__lp_q32_roundeven" | "roundevenf" => {
+            Some((BuiltinId::LpQ32Roundeven, 1))
+        }
         "lp_q32_sinf" | "__lp_q32_sin" | "sinf" => Some((BuiltinId::LpQ32Sin, 1)),
         "lp_q32_sinhf" | "__lp_q32_sinh" | "sinhf" => Some((BuiltinId::LpQ32Sinh, 1)),
         "lp_q32_sqrtf" | "__lp_q32_sqrt" | "sqrtf" => Some((BuiltinId::LpQ32Sqrt, 1)),
@@ -62,14 +66,13 @@ pub fn map_testcase_to_builtin(testcase_name: &str) -> Option<(BuiltinId, usize)
         "__lpfx_simplex1" => Some((BuiltinId::LpfxSimplex1Q32, 2)),
         "__lpfx_simplex2" => Some((BuiltinId::LpfxSimplex2Q32, 3)),
         "__lpfx_simplex3" => Some((BuiltinId::LpfxSimplex3Q32, 4)),
-        "lpfx_worley2_q32f" | "__lpfx_worley2_q32" => Some((BuiltinId::LpfxWorley2Q32, 3)),
-        "lpfx_worley2_value_q32f" | "__lpfx_worley2_value_q32" => Some((BuiltinId::LpfxWorley2ValueQ32, 3)),
-        "lpfx_worley3_q32f" | "__lpfx_worley3_q32" => Some((BuiltinId::LpfxWorley3Q32, 4)),
-        "lpfx_worley3_value_q32f" | "__lpfx_worley3_value_q32" => Some((BuiltinId::LpfxWorley3ValueQ32, 4)),
+        "__lpfx_worley2" => Some((BuiltinId::LpfxWorley2Q32, 3)),
+        "__lpfx_worley2_value" => Some((BuiltinId::LpfxWorley2ValueQ32, 3)),
+        "__lpfx_worley3" => Some((BuiltinId::LpfxWorley3Q32, 4)),
+        "__lpfx_worley3_value" => Some((BuiltinId::LpfxWorley3ValueQ32, 4)),
         _ => None,
     }
 }
-
 
 /// Convert Ceil instruction.
 pub(crate) fn convert_ceil(

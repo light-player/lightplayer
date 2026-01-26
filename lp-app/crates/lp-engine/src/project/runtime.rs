@@ -354,7 +354,9 @@ impl ProjectRuntime {
                 // GLSL compilation errors are runtime state errors, not initialization errors
                 let shader_compilation_error = if node_kind == NodeKind::Shader {
                     // Try to downcast to ShaderRuntime to check compilation error
-                    runtime.as_any().downcast_ref::<ShaderRuntime>()
+                    runtime
+                        .as_any()
+                        .downcast_ref::<ShaderRuntime>()
                         .and_then(|sr| sr.compilation_error().map(|s| s.to_string()))
                 } else {
                     None
@@ -722,7 +724,9 @@ impl ProjectRuntime {
                     drop(ctx);
 
                     // Check if this is a shader runtime with compilation error
-                    let shader_compilation_error = runtime.as_any().downcast_ref::<ShaderRuntime>()
+                    let shader_compilation_error = runtime
+                        .as_any()
+                        .downcast_ref::<ShaderRuntime>()
                         .and_then(|sr| sr.compilation_error().map(|s| s.to_string()));
 
                     // Put runtime back and update status

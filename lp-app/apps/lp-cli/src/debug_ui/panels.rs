@@ -69,16 +69,17 @@ pub fn render_all_nodes_panel(
                 NodeStatus::Warn(_) => Color32::from_rgb(255, 255, 0), // Yellow
                 NodeStatus::Created => Color32::from_rgb(128, 128, 128), // Gray
             };
-            
+
             // Draw status indicator circle using painter
             let circle_size = 8.0;
             let rect = ui.available_rect_before_wrap();
             let circle_center = egui::pos2(rect.min.x + circle_size / 2.0, rect.center().y);
-            ui.painter().circle_filled(circle_center, circle_size / 2.0, status_color);
-            
+            ui.painter()
+                .circle_filled(circle_center, circle_size / 2.0, status_color);
+
             // Add spacing after circle
             ui.add_space(circle_size + 4.0);
-            
+
             // Show checkbox with node path
             let node_path = entry.path.as_str();
             let checkbox_response = ui.checkbox(&mut checked, node_path);
