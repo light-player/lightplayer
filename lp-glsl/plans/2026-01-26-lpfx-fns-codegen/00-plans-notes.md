@@ -19,9 +19,11 @@
 **Decision**: Use consistent syntax with variant type for decimal functions:
 
 **Syntax**:
-- Non-decimal: `#[lpfx_impl("u32 lpfx_hash1(u32 x, u32 seed)")]` - just the signature string
-- Decimal f32: `#[lpfx_impl(f32, "float lpfx_simplex3(vec3 p, u32 seed)")]` - variant type + signature
-- Decimal q32: `#[lpfx_impl(q32, "float lpfx_simplex3(vec3 p, u32 seed)")]` - variant type + signature
+- Non-decimal: `#[lpfx_impl("uint lpfx_hash1(uint x, uint seed)")]` - just the signature string (note: GLSL uses 'uint' not 'u32')
+- Decimal f32: `#[lpfx_impl(f32, "float lpfx_simplex3(vec3 p, uint seed)")]` - variant type + signature
+- Decimal q32: `#[lpfx_impl(q32, "float lpfx_simplex3(vec3 p, uint seed)")]` - variant type + signature
+
+**Note**: GLSL syntax uses `uint` for unsigned integers, not `u32`. The attributes should use standard GLSL syntax.
 
 **Rationale**:
 - Duplicating the signature is fine - explicit and clear

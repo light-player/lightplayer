@@ -4,9 +4,13 @@ use lp_builtin_gen::lpfx::glsl_parse::parse_glsl_signature;
 
 #[test]
 fn test_parse_simple_signature() {
-    let sig = "u32 lpfx_hash1(u32 x, u32 seed)";
+    // Note: GLSL uses 'uint' not 'u32' in source code
+    let sig = "uint lpfx_hash1(uint x, uint seed)";
     let result = parse_glsl_signature(sig, "test_func", "test.rs");
-    assert!(result.is_ok());
+    if let Err(e) = &result {
+        eprintln!("Error: {}", e);
+    }
+    assert!(result.is_ok(), "Failed to parse signature: {:?}", result);
 
     let func_sig = result.unwrap();
     assert_eq!(func_sig.name, "lpfx_hash1");
@@ -15,9 +19,10 @@ fn test_parse_simple_signature() {
 
 #[test]
 fn test_parse_vector_signature() {
-    let sig = "float lpfx_simplex3(vec3 p, u32 seed)";
+    // Note: GLSL uses 'uint' not 'u32' in source code
+    let sig = "float lpfx_simplex3(vec3 p, uint seed)";
     let result = parse_glsl_signature(sig, "test_func", "test.rs");
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "Failed to parse signature: {:?}", result);
 
     let func_sig = result.unwrap();
     assert_eq!(func_sig.name, "lpfx_simplex3");
