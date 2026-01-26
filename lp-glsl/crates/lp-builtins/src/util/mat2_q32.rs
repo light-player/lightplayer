@@ -228,3 +228,187 @@ impl Neg for Mat2Q32 {
         Mat2Q32::new(-self.m[0], -self.m[1], -self.m[2], -self.m[3])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[cfg(test)]
+    extern crate std;
+    use super::*;
+
+    #[test]
+    fn test_identity() {
+        let m = Mat2Q32::identity();
+        assert_eq!(m.get(0, 0).to_f32(), 1.0);
+        assert_eq!(m.get(1, 1).to_f32(), 1.0);
+        assert_eq!(m.get(0, 1).to_f32(), 0.0);
+        assert_eq!(m.get(1, 0).to_f32(), 0.0);
+    }
+
+    #[test]
+    fn test_zero() {
+        let m = Mat2Q32::zero();
+        for i in 0..4 {
+            assert_eq!(m.m[i].to_f32(), 0.0);
+        }
+    }
+
+    #[test]
+    fn test_new() {
+        let m = Mat2Q32::new(
+            Q32::from_i32(1),
+            Q32::from_i32(2),
+            Q32::from_i32(3),
+            Q32::from_i32(4),
+        );
+        assert_eq!(m.get(0, 0).to_f32(), 1.0);
+        assert_eq!(m.get(1, 0).to_f32(), 2.0);
+        assert_eq!(m.get(0, 1).to_f32(), 3.0);
+        assert_eq!(m.get(1, 1).to_f32(), 4.0);
+    }
+
+    #[test]
+    fn test_from_f32() {
+        let m = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        assert_eq!(m.get(0, 0).to_f32(), 1.0);
+        assert_eq!(m.get(1, 0).to_f32(), 2.0);
+        assert_eq!(m.get(0, 1).to_f32(), 3.0);
+        assert_eq!(m.get(1, 1).to_f32(), 4.0);
+    }
+
+    #[test]
+    fn test_from_vec2() {
+        let col0 = Vec2Q32::from_f32(1.0, 2.0);
+        let col1 = Vec2Q32::from_f32(3.0, 4.0);
+        let m = Mat2Q32::from_vec2(col0, col1);
+        assert_eq!(m.col0(), col0);
+        assert_eq!(m.col1(), col1);
+    }
+
+    #[test]
+    fn test_get_set() {
+        let mut m = Mat2Q32::zero();
+        m.set(0, 0, Q32::from_f32(5.0));
+        assert_eq!(m.get(0, 0).to_f32(), 5.0);
+    }
+
+    #[test]
+    fn test_col0_col1() {
+        let m = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        let col0 = m.col0();
+        assert_eq!(col0.x.to_f32(), 1.0);
+        assert_eq!(col0.y.to_f32(), 2.0);
+        let col1 = m.col1();
+        assert_eq!(col1.x.to_f32(), 3.0);
+        assert_eq!(col1.y.to_f32(), 4.0);
+    }
+
+    #[test]
+    fn test_add() {
+        let a = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        let b = Mat2Q32::from_f32(1.0, 1.0, 1.0, 1.0);
+        let c = a + b;
+        assert_eq!(c.get(0, 0).to_f32(), 2.0);
+        assert_eq!(c.get(1, 1).to_f32(), 5.0);
+    }
+
+    #[test]
+    fn test_sub() {
+        let a = Mat2Q32::from_f32(5.0, 5.0, 5.0, 5.0);
+        let b = Mat2Q32::from_f32(1.0, 1.0, 1.0, 1.0);
+        let c = a - b;
+        assert_eq!(c.get(0, 0).to_f32(), 4.0);
+    }
+
+    #[test]
+    fn test_mul_matrix() {
+        let a = Mat2Q32::identity();
+        let b = Mat2Q32::identity();
+        let c = a * b;
+        assert_eq!(c, Mat2Q32::identity());
+    }
+
+    #[test]
+    fn test_mul_vec2() {
+        let m = Mat2Q32::identity();
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        let result = m * v;
+        assert_eq!(result.x.to_f32(), 1.0);
+        assert_eq!(result.y.to_f32(), 2.0);
+    }
+
+    #[test]
+    fn test_mul_scalar() {
+        let m = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        let s = Q32::from_f32(2.0);
+        let result = m * s;
+        assert_eq!(result.get(0, 0).to_f32(), 2.0);
+        assert_eq!(result.get(1, 1).to_f32(), 8.0);
+    }
+
+    #[test]
+    fn test_div_scalar() {
+        let m = Mat2Q32::from_f32(4.0, 6.0, 8.0, 10.0);
+        let s = Q32::from_f32(2.0);
+        let result = m / s;
+        assert_eq!(result.get(0, 0).to_f32(), 2.0);
+        assert_eq!(result.get(1, 1).to_f32(), 5.0);
+    }
+
+    #[test]
+    fn test_neg() {
+        let m = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        let neg = -m;
+        assert_eq!(neg.get(0, 0).to_f32(), -1.0);
+        assert_eq!(neg.get(1, 1).to_f32(), -4.0);
+    }
+
+    #[test]
+    fn test_transpose() {
+        let m = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        let t = m.transpose();
+        assert_eq!(t.get(0, 1).to_f32(), m.get(1, 0).to_f32());
+        assert_eq!(t.get(1, 0).to_f32(), m.get(0, 1).to_f32());
+    }
+
+    #[test]
+    fn test_determinant() {
+        let m = Mat2Q32::identity();
+        let det = m.determinant();
+        assert!((det.to_f32() - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_determinant_specific() {
+        let m = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        let det = m.determinant();
+        // det = 1*4 - 3*2 = 4 - 6 = -2
+        assert!((det.to_f32() - (-2.0)).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_inverse() {
+        let m = Mat2Q32::identity();
+        let inv = m.inverse().unwrap();
+        assert_eq!(inv, Mat2Q32::identity());
+    }
+
+    #[test]
+    fn test_inverse_singular() {
+        let m = Mat2Q32::zero();
+        assert_eq!(m.inverse(), None);
+    }
+
+    #[test]
+    fn test_inverse_specific() {
+        // Test with a specific matrix: [1, 2; 3, 4]
+        // Inverse should be: (1/-2) * [4, -2; -3, 1] = [-2, 1; 1.5, -0.5]
+        let m = Mat2Q32::from_f32(1.0, 2.0, 3.0, 4.0);
+        let inv = m.inverse().unwrap();
+        let product = m * inv;
+        // Should be approximately identity
+        assert!((product.get(0, 0).to_f32() - 1.0).abs() < 0.01);
+        assert!((product.get(1, 1).to_f32() - 1.0).abs() < 0.01);
+        assert!((product.get(0, 1).to_f32() - 0.0).abs() < 0.01);
+        assert!((product.get(1, 0).to_f32() - 0.0).abs() < 0.01);
+    }
+}

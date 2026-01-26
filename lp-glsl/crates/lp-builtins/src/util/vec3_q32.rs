@@ -291,7 +291,6 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
 
     #[test]
     fn test_new() {

@@ -340,3 +340,181 @@ impl Neg for Mat3Q32 {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[cfg(test)]
+    extern crate std;
+    use super::*;
+
+    #[test]
+    fn test_identity() {
+        let m = Mat3Q32::identity();
+        assert_eq!(m.get(0, 0).to_f32(), 1.0);
+        assert_eq!(m.get(1, 1).to_f32(), 1.0);
+        assert_eq!(m.get(2, 2).to_f32(), 1.0);
+        assert_eq!(m.get(0, 1).to_f32(), 0.0);
+        assert_eq!(m.get(1, 0).to_f32(), 0.0);
+    }
+
+    #[test]
+    fn test_zero() {
+        let m = Mat3Q32::zero();
+        for i in 0..9 {
+            assert_eq!(m.m[i].to_f32(), 0.0);
+        }
+    }
+
+    #[test]
+    fn test_new() {
+        let m = Mat3Q32::new(
+            Q32::from_i32(1),
+            Q32::from_i32(2),
+            Q32::from_i32(3),
+            Q32::from_i32(4),
+            Q32::from_i32(5),
+            Q32::from_i32(6),
+            Q32::from_i32(7),
+            Q32::from_i32(8),
+            Q32::from_i32(9),
+        );
+        assert_eq!(m.get(0, 0).to_f32(), 1.0);
+        assert_eq!(m.get(2, 2).to_f32(), 9.0);
+    }
+
+    #[test]
+    fn test_from_f32() {
+        let m = Mat3Q32::from_f32(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        assert_eq!(m.get(0, 0).to_f32(), 1.0);
+        assert_eq!(m.get(2, 2).to_f32(), 9.0);
+    }
+
+    #[test]
+    fn test_from_vec3() {
+        let col0 = Vec3Q32::from_f32(1.0, 2.0, 3.0);
+        let col1 = Vec3Q32::from_f32(4.0, 5.0, 6.0);
+        let col2 = Vec3Q32::from_f32(7.0, 8.0, 9.0);
+        let m = Mat3Q32::from_vec3(col0, col1, col2);
+        assert_eq!(m.col0(), col0);
+        assert_eq!(m.col1(), col1);
+        assert_eq!(m.col2(), col2);
+    }
+
+    #[test]
+    fn test_get_set() {
+        let mut m = Mat3Q32::zero();
+        m.set(0, 0, Q32::from_f32(5.0));
+        assert_eq!(m.get(0, 0).to_f32(), 5.0);
+    }
+
+    #[test]
+    fn test_col0_col1_col2() {
+        let m = Mat3Q32::from_f32(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        let col0 = m.col0();
+        assert_eq!(col0.x.to_f32(), 1.0);
+        assert_eq!(col0.y.to_f32(), 2.0);
+        assert_eq!(col0.z.to_f32(), 3.0);
+    }
+
+    #[test]
+    fn test_add() {
+        let a = Mat3Q32::from_f32(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        let b = Mat3Q32::from_f32(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        let c = a + b;
+        assert_eq!(c.get(0, 0).to_f32(), 2.0);
+        assert_eq!(c.get(2, 2).to_f32(), 10.0);
+    }
+
+    #[test]
+    fn test_sub() {
+        let a = Mat3Q32::from_f32(5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0);
+        let b = Mat3Q32::from_f32(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        let c = a - b;
+        assert_eq!(c.get(0, 0).to_f32(), 4.0);
+    }
+
+    #[test]
+    fn test_mul_matrix() {
+        let a = Mat3Q32::identity();
+        let b = Mat3Q32::identity();
+        let c = a * b;
+        assert_eq!(c, Mat3Q32::identity());
+    }
+
+    #[test]
+    fn test_mul_vec3() {
+        let m = Mat3Q32::identity();
+        let v = Vec3Q32::from_f32(1.0, 2.0, 3.0);
+        let result = m * v;
+        assert_eq!(result.x.to_f32(), 1.0);
+        assert_eq!(result.y.to_f32(), 2.0);
+        assert_eq!(result.z.to_f32(), 3.0);
+    }
+
+    #[test]
+    fn test_mul_scalar() {
+        let m = Mat3Q32::from_f32(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        let s = Q32::from_f32(2.0);
+        let result = m * s;
+        assert_eq!(result.get(0, 0).to_f32(), 2.0);
+        assert_eq!(result.get(2, 2).to_f32(), 18.0);
+    }
+
+    #[test]
+    fn test_div_scalar() {
+        let m = Mat3Q32::from_f32(4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0);
+        let s = Q32::from_f32(2.0);
+        let result = m / s;
+        assert_eq!(result.get(0, 0).to_f32(), 2.0);
+        assert_eq!(result.get(2, 2).to_f32(), 10.0);
+    }
+
+    #[test]
+    fn test_neg() {
+        let m = Mat3Q32::from_f32(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        let neg = -m;
+        assert_eq!(neg.get(0, 0).to_f32(), -1.0);
+        assert_eq!(neg.get(2, 2).to_f32(), -9.0);
+    }
+
+    #[test]
+    fn test_transpose() {
+        let m = Mat3Q32::from_f32(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        let t = m.transpose();
+        assert_eq!(t.get(0, 1).to_f32(), m.get(1, 0).to_f32());
+        assert_eq!(t.get(1, 0).to_f32(), m.get(0, 1).to_f32());
+    }
+
+    #[test]
+    fn test_determinant() {
+        let m = Mat3Q32::identity();
+        let det = m.determinant();
+        assert!((det.to_f32() - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_inverse() {
+        let m = Mat3Q32::identity();
+        let inv = m.inverse().unwrap();
+        assert_eq!(inv, Mat3Q32::identity());
+    }
+
+    #[test]
+    fn test_inverse_singular() {
+        let m = Mat3Q32::zero();
+        assert_eq!(m.inverse(), None);
+    }
+
+    #[test]
+    fn test_inverse_product() {
+        // Test that m * m.inverse() = identity (approximately)
+        let m = Mat3Q32::from_f32(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0);
+        let inv = m.inverse().unwrap();
+        let product = m * inv;
+        // Should be approximately identity
+        assert!((product.get(0, 0).to_f32() - 1.0).abs() < 0.01);
+        assert!((product.get(1, 1).to_f32() - 1.0).abs() < 0.01);
+        assert!((product.get(2, 2).to_f32() - 1.0).abs() < 0.01);
+        assert!((product.get(0, 1).to_f32() - 0.0).abs() < 0.01);
+    }
+}
