@@ -8,6 +8,10 @@ license.workspace = true
 name = "lp-builtin-gen"
 path = "src/main.rs"
 
+[lib]
+name = "lp_builtin_gen"
+path = "src/lib.rs"
+
 [dependencies]
 syn = { version = "2.0", features = ["full", "parsing"] }
 quote = "1.0"
