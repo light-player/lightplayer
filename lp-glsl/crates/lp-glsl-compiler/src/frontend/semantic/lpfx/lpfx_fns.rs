@@ -5,21 +5,43 @@
 
 use super::lpfx_fn::{LpfxFn, LpfxFnImpl};
 use crate::DecimalFormat;
+use crate::backend::builtins::registry::BuiltinId;
 use crate::semantic::functions::{FunctionSignature, ParamQualifier, Parameter};
 use crate::semantic::types::Type;
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{boxed::Box, string::String, vec, vec::Vec};
+use hashbrown::HashMap;
 
 /// Registry of all LPFX functions
 ///
 /// This is the single source of truth for all LPFX function definitions.
 /// Functions are looked up by name from this array.
 ///
-/// Note: Returns a Vec to avoid const limitations with String/Vec.
+/// Returns a static reference to avoid recreating the Vec on every call.
 /// In the future, this will be codegen'd and can use a more efficient storage.
-pub fn lpfx_fns() -> Vec<LpfxFn> {
+pub fn lpfx_fns() -> &'static [LpfxFn] {
+    #[cfg(feature = "std")]
+    {
+        static FUNCTIONS: std::sync::OnceLock<&'static [LpfxFn]> = std::sync::OnceLock::new();
+        *FUNCTIONS.get_or_init(|| init_functions())
+    }
+    #[cfg(not(feature = "std"))]
+    {
+        // In no_std, use a static initialized on first access
+        // This is safe because the data is immutable after initialization
+        static mut FUNCTIONS: Option<&'static [LpfxFn]> = None;
+        unsafe {
+            let ptr = core::ptr::addr_of_mut!(FUNCTIONS);
+            if (*ptr).is_none() {
+                *ptr = Some(init_functions());
+            }
+            (*ptr).unwrap_unchecked()
+        }
+    }
+}
+
+fn init_functions() -> &'static [LpfxFn] {
     // This will be codegen output - for now manually maintained
-    vec![
+    let vec: Vec<LpfxFn> = vec![
         // Hash functions
         LpfxFn {
             glsl_sig: FunctionSignature {
@@ -38,11 +60,7 @@ pub fn lpfx_fns() -> Vec<LpfxFn> {
                     },
                 ],
             },
-            impls: vec![LpfxFnImpl {
-                decimal_format: None,
-                builtin_module: "builtins::lpfx::hash",
-                rust_fn_name: "__lpfx_hash_1",
-            }],
+            impls: LpfxFnImpl::NonDecimal(BuiltinId::LpfxHash1),
         },
         LpfxFn {
             glsl_sig: FunctionSignature {
@@ -66,11 +84,7 @@ pub fn lpfx_fns() -> Vec<LpfxFn> {
                     },
                 ],
             },
-            impls: vec![LpfxFnImpl {
-                decimal_format: None,
-                builtin_module: "builtins::lpfx::hash",
-                rust_fn_name: "__lpfx_hash_2",
-            }],
+            impls: LpfxFnImpl::NonDecimal(BuiltinId::LpfxHash2),
         },
         LpfxFn {
             glsl_sig: FunctionSignature {
@@ -99,11 +113,7 @@ pub fn lpfx_fns() -> Vec<LpfxFn> {
                     },
                 ],
             },
-            impls: vec![LpfxFnImpl {
-                decimal_format: None,
-                builtin_module: "builtins::lpfx::hash",
-                rust_fn_name: "__lpfx_hash_3",
-            }],
+            impls: LpfxFnImpl::NonDecimal(BuiltinId::LpfxHash3),
         },
         // Simplex noise functions
         LpfxFn {
@@ -123,11 +133,11 @@ pub fn lpfx_fns() -> Vec<LpfxFn> {
                     },
                 ],
             },
-            impls: vec![LpfxFnImpl {
-                decimal_format: Some(DecimalFormat::Fixed32),
-                builtin_module: "builtins::lpfx::simplex",
-                rust_fn_name: "__lpfx_simplex1_q32",
-            }],
+            impls: {
+                let mut map = HashMap::new();
+                map.insert(DecimalFormat::Fixed32, BuiltinId::LpfxSimplex1Q32);
+                LpfxFnImpl::Decimal(map)
+            },
         },
         LpfxFn {
             glsl_sig: FunctionSignature {
@@ -146,11 +156,11 @@ pub fn lpfx_fns() -> Vec<LpfxFn> {
                     },
                 ],
             },
-            impls: vec![LpfxFnImpl {
-                decimal_format: Some(DecimalFormat::Fixed32),
-                builtin_module: "builtins::lpfx::simplex",
-                rust_fn_name: "__lpfx_simplex2_q32",
-            }],
+            impls: {
+                let mut map = HashMap::new();
+                map.insert(DecimalFormat::Fixed32, BuiltinId::LpfxSimplex2Q32);
+                LpfxFnImpl::Decimal(map)
+            },
         },
         LpfxFn {
             glsl_sig: FunctionSignature {
@@ -169,11 +179,12 @@ pub fn lpfx_fns() -> Vec<LpfxFn> {
                     },
                 ],
             },
-            impls: vec![LpfxFnImpl {
-                decimal_format: Some(DecimalFormat::Fixed32),
-                builtin_module: "builtins::lpfx::simplex",
-                rust_fn_name: "__lpfx_simplex3_q32",
-            }],
+            impls: {
+                let mut map = HashMap::new();
+                map.insert(DecimalFormat::Fixed32, BuiltinId::LpfxSimplex3Q32);
+                LpfxFnImpl::Decimal(map)
+            },
         },
-    ]
+    ];
+    Box::leak(vec.into_boxed_slice())
 }

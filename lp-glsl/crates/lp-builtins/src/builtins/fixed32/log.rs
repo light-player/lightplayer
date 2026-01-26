@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 natural logarithm function.
 
-use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::exp::__lp_fixed32_exp;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Fixed-point value of 1.0 (Q16.16 format)

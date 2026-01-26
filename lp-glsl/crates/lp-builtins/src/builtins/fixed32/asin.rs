@@ -1,9 +1,9 @@
 //! Fixed-point 16.16 arcsine function.
 
 use super::atan::__lp_fixed32_atan;
+use super::sqrt::__lp_fixed32_sqrt;
 use crate::builtins::fixed32::div::__lp_fixed32_div;
 use crate::builtins::fixed32::mul::__lp_fixed32_mul;
-use super::sqrt::__lp_fixed32_sqrt;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
 const FIX16_ONE: i32 = 0x00010000; // 65536

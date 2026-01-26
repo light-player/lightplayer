@@ -1,7 +1,7 @@
 //! Helper functions for converting/calling lpfx functions, handling expanding vec types
 //! to scalars expected by the implementation.
 
-use super::lpfx_fn::{LpfxFn, LpfxFnImpl};
+use super::lpfx_fn::LpfxFn;
 use crate::DecimalFormat;
 use crate::semantic::types::Type;
 use alloc::vec::Vec;
@@ -52,10 +52,7 @@ pub fn expand_vector_args(
                 value_idx += 1;
             }
             _ => {
-                panic!(
-                    "Unsupported parameter type for LPFX function: {:?}",
-                    param_ty
-                );
+                panic!("Unsupported parameter type for LPFX function: {param_ty:?}");
             }
         }
     }
@@ -124,10 +121,7 @@ pub fn convert_to_cranelift_types(
                 cranelift_types.push(types::I32);
             }
             _ => {
-                panic!(
-                    "Unsupported parameter type for LPFX function: {:?}",
-                    param_ty
-                );
+                panic!("Unsupported parameter type for LPFX function: {param_ty:?}");
             }
         }
     }
@@ -141,7 +135,7 @@ pub fn convert_to_cranelift_types(
 /// Returns a Signature ready for use in Cranelift function calls.
 pub fn build_call_signature(
     func: &LpfxFn,
-    _impl_: &LpfxFnImpl,
+    _builtin_id: crate::backend::builtins::registry::BuiltinId,
     format: DecimalFormat,
 ) -> Signature {
     let mut sig = Signature::new(CallConv::SystemV);

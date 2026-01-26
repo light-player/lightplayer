@@ -140,7 +140,7 @@ pub enum RunMode {
 }
 
 /// Decimal format for floating-point operations
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DecimalFormat {
     /// Native floating-point (f32/f64)
     Float,

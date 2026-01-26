@@ -11,12 +11,9 @@
 //! Functions operate on i32 values representing fixed-point numbers
 //! with 16 bits of fractional precision.
 
-mod add;
-mod div;
-mod mul;
-mod sub;
 mod acos;
 mod acosh;
+mod add;
 mod asin;
 mod asinh;
 mod atan;
@@ -24,6 +21,7 @@ mod atan2;
 mod atanh;
 mod cos;
 mod cosh;
+mod div;
 mod exp;
 mod exp2;
 mod fma;
@@ -32,12 +30,14 @@ mod ldexp;
 mod log;
 mod log2;
 mod mod_builtin;
+mod mul;
 mod pow;
 mod round;
 mod roundeven;
 mod sin;
 mod sinh;
 mod sqrt;
+mod sub;
 mod tan;
 mod tanh;
 
@@ -59,9 +59,6 @@ pub use inversesqrt::__lp_fixed32_inversesqrt;
 pub use ldexp::__lp_fixed32_ldexp;
 pub use log::__lp_fixed32_log;
 pub use log2::__lp_fixed32_log2;
-pub use crate::builtins::lpfx::simplex::simplex1_q32::__lpfx_simplex1_q32;
-pub use crate::builtins::lpfx::simplex::simplex2_q32::__lpfx_simplex2_q32;
-pub use crate::builtins::lpfx::simplex::simplex3_q32::__lpfx_simplex3_q32;
 pub use mod_builtin::__lp_fixed32_mod;
 pub use mul::__lp_fixed32_mul;
 pub use pow::__lp_fixed32_pow;

@@ -28,7 +28,7 @@
 //! operates on Q32 fixed-point values. Vector arguments are automatically flattened
 //! by the compiler (vec3 becomes three i32 parameters).
 
-use crate::builtins::lpfx::hash::__lp_lpfx_hash_3;
+use crate::builtins::lpfx::hash::__lpfx_hash_3;
 use crate::util::q32::Q32;
 
 /// Fixed-point constants
@@ -173,25 +173,25 @@ pub extern "C" fn __lpfx_simplex3_q32(x: i32, y: i32, z: i32, seed: u32) -> i32 
     let offset4_z = offset1_z - Q32::ONE + (THREE * UNSKEW_FACTOR_3D);
 
     // Calculate gradient indexes for each corner
-    let gi0 = __lp_lpfx_hash_3(
+    let gi0 = __lpfx_hash_3(
         cell_x_int as u32,
         cell_y_int as u32,
         cell_z_int as u32,
         seed,
     );
-    let gi1 = __lp_lpfx_hash_3(
+    let gi1 = __lpfx_hash_3(
         (cell_x_int + order1_x.to_i32()) as u32,
         (cell_y_int + order1_y.to_i32()) as u32,
         (cell_z_int + order1_z.to_i32()) as u32,
         seed,
     );
-    let gi2 = __lp_lpfx_hash_3(
+    let gi2 = __lpfx_hash_3(
         (cell_x_int + order2_x.to_i32()) as u32,
         (cell_y_int + order2_y.to_i32()) as u32,
         (cell_z_int + order2_z.to_i32()) as u32,
         seed,
     );
-    let gi3 = __lp_lpfx_hash_3(
+    let gi3 = __lpfx_hash_3(
         (cell_x_int + 1) as u32,
         (cell_y_int + 1) as u32,
         (cell_z_int + 1) as u32,
@@ -386,12 +386,8 @@ mod tests {
 
         for (x, y, z) in test_points {
             // Get our output
-            let our_value_fixed = __lpfx_simplex3_q32(
-                float_to_fixed(x),
-                float_to_fixed(y),
-                float_to_fixed(z),
-                0,
-            );
+            let our_value_fixed =
+                __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
             let our_value = fixed_to_float(our_value_fixed);
 
             // Get noise-rs output for reference
@@ -438,12 +434,8 @@ mod tests {
                 let x = x_idx as f32;
                 let y = y_idx as f32;
                 let z = 0.0;
-                let result = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
+                let result =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
                 let result_float = fixed_to_float(result);
                 print!("{:6.3} ", result_float);
             }
@@ -463,12 +455,8 @@ mod tests {
                 let x = x_idx as f32;
                 let y = y_idx as f32;
                 let z = 2.0;
-                let result = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
+                let result =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
                 let result_float = fixed_to_float(result);
                 print!("{:6.3} ", result_float);
             }
@@ -521,12 +509,8 @@ mod tests {
             let mut max_jump = 0.0f32;
 
             for (x, y, z) in boundary_points {
-                let result = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
+                let result =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
                 let result_float = fixed_to_float(result);
 
                 if let Some(prev) = prev_value {
@@ -562,18 +546,10 @@ mod tests {
             ];
 
             for (x, y, z) in test_points {
-                let result1 = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
-                let result2 = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
+                let result1 =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
+                let result2 =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
                 assert_eq!(
                     result1, result2,
                     "Simplex3({}, {}, {}) should be deterministic with fixed hash",
@@ -596,12 +572,8 @@ mod tests {
                 let x = i as f32 * STEP;
                 let y = x;
                 let z = x;
-                let result = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
+                let result =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
                 let result_float = fixed_to_float(result);
 
                 if let Some(prev) = prev_value {
@@ -698,12 +670,8 @@ mod tests {
                 let x = i as f32 * STEP;
                 let y = x;
                 let z = x;
-                let result = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
+                let result =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
                 let result_float = fixed_to_float(result);
 
                 if let Some(prev) = prev_value {
@@ -758,12 +726,8 @@ mod tests {
 
             println!("\n=== Simplex3 Comparison with noise-rs ===");
             for (x, y, z) in test_points {
-                let our_value = __lpfx_simplex3_q32(
-                    float_to_fixed(x),
-                    float_to_fixed(y),
-                    float_to_fixed(z),
-                    0,
-                );
+                let our_value =
+                    __lpfx_simplex3_q32(float_to_fixed(x), float_to_fixed(y), float_to_fixed(z), 0);
                 let our_float = fixed_to_float(our_value);
 
                 let noise_rs_value = noise_rs_fn.get([x as f64, y as f64, z as f64]) as f32;
@@ -783,9 +747,9 @@ mod tests {
         #[cfg(all(test, feature = "test_hash_fixed"))]
         mod trace_tests {
             use super::*;
-            use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
             use crate::builtins::shared::lpfx_hash::__lpfx_hash_3;
             use crate::util::q32::Q32;
+            use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
 
             #[test]
             fn test_simplex3_trace_algorithm() {

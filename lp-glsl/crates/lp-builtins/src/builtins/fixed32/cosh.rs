@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 hyperbolic cosine function.
 
-use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::exp::__lp_fixed32_exp;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 
 /// Fixed-point value of 2.0 (Q16.16 format)
 const FIX16_TWO: i32 = 0x00020000; // 131072

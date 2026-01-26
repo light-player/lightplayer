@@ -1,7 +1,7 @@
 //! Fixed-point 16.16 inverse hyperbolic tangent function.
 
-use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::log::__lp_fixed32_log;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
 const FIX16_ONE: i32 = 0x00010000; // 65536

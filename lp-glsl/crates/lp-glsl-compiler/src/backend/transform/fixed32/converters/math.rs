@@ -27,65 +27,57 @@ use alloc::format;
 ///     scripts/build-builtins.sh
 pub fn map_testcase_to_builtin(testcase_name: &str) -> Option<(BuiltinId, usize)> {
     match testcase_name {
-        "acosf" | "__lp_acos" => Some((BuiltinId::Fixed32Acos, 1)),
-        "acoshf" | "__lp_acosh" => Some((BuiltinId::Fixed32Acosh, 1)),
-        "addf" | "__lp_add" => Some((BuiltinId::Fixed32Add, 2)),
-        "asinf" | "__lp_asin" => Some((BuiltinId::Fixed32Asin, 1)),
-        "asinhf" | "__lp_asinh" => Some((BuiltinId::Fixed32Asinh, 1)),
-        "atanf" | "__lp_atan" => Some((BuiltinId::Fixed32Atan, 1)),
-        "atan2f" | "__lp_atan2" => Some((BuiltinId::Fixed32Atan2, 2)),
-        "atanhf" | "__lp_atanh" => Some((BuiltinId::Fixed32Atanh, 1)),
-        "cosf" | "__lp_cos" => Some((BuiltinId::Fixed32Cos, 1)),
-        "coshf" | "__lp_cosh" => Some((BuiltinId::Fixed32Cosh, 1)),
-        "divf" | "__lp_div" => Some((BuiltinId::Fixed32Div, 2)),
-        "expf" | "__lp_exp" => Some((BuiltinId::Fixed32Exp, 1)),
-        "exp2f" | "__lp_exp2" => Some((BuiltinId::Fixed32Exp2, 1)),
-        "fmaf" | "__lp_fma" => Some((BuiltinId::Fixed32Fma, 3)),
-        "inversesqrtf" | "__lp_inversesqrt" => Some((BuiltinId::Fixed32Inversesqrt, 1)),
-        "ldexpf" | "__lp_ldexp" => Some((BuiltinId::Fixed32Ldexp, 2)),
-        "logf" | "__lp_log" => Some((BuiltinId::Fixed32Log, 1)),
-        "log2f" | "__lp_log2" => Some((BuiltinId::Fixed32Log2, 1)),
-        // LPFX functions - lookup from registry
-        name if name.starts_with("__lpfx_") => {
-            // Try to find function by rust_fn_name in registry
-            use crate::frontend::semantic::lpfx::lpfx_fn_registry::{
-                find_lpfx_fn_by_rust_name, rust_fn_name_to_builtin_id,
-            };
-            if let Some((func, impl_)) = find_lpfx_fn_by_rust_name(name) {
-                if let Some(builtin_id) = rust_fn_name_to_builtin_id(impl_.rust_fn_name) {
-                    // Count parameters (expanding vectors)
-                    let param_count = func
-                        .glsl_sig
-                        .parameters
-                        .iter()
-                        .map(|p| {
-                            if p.ty.is_vector() {
-                                p.ty.component_count().unwrap()
-                            } else {
-                                1
-                            }
-                        })
-                        .sum();
-                    return Some((builtin_id, param_count));
-                }
-            }
-            None
+        "lp_fixed32_acosf" | "__lp_fixed32_acos" | "acosf" => Some((BuiltinId::LpFixed32Acos, 1)),
+        "lp_fixed32_acoshf" | "__lp_fixed32_acosh" | "acoshf" => {
+            Some((BuiltinId::LpFixed32Acosh, 1))
         }
-        "modf" | "__lp_mod" | "fmodf" => Some((BuiltinId::Fixed32Mod, 2)),
-        "mulf" | "__lp_mul" => Some((BuiltinId::Fixed32Mul, 2)),
-        "powf" | "__lp_pow" => Some((BuiltinId::Fixed32Pow, 2)),
-        "roundf" | "__lp_round" => Some((BuiltinId::Fixed32Round, 1)),
-        "roundevenf" | "__lp_roundeven" => Some((BuiltinId::Fixed32Roundeven, 1)),
-        "sinf" | "__lp_sin" => Some((BuiltinId::Fixed32Sin, 1)),
-        "sinhf" | "__lp_sinh" => Some((BuiltinId::Fixed32Sinh, 1)),
-        "sqrtf" | "__lp_sqrt" => Some((BuiltinId::Fixed32Sqrt, 1)),
-        "subf" | "__lp_sub" => Some((BuiltinId::Fixed32Sub, 2)),
-        "tanf" | "__lp_tan" => Some((BuiltinId::Fixed32Tan, 1)),
-        "tanhf" | "__lp_tanh" => Some((BuiltinId::Fixed32Tanh, 1)),
-        // Legacy hash function names - also handled by __lpfx_* pattern above
-        "1f" | "__lp_1" => Some((BuiltinId::LpHash1, 2)),
-        "2f" | "__lp_2" => Some((BuiltinId::LpHash2, 3)),
-        "3f" | "__lp_3" => Some((BuiltinId::LpHash3, 4)),
+        "lp_fixed32_addf" | "__lp_fixed32_add" | "addf" => Some((BuiltinId::LpFixed32Add, 2)),
+        "lp_fixed32_asinf" | "__lp_fixed32_asin" | "asinf" => Some((BuiltinId::LpFixed32Asin, 1)),
+        "lp_fixed32_asinhf" | "__lp_fixed32_asinh" | "asinhf" => {
+            Some((BuiltinId::LpFixed32Asinh, 1))
+        }
+        "lp_fixed32_atanf" | "__lp_fixed32_atan" | "atanf" => Some((BuiltinId::LpFixed32Atan, 1)),
+        "lp_fixed32_atan2f" | "__lp_fixed32_atan2" | "atan2f" => {
+            Some((BuiltinId::LpFixed32Atan2, 2))
+        }
+        "lp_fixed32_atanhf" | "__lp_fixed32_atanh" | "atanhf" => {
+            Some((BuiltinId::LpFixed32Atanh, 1))
+        }
+        "lp_fixed32_cosf" | "__lp_fixed32_cos" | "cosf" => Some((BuiltinId::LpFixed32Cos, 1)),
+        "lp_fixed32_coshf" | "__lp_fixed32_cosh" | "coshf" => Some((BuiltinId::LpFixed32Cosh, 1)),
+        "lp_fixed32_divf" | "__lp_fixed32_div" | "divf" => Some((BuiltinId::LpFixed32Div, 2)),
+        "lp_fixed32_expf" | "__lp_fixed32_exp" | "expf" => Some((BuiltinId::LpFixed32Exp, 1)),
+        "lp_fixed32_exp2f" | "__lp_fixed32_exp2" | "exp2f" => Some((BuiltinId::LpFixed32Exp2, 1)),
+        "lp_fixed32_fmaf" | "__lp_fixed32_fma" | "fmaf" => Some((BuiltinId::LpFixed32Fma, 3)),
+        "lp_fixed32_inversesqrtf" | "__lp_fixed32_inversesqrt" | "inversesqrtf" => {
+            Some((BuiltinId::LpFixed32Inversesqrt, 1))
+        }
+        "lp_fixed32_ldexpf" | "__lp_fixed32_ldexp" | "ldexpf" => {
+            Some((BuiltinId::LpFixed32Ldexp, 2))
+        }
+        "lp_fixed32_logf" | "__lp_fixed32_log" | "logf" => Some((BuiltinId::LpFixed32Log, 1)),
+        "lp_fixed32_log2f" | "__lp_fixed32_log2" | "log2f" => Some((BuiltinId::LpFixed32Log2, 1)),
+        "lp_fixed32_modf" | "__lp_fixed32_mod" | "fmodf" => Some((BuiltinId::LpFixed32Mod, 2)),
+        "lp_fixed32_mulf" | "__lp_fixed32_mul" | "mulf" => Some((BuiltinId::LpFixed32Mul, 2)),
+        "lp_fixed32_powf" | "__lp_fixed32_pow" | "powf" => Some((BuiltinId::LpFixed32Pow, 2)),
+        "lp_fixed32_roundf" | "__lp_fixed32_round" | "roundf" => {
+            Some((BuiltinId::LpFixed32Round, 1))
+        }
+        "lp_fixed32_roundevenf" | "__lp_fixed32_roundeven" | "roundevenf" => {
+            Some((BuiltinId::LpFixed32Roundeven, 1))
+        }
+        "lp_fixed32_sinf" | "__lp_fixed32_sin" | "sinf" => Some((BuiltinId::LpFixed32Sin, 1)),
+        "lp_fixed32_sinhf" | "__lp_fixed32_sinh" | "sinhf" => Some((BuiltinId::LpFixed32Sinh, 1)),
+        "lp_fixed32_sqrtf" | "__lp_fixed32_sqrt" | "sqrtf" => Some((BuiltinId::LpFixed32Sqrt, 1)),
+        "lp_fixed32_subf" | "__lp_fixed32_sub" | "subf" => Some((BuiltinId::LpFixed32Sub, 2)),
+        "lp_fixed32_tanf" | "__lp_fixed32_tan" | "tanf" => Some((BuiltinId::LpFixed32Tan, 1)),
+        "lp_fixed32_tanhf" | "__lp_fixed32_tanh" | "tanhf" => Some((BuiltinId::LpFixed32Tanh, 1)),
+        "lpfx_hash_1f" | "__lp_lpfx_hash_1" => Some((BuiltinId::LpfxHash1, 2)),
+        "lpfx_hash_2f" | "__lp_lpfx_hash_2" => Some((BuiltinId::LpfxHash2, 3)),
+        "lpfx_hash_3f" | "__lp_lpfx_hash_3" => Some((BuiltinId::LpfxHash3, 4)),
+        "__lpfx_simplex1" => Some((BuiltinId::LpfxSimplex1Q32, 2)),
+        "__lpfx_simplex2" => Some((BuiltinId::LpfxSimplex2Q32, 3)),
+        "__lpfx_simplex3" => Some((BuiltinId::LpfxSimplex3Q32, 4)),
         _ => None,
     }
 }
@@ -318,72 +310,45 @@ block0:
     fn test_map_testcase_to_builtin_simplex() {
         // Test simplex function mappings
         assert_eq!(
-            map_testcase_to_builtin("lpfx_simplex1f"),
-            Some((BuiltinId::LpSimplex1, 2))
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lp_lpfx_simplex1"),
-            Some((BuiltinId::LpSimplex1, 2))
-        );
-        assert_eq!(
             map_testcase_to_builtin("__lpfx_simplex1"),
-            Some((BuiltinId::LpSimplex1, 2))
-        );
-        assert_eq!(
-            map_testcase_to_builtin("lpfx_simplex2f"),
-            Some((BuiltinId::LpSimplex2, 3))
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lp_lpfx_simplex2"),
-            Some((BuiltinId::LpSimplex2, 3))
+            Some((BuiltinId::LpfxSimplex1Q32, 2))
         );
         assert_eq!(
             map_testcase_to_builtin("__lpfx_simplex2"),
-            Some((BuiltinId::LpSimplex2, 3))
-        );
-        assert_eq!(
-            map_testcase_to_builtin("lpfx_simplex3f"),
-            Some((BuiltinId::LpSimplex3, 4))
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lp_lpfx_simplex3"),
-            Some((BuiltinId::LpSimplex3, 4))
+            Some((BuiltinId::LpfxSimplex2Q32, 3))
         );
         assert_eq!(
             map_testcase_to_builtin("__lpfx_simplex3"),
-            Some((BuiltinId::LpSimplex3, 4))
+            Some((BuiltinId::LpfxSimplex3Q32, 4))
         );
     }
 
     #[test]
     fn test_map_testcase_to_builtin_hash() {
         // Test hash function mappings
-        assert_eq!(map_testcase_to_builtin("1f"), Some((BuiltinId::LpHash1, 2)));
         assert_eq!(
-            map_testcase_to_builtin("__lp_1"),
-            Some((BuiltinId::LpHash1, 2))
+            map_testcase_to_builtin("lpfx_hash_1f"),
+            Some((BuiltinId::LpfxHash1, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lpfx_hash_1"),
-            Some((BuiltinId::LpHash1, 2))
-        );
-        assert_eq!(map_testcase_to_builtin("2f"), Some((BuiltinId::LpHash2, 3)));
-        assert_eq!(
-            map_testcase_to_builtin("__lp_2"),
-            Some((BuiltinId::LpHash2, 3))
+            map_testcase_to_builtin("__lp_lpfx_hash_1"),
+            Some((BuiltinId::LpfxHash1, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lpfx_hash_2"),
-            Some((BuiltinId::LpHash2, 3))
-        );
-        assert_eq!(map_testcase_to_builtin("3f"), Some((BuiltinId::LpHash3, 4)));
-        assert_eq!(
-            map_testcase_to_builtin("__lp_3"),
-            Some((BuiltinId::LpHash3, 4))
+            map_testcase_to_builtin("lpfx_hash_2f"),
+            Some((BuiltinId::LpfxHash2, 3))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lpfx_hash_3"),
-            Some((BuiltinId::LpHash3, 4))
+            map_testcase_to_builtin("__lp_lpfx_hash_2"),
+            Some((BuiltinId::LpfxHash2, 3))
+        );
+        assert_eq!(
+            map_testcase_to_builtin("lpfx_hash_3f"),
+            Some((BuiltinId::LpfxHash3, 4))
+        );
+        assert_eq!(
+            map_testcase_to_builtin("__lp_lpfx_hash_3"),
+            Some((BuiltinId::LpfxHash3, 4))
         );
     }
 
@@ -391,28 +356,28 @@ block0:
     fn test_map_testcase_to_builtin_standard_math() {
         // Test a few standard math function mappings
         assert_eq!(
-            map_testcase_to_builtin("sinf"),
-            Some((BuiltinId::Fixed32Sin, 1))
+            map_testcase_to_builtin("lp_fixed32_sinf"),
+            Some((BuiltinId::LpFixed32Sin, 1))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_sin"),
-            Some((BuiltinId::Fixed32Sin, 1))
+            map_testcase_to_builtin("__lp_fixed32_sin"),
+            Some((BuiltinId::LpFixed32Sin, 1))
         );
         assert_eq!(
-            map_testcase_to_builtin("addf"),
-            Some((BuiltinId::Fixed32Add, 2))
+            map_testcase_to_builtin("lp_fixed32_addf"),
+            Some((BuiltinId::LpFixed32Add, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_add"),
-            Some((BuiltinId::Fixed32Add, 2))
+            map_testcase_to_builtin("__lp_fixed32_add"),
+            Some((BuiltinId::LpFixed32Add, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("fmaf"),
-            Some((BuiltinId::Fixed32Fma, 3))
+            map_testcase_to_builtin("lp_fixed32_fmaf"),
+            Some((BuiltinId::LpFixed32Fma, 3))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lp_fma"),
-            Some((BuiltinId::Fixed32Fma, 3))
+            map_testcase_to_builtin("__lp_fixed32_fma"),
+            Some((BuiltinId::LpFixed32Fma, 3))
         );
     }
 

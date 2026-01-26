@@ -28,7 +28,7 @@
 //! operates on Q32 fixed-point values. Vector arguments are automatically flattened
 //! by the compiler (vec2 becomes two i32 parameters).
 
-use crate::builtins::lpfx::hash::__lp_lpfx_hash_2;
+use crate::builtins::lpfx::hash::__lpfx_hash_2;
 use crate::util::q32::Q32;
 
 /// Fixed-point constants
@@ -103,13 +103,13 @@ pub extern "C" fn __lpfx_simplex2_q32(x: i32, y: i32, seed: u32) -> i32 {
     let offset3_y = offset1_y - Q32::ONE + (TWO * UNSKEW_FACTOR_2D);
 
     // Calculate gradient indexes for each corner
-    let gi0 = __lp_lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, seed);
-    let gi1 = __lp_lpfx_hash_2(
+    let gi0 = __lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, seed);
+    let gi1 = __lpfx_hash_2(
         (cell_x_int + order_x.to_i32()) as u32,
         (cell_y_int + order_y.to_i32()) as u32,
         seed,
     );
-    let gi2 = __lp_lpfx_hash_2((cell_x_int + 1) as u32, (cell_y_int + 1) as u32, seed);
+    let gi2 = __lpfx_hash_2((cell_x_int + 1) as u32, (cell_y_int + 1) as u32, seed);
 
     // Calculate contribution from each corner
     let corner0 = surflet_2d(gi0 as usize, offset1_x, offset1_y);
@@ -185,9 +185,9 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
+    use crate::builtins::lpfx::hash::__lpfx_hash_2;
     use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
     use std::{print, println};
-    use crate::builtins::lpfx::hash::__lp_lpfx_hash_2;
 
     #[test]
     fn test_simplex2_basic() {
@@ -361,8 +361,8 @@ mod tests {
         println!("Difference = {}", diff);
 
         // Check hash values directly
-        let hash0 = __lp_lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, 0);
-        let hash1 = __lp_lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, 1);
+        let hash0 = __lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, 0);
+        let hash1 = __lpfx_hash_2(cell_x_int as u32, cell_y_int as u32, 1);
         println!(
             "Hash({}, {}, seed=0) = {}, mod 8 = {}",
             cell_x_int,

@@ -3,8 +3,9 @@
 //! Core data structures for representing LPFX functions and their implementations.
 
 use crate::DecimalFormat;
+use crate::backend::builtins::BuiltinId;
 use crate::semantic::functions::FunctionSignature;
-use alloc::vec::Vec;
+use hashbrown::HashMap;
 
 /// LPFX function definition
 ///
@@ -14,27 +15,10 @@ pub struct LpfxFn {
     pub glsl_sig: FunctionSignature,
 
     /// Available implementations for different decimal formats
-    pub impls: Vec<LpfxFnImpl>,
+    pub impls: LpfxFnImpl,
 }
 
-/// Implementation of an LPFX function for a specific decimal format
-///
-/// Each function may have multiple implementations (e.g., one for q32 fixed-point,
-/// one format-agnostic for hash functions).
-pub struct LpfxFnImpl {
-    /// Decimal format for this implementation.
-    ///
-    /// `None` signifies that the function applies to all formats and doesn't use decimal numbers
-    /// (e.g., hash functions).
-    pub decimal_format: Option<DecimalFormat>,
-
-    /// Name of the builtin module in which this function is defined in lp_builtins.
-    ///
-    /// Example: `"builtins::lpfx::hash"`
-    pub builtin_module: &'static str,
-
-    /// Name of the Rust function that implements this function.
-    ///
-    /// Example: `"__lpfx_hash_1"`
-    pub rust_fn_name: &'static str,
+pub enum LpfxFnImpl {
+    NonDecimal(BuiltinId),
+    Decimal(HashMap<DecimalFormat, BuiltinId>),
 }

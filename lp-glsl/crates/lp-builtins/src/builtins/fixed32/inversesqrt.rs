@@ -2,8 +2,8 @@
 //!
 //! inversesqrt(x) = 1 / sqrt(x)
 
-use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::sqrt::__lp_fixed32_sqrt;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
 const FIX16_ONE: i32 = 0x00010000; // 65536

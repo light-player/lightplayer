@@ -342,8 +342,16 @@ pub(crate) fn convert_call(
                                     format!("Invalid TestCase name encoding: {e}"),
                                 )
                             })?;
+                        // Convert TestCase name to builtin name if it's a math function
+                        // func_id_map contains builtin names (e.g., "__lp_fixed32_atan2"), not TestCase names (e.g., "atan2f")
+                        let lookup_name =
+                            if let Some((builtin_id, _)) = map_testcase_to_builtin(func_name_str) {
+                                builtin_id.name()
+                            } else {
+                                func_name_str
+                            };
                         // Look up the new FuncId for this function name
-                        let new_func_id = func_id_map.get(func_name_str).ok_or_else(|| {
+                        let new_func_id = func_id_map.get(lookup_name).ok_or_else(|| {
                             GlslError::new(
                                 ErrorCode::E0400,
                                 format!("Function '{func_name_str}' not found in func_id_map"),

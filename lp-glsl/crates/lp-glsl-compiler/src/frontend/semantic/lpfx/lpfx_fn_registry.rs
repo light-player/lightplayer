@@ -4,7 +4,7 @@
 
 use super::lpfx_fn::LpfxFn;
 use crate::semantic::types::Type;
-use alloc::{boxed::Box, string::String, vec::Vec};
+use alloc::{format, string::String};
 
 /// Check if a function name is an LPFX function
 ///
@@ -18,11 +18,7 @@ pub fn is_lpfx_fn(name: &str) -> bool {
 /// Returns `None` if the function is not found in the registry.
 /// Get cached functions array
 fn get_cached_functions() -> &'static [LpfxFn] {
-    static FUNCTIONS: std::sync::OnceLock<&'static [LpfxFn]> = std::sync::OnceLock::new();
-    *FUNCTIONS.get_or_init(|| {
-        let vec = super::lpfx_fns::lpfx_fns();
-        Box::leak(vec.into_boxed_slice())
-    })
+    super::lpfx_fns::lpfx_fns()
 }
 
 /// Find an LPFX function by its GLSL name
@@ -34,22 +30,23 @@ pub fn find_lpfx_fn(name: &str) -> Option<&'static LpfxFn> {
         .find(|f| f.glsl_sig.name == name)
 }
 
-/// Find an LPFX function and implementation by rust function name
+/// Find an LPFX function by BuiltinId
 ///
 /// Returns `None` if the function is not found in the registry.
-/// Returns `Some((func, impl_))` where `impl_` is the first matching implementation.
-/// Find an LPFX function and implementation by rust function name
-///
-/// Returns `None` if the function is not found in the registry.
-/// Returns `Some((func, impl_))` where `impl_` is the first matching implementation.
-pub fn find_lpfx_fn_by_rust_name(
-    rust_fn_name: &str,
-) -> Option<(&'static LpfxFn, &'static super::lpfx_fn::LpfxFnImpl)> {
+pub fn find_lpfx_fn_by_builtin_id(
+    builtin_id: crate::backend::builtins::registry::BuiltinId,
+) -> Option<&'static LpfxFn> {
     for func in get_cached_functions().iter() {
-        for impl_ in func.impls.iter() {
-            if impl_.rust_fn_name == rust_fn_name {
-                return Some((func, impl_));
+        match &func.impls {
+            super::lpfx_fn::LpfxFnImpl::NonDecimal(id) if *id == builtin_id => {
+                return Some(func);
             }
+            super::lpfx_fn::LpfxFnImpl::Decimal(map) => {
+                if map.values().any(|id| *id == builtin_id) {
+                    return Some(func);
+                }
+            }
+            _ => {}
         }
     }
     None
@@ -64,7 +61,7 @@ pub fn find_lpfx_fn_by_rust_name(
 /// - `Ok(return_type)` if the call is valid
 /// - `Err(error_message)` if the call is invalid
 pub fn check_lpfx_fn_call(name: &str, arg_types: &[Type]) -> Result<Type, String> {
-    let func = find_lpfx_fn(name).ok_or_else(|| format!("unknown LPFX function: {}", name))?;
+    let func = find_lpfx_fn(name).ok_or_else(|| format!("unknown LPFX function: {name}"))?;
 
     // Check parameter count matches
     if func.glsl_sig.parameters.len() != arg_types.len() {
@@ -113,43 +110,15 @@ pub fn check_lpfx_fn_call(name: &str, arg_types: &[Type]) -> Result<Type, String
     Ok(func.glsl_sig.return_type.clone())
 }
 
-/// Get the implementation for a specific decimal format
+/// Get the BuiltinId for a function with a specific decimal format
 ///
 /// Returns `None` if no implementation exists for the given format.
-pub fn get_impl_for_format(
+pub fn get_builtin_id_for_format(
     func: &'static LpfxFn,
     format: crate::DecimalFormat,
-) -> Option<&'static super::lpfx_fn::LpfxFnImpl> {
-    // First try to find format-specific implementation
-    if let Some(impl_) = func
-        .impls
-        .iter()
-        .find(|impl_| impl_.decimal_format == Some(format))
-    {
-        return Some(impl_);
-    }
-
-    // Fall back to format-agnostic implementation (decimal_format == None)
-    func.impls
-        .iter()
-        .find(|impl_| impl_.decimal_format.is_none())
-}
-
-/// Map rust function name to BuiltinId
-///
-/// This maps the internal Rust function names (e.g., "__lpfx_hash_1") to BuiltinId enum variants.
-/// Returns `None` if the function name doesn't correspond to a builtin.
-pub fn rust_fn_name_to_builtin_id(
-    rust_fn_name: &str,
 ) -> Option<crate::backend::builtins::registry::BuiltinId> {
-    use crate::backend::builtins::registry::BuiltinId;
-    match rust_fn_name {
-        "__lpfx_hash_1" => Some(BuiltinId::LpHash1),
-        "__lpfx_hash_2" => Some(BuiltinId::LpHash2),
-        "__lpfx_hash_3" => Some(BuiltinId::LpHash3),
-        "__lpfx_simplex1_q32" => Some(BuiltinId::LpSimplex1),
-        "__lpfx_simplex2_q32" => Some(BuiltinId::LpSimplex2),
-        "__lpfx_simplex3_q32" => Some(BuiltinId::LpSimplex3),
-        _ => None,
+    match &func.impls {
+        super::lpfx_fn::LpfxFnImpl::NonDecimal(builtin_id) => Some(*builtin_id),
+        super::lpfx_fn::LpfxFnImpl::Decimal(map) => map.get(&format).copied(),
     }
 }

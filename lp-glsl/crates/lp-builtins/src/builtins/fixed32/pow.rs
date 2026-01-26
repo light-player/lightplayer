@@ -1,8 +1,8 @@
 //! Fixed-point 16.16 power function.
 
-use crate::builtins::fixed32::div::__lp_fixed32_div;
 use super::exp2::__lp_fixed32_exp2;
 use super::log2::__lp_fixed32_log2;
+use crate::builtins::fixed32::div::__lp_fixed32_div;
 use crate::builtins::fixed32::mul::__lp_fixed32_mul;
 
 /// Fixed-point value of 1.0 (Q16.16 format)
