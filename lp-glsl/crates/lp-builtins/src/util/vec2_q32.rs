@@ -237,3 +237,226 @@ impl Neg for Vec2Q32 {
         Vec2Q32::new(-self.x, -self.y)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[cfg(test)]
+    extern crate std;
+    use super::*;
+    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
+
+    #[test]
+    fn test_new() {
+        let v = Vec2Q32::new(Q32::from_i32(1), Q32::from_i32(2));
+        assert_eq!(v.x.to_f32(), 1.0);
+        assert_eq!(v.y.to_f32(), 2.0);
+    }
+
+    #[test]
+    fn test_from_f32() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        assert_eq!(v.x.to_f32(), 1.0);
+        assert_eq!(v.y.to_f32(), 2.0);
+    }
+
+    #[test]
+    fn test_from_i32() {
+        let v = Vec2Q32::from_i32(5, 10);
+        assert_eq!(v.x.to_f32(), 5.0);
+        assert_eq!(v.y.to_f32(), 10.0);
+    }
+
+    #[test]
+    fn test_zero_one() {
+        let z = Vec2Q32::zero();
+        assert_eq!(z.x.to_f32(), 0.0);
+        assert_eq!(z.y.to_f32(), 0.0);
+
+        let o = Vec2Q32::one();
+        assert_eq!(o.x.to_f32(), 1.0);
+        assert_eq!(o.y.to_f32(), 1.0);
+    }
+
+    #[test]
+    fn test_add() {
+        let a = Vec2Q32::from_f32(1.0, 2.0);
+        let b = Vec2Q32::from_f32(3.0, 4.0);
+        let c = a + b;
+        assert_eq!(c.x.to_f32(), 4.0);
+        assert_eq!(c.y.to_f32(), 6.0);
+    }
+
+    #[test]
+    fn test_sub() {
+        let a = Vec2Q32::from_f32(5.0, 7.0);
+        let b = Vec2Q32::from_f32(1.0, 2.0);
+        let c = a - b;
+        assert_eq!(c.x.to_f32(), 4.0);
+        assert_eq!(c.y.to_f32(), 5.0);
+    }
+
+    #[test]
+    fn test_mul_scalar() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        let s = Q32::from_f32(2.0);
+        let result = v * s;
+        assert_eq!(result.x.to_f32(), 2.0);
+        assert_eq!(result.y.to_f32(), 4.0);
+    }
+
+    #[test]
+    fn test_div_scalar() {
+        let v = Vec2Q32::from_f32(4.0, 6.0);
+        let s = Q32::from_f32(2.0);
+        let result = v / s;
+        assert_eq!(result.x.to_f32(), 2.0);
+        assert_eq!(result.y.to_f32(), 3.0);
+    }
+
+    #[test]
+    fn test_neg() {
+        let v = Vec2Q32::from_f32(5.0, -3.0);
+        let neg = -v;
+        assert_eq!(neg.x.to_f32(), -5.0);
+        assert_eq!(neg.y.to_f32(), 3.0);
+    }
+
+    #[test]
+    fn test_dot() {
+        let a = Vec2Q32::from_f32(1.0, 2.0);
+        let b = Vec2Q32::from_f32(3.0, 4.0);
+        let dot = a.dot(b);
+        // 1*3 + 2*4 = 3 + 8 = 11
+        assert_eq!(dot.to_f32(), 11.0);
+    }
+
+    #[test]
+    fn test_cross() {
+        let a = Vec2Q32::from_f32(1.0, 0.0);
+        let b = Vec2Q32::from_f32(0.0, 1.0);
+        let cross = a.cross(b);
+        // (1,0) × (0,1) = 1*1 - 0*0 = 1
+        assert_eq!(cross.to_f32(), 1.0);
+    }
+
+    #[test]
+    fn test_length_squared() {
+        let v = Vec2Q32::from_f32(3.0, 4.0);
+        let len_sq = v.length_squared();
+        // 3^2 + 4^2 = 9 + 16 = 25
+        assert_eq!(len_sq.to_f32(), 25.0);
+    }
+
+    #[test]
+    fn test_length() {
+        let v = Vec2Q32::from_f32(3.0, 4.0);
+        let len = v.length();
+        // Length should be 5
+        assert!((len.to_f32() - 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_normalize() {
+        let v = Vec2Q32::from_f32(3.0, 4.0);
+        let n = v.normalize();
+
+        // Check length is approximately 1
+        let len = n.length();
+        assert!((len.to_f32() - 1.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_normalize_zero() {
+        let v = Vec2Q32::zero();
+        let n = v.normalize();
+        // Should return zero vector, not panic
+        assert_eq!(n.x.to_f32(), 0.0);
+        assert_eq!(n.y.to_f32(), 0.0);
+    }
+
+    #[test]
+    fn test_distance() {
+        let a = Vec2Q32::from_f32(0.0, 0.0);
+        let b = Vec2Q32::from_f32(3.0, 4.0);
+        let dist = a.distance(b);
+        // Distance should be 5
+        assert!((dist.to_f32() - 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_mul_comp() {
+        let a = Vec2Q32::from_f32(2.0, 3.0);
+        let b = Vec2Q32::from_f32(5.0, 6.0);
+        let c = a.mul_comp(b);
+        assert_eq!(c.x.to_f32(), 10.0);
+        assert_eq!(c.y.to_f32(), 18.0);
+    }
+
+    #[test]
+    fn test_div_comp() {
+        let a = Vec2Q32::from_f32(10.0, 18.0);
+        let b = Vec2Q32::from_f32(2.0, 3.0);
+        let c = a.div_comp(b);
+        assert_eq!(c.x.to_f32(), 5.0);
+        assert_eq!(c.y.to_f32(), 6.0);
+    }
+
+    #[test]
+    fn test_swizzle_x() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        assert_eq!(v.x().to_f32(), 1.0);
+        assert_eq!(v.y().to_f32(), 2.0);
+        assert_eq!(v.r().to_f32(), 1.0);
+        assert_eq!(v.g().to_f32(), 2.0);
+        assert_eq!(v.s().to_f32(), 1.0);
+        assert_eq!(v.t().to_f32(), 2.0);
+    }
+
+    #[test]
+    fn test_swizzle_xx() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        let xx = v.xx();
+        assert_eq!(xx.x.to_f32(), 1.0);
+        assert_eq!(xx.y.to_f32(), 1.0);
+    }
+
+    #[test]
+    fn test_swizzle_xy() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        let xy = v.xy();
+        assert_eq!(xy.x.to_f32(), 1.0);
+        assert_eq!(xy.y.to_f32(), 2.0);
+    }
+
+    #[test]
+    fn test_swizzle_yx() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        let yx = v.yx();
+        assert_eq!(yx.x.to_f32(), 2.0);
+        assert_eq!(yx.y.to_f32(), 1.0);
+    }
+
+    #[test]
+    fn test_swizzle_rgba() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        assert_eq!(v.rr().x.to_f32(), 1.0);
+        assert_eq!(v.rg().x.to_f32(), 1.0);
+        assert_eq!(v.rg().y.to_f32(), 2.0);
+        assert_eq!(v.gr().x.to_f32(), 2.0);
+        assert_eq!(v.gr().y.to_f32(), 1.0);
+        assert_eq!(v.gg().x.to_f32(), 2.0);
+        assert_eq!(v.gg().y.to_f32(), 2.0);
+    }
+
+    #[test]
+    fn test_swizzle_stpq() {
+        let v = Vec2Q32::from_f32(1.0, 2.0);
+        assert_eq!(v.ss().x.to_f32(), 1.0);
+        assert_eq!(v.st().x.to_f32(), 1.0);
+        assert_eq!(v.st().y.to_f32(), 2.0);
+        assert_eq!(v.ts().x.to_f32(), 2.0);
+        assert_eq!(v.ts().y.to_f32(), 1.0);
+        assert_eq!(v.tt().x.to_f32(), 2.0);
+        assert_eq!(v.tt().y.to_f32(), 2.0);
+    }
+}
