@@ -6,5 +6,7 @@
 //! CPU-compiled shaders.
 //!
 
+pub mod color;
 pub mod generative;
 pub mod hash;
+pub mod math;
