@@ -245,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_worley2_value_different_from_distance() {
-        use crate::builtins::lpfx::worley::worley2_q32::__lpfx_worley2_q32;
+        use crate::builtins::lpfx::generative::worley::worley2_q32::__lpfx_worley2_q32;
 
         let x = float_to_fixed(5.5);
         let y = float_to_fixed(3.3);

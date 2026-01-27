@@ -68,7 +68,7 @@ pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
 
 ### 4. Add Reference Value Tests
 
-**File**: `lp-glsl/crates/lp-builtins/src/builtins/q32/lpfx_simplex2.rs` (in test module)
+**File**: `lp-glsl/crates/lp-builtins/src/builtins/q32/lpfx_snoise2.rs` (in test module)
 
 Add test with fixed hash:
 ```rust
@@ -89,7 +89,7 @@ mod fixed_hash_tests {
         ];
         
         for ((x, y), seed) in test_cases {
-            let result = __lp_q32_lpfx_simplex2(float_to_fixed(x), float_to_fixed(y), seed);
+            let result = __lp_q32_lpfx_snoise2(float_to_fixed(x), float_to_fixed(y), seed);
             let result_float = fixed_to_float(result);
             // Verify against expected value (to be filled in after fixing bugs)
             println!("Simplex2({}, {}, seed={}) = {}", x, y, seed, result_float);
@@ -111,7 +111,7 @@ mod fixed_hash_tests {
         
         let mut prev_value = None;
         for (x, y) in boundary_points {
-            let result = __lp_q32_lpfx_simplex2(float_to_fixed(x), float_to_fixed(y), 0);
+            let result = __lp_q32_lpfx_snoise2(float_to_fixed(x), float_to_fixed(y), 0);
             let result_float = fixed_to_float(result);
             
             if let Some(prev) = prev_value {
@@ -131,7 +131,7 @@ mod fixed_hash_tests {
 
 ### 5. Add Similar Tests for 3D
 
-**File**: `lp-glsl/crates/lp-builtins/src/builtins/q32/lpfx_simplex3.rs`
+**File**: `lp-glsl/crates/lp-builtins/src/builtins/q32/lpfx_snoise3.rs`
 
 Add similar test module with fixed hash tests.
 

@@ -219,7 +219,7 @@ fn extract_builtin(func: &ItemFn, file_name: &str, module_path: &str) -> Option<
     // Examples:
     // __lp_q32_sqrt -> LpQ32Sqrt
     // __lpfx_hash_1 -> LpfxHash1
-    // __lpfx_simplex1_q32 -> LpfxSimplex1Q32
+    // __lpfx_snoise1_q32 -> LpfxSnoise1Q32
     let name_without_prefix = func_name.strip_prefix("__").unwrap();
     let enum_variant = name_without_prefix
         .split('_')

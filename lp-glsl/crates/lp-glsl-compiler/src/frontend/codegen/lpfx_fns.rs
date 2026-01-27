@@ -16,7 +16,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
     /// Emit code for an LPFX function call.
     ///
     /// # Arguments
-    /// * `name` - Function name (e.g., "lpfx_hash1", "lpfx_simplex2")
+    /// * `name` - Function name (e.g., "lpfx_hash1", "lpfx_snoise2")
     /// * `args` - Vector of (value, type) pairs for each argument
     ///
     /// # Returns
@@ -105,7 +105,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
     /// Helper to declare and get FuncRef for LPFX function TestCase call.
     ///
-    /// Creates external function calls using TestCase names (e.g., "__lpfx_simplex3").
+    /// Creates external function calls using TestCase names (e.g., "__lpfx_snoise3").
     /// These are converted to q32 builtins by the transform.
     ///
     /// Always uses float signature (f32 args, f32 return) - the transform will handle

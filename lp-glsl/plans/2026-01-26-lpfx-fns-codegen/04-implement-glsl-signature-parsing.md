@@ -17,6 +17,6 @@ Parse GLSL signature strings into `FunctionSignature` structures using the GLSL 
 ## Success Criteria
 
 - Correctly parses simple signatures (e.g., `"u32 lpfx_hash1(u32 x, u32 seed)"`)
-- Correctly parses vector signatures (e.g., `"float lpfx_simplex3(vec3 p, u32 seed)"`)
+- Correctly parses vector signatures (e.g., `"float lpfx_snoise3(vec3 p, u32 seed)"`)
 - Returns appropriate error for invalid GLSL syntax
 - Code compiles

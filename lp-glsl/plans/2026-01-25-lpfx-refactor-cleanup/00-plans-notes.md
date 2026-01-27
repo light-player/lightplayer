@@ -6,7 +6,7 @@ The builtins directory was reorganized:
 - Functions moved to `glsl/q32/`, `internal/q32/`, and `lpfx/` directories
 - `lp_simplex` and `lp_noise` renamed to use `__lpfx` prefix
 - In GLSL usage: functions use `lpfx_` prefix (already correct)
-- In implementations: functions named `__lpfx_name_<decimal-format>` (e.g., `__lpfx_simplex1_q32`)
+- In implementations: functions named `__lpfx_name_<decimal-format>` (e.g., `__lpfx_snoise1_q32`)
 
 ## Problem
 
@@ -15,7 +15,7 @@ The code is doing direct string checks against function names instead of using `
 ### Issues Found
 
 1. **Generator code (`lp-builtin-gen/src/main.rs`)**:
-   - Lines 37, 201-203, 259-262: Direct `starts_with()` checks for `__lpfx_hash_` and `__lpfx_simplex`
+   - Lines 37, 201-203, 259-262: Direct `starts_with()` checks for `__lpfx_hash_` and `__lpfx_snoise`
    - Lines 440, 443, 459, 549, 553, 595, 603, 763: More direct string checks
    - Should use `LpfxFnId` methods instead
 
@@ -43,7 +43,7 @@ The code is doing direct string checks against function names instead of using `
 
 ### Q2: Should we update `LpfxFnId` to provide the actual implementation function name?
 
-**Context**: The generator needs to know the actual Rust function name (e.g., `__lpfx_simplex1_q32`) to generate imports and references.
+**Context**: The generator needs to know the actual Rust function name (e.g., `__lpfx_snoise1_q32`) to generate imports and references.
 
 **Suggestion**: Add a method like `implementation_name()` that returns the actual Rust function name.
 
@@ -68,6 +68,6 @@ The code is doing direct string checks against function names instead of using `
 ## Notes
 
 - The reorganization moved files but shouldn't affect functionality - we just need to update the codegen
-- GLSL names are already correct (`lpfx_hash`, `lpfx_simplex1`, etc.)
+- GLSL names are already correct (`lpfx_hash`, `lpfx_snoise1`, etc.)
 - Implementation names follow pattern `__lpfx_name_<format>` which is correct
 - Need to ensure all string-based checks are replaced with `LpfxFnId` method calls

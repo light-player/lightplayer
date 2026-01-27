@@ -10,9 +10,9 @@ use crate::lpfx::errors::LpfxCodegenError;
 /// Information about a discovered LPFX function
 #[derive(Debug, Clone)]
 pub struct LpfxFunctionInfo {
-    /// Rust function name (e.g., "__lpfx_simplex3_f32")
+    /// Rust function name (e.g., "__lpfx_snoise3_f32")
     pub rust_fn_name: String,
-    /// BuiltinId enum variant name (e.g., "LpfxSimplex3Float")
+    /// BuiltinId enum variant name (e.g., "LpfxSnoise3Float")
     pub builtin_id_variant: String,
     /// File path where function is defined
     pub file_path: PathBuf,
@@ -112,8 +112,8 @@ fn extract_lpfx_function(func: &ItemFn, file_path: &Path) -> Option<LpfxFunction
     // 3. Join together
     // Examples:
     // __lpfx_hash_1 -> LpfxHash1
-    // __lpfx_simplex1_f32 -> LpfxSimplex1F32
-    // __lpfx_simplex1_q32 -> LpfxSimplex1Q32
+    // __lpfx_snoise1_f32 -> LpfxSnoise1F32
+    // __lpfx_snoise1_q32 -> LpfxSnoise1Q32
     let name_without_prefix = func_name.strip_prefix("__").unwrap();
     let builtin_id_variant = name_without_prefix
         .split('_')

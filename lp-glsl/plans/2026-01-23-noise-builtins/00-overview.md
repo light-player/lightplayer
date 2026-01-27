@@ -6,14 +6,14 @@ Implement Lightplayer-specific library functions for noise generation that can b
 
 The implementation includes:
 - Hash function (`lpfx_hash`) with 1D, 2D, and 3D variants
-- Simplex noise functions (`lpfx_simplex1`, `lpfx_simplex2`, `lpfx_simplex3`)
+- Simplex noise functions (`lpfx_snoise1`, `lpfx_snoise2`, `lpfx_snoise3`)
 - Integration with the existing builtin system
 - Semantic checking and codegen for user-facing `lp_*` function names
 
 ## Phases
 
 1. **Implement hash function** - Create `lpfx_hash.rs` with Q32 fixed-point hash functions using noiz algorithm
-2. **Implement Simplex noise functions** - Create `lpfx_simplex1.rs`, `lpfx_simplex2.rs`, `lpfx_simplex3.rs` with Q32 implementations
+2. **Implement Simplex noise functions** - Create `lpfx_snoise1.rs`, `lpfx_snoise2.rs`, `lpfx_snoise3.rs` with Q32 implementations
 3. **Regenerate builtin registry** - Run builtin generator to add new functions to `BuiltinId` enum
 4. **Add semantic checking** - Create semantic checking to map `lp_*` names to `BuiltinId` variants
 5. **Add codegen support** - Create codegen to generate calls to builtins with vector argument flattening

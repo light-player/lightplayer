@@ -9,9 +9,9 @@ Add Lightplayer-specific library functions for noise generation that can be call
 ```
 lp-glsl/crates/lp-builtins/src/builtins/q32/
 ├── lpfx_hash.rs                 # NEW: Hash function (1D, 2D, 3D overloads)
-├── lpfx_simplex1.rs             # NEW: 1D Simplex noise
-├── lpfx_simplex2.rs             # NEW: 2D Simplex noise
-├── lpfx_simplex3.rs             # NEW: 3D Simplex noise
+├── lpfx_snoise1.rs             # NEW: 1D Simplex noise
+├── lpfx_snoise2.rs             # NEW: 2D Simplex noise
+├── lpfx_snoise3.rs             # NEW: 3D Simplex noise
 └── mod.rs                     # UPDATE: Add exports for new functions
 
 lp-glsl/crates/lp-glsl-compiler/src/
@@ -33,9 +33,9 @@ User-facing name          Internal symbol name (auto-registered)
 lpfx_hash(u32)            -> __lpfx_hash_1(u32, u32) -> u32
 lpfx_hash(u32, u32)       -> __lpfx_hash_2(u32, u32, u32) -> u32
 lpfx_hash(u32, u32, u32)  -> __lpfx_hash_3(u32, u32, u32, u32) -> u32
-lpfx_simplex1(i32, u32)   -> __lpfx_simplex1(i32, u32) -> i32
-lpfx_simplex2(i32, i32, u32) -> __lpfx_simplex2(i32, i32, u32) -> i32
-lpfx_simplex3(i32, i32, i32, u32) -> __lpfx_simplex3(i32, i32, i32, u32) -> i32
+lpfx_snoise1(i32, u32)   -> __lpfx_snoise1(i32, u32) -> i32
+lpfx_snoise2(i32, i32, u32) -> __lpfx_snoise2(i32, i32, u32) -> i32
+lpfx_snoise3(i32, i32, i32, u32) -> __lpfx_snoise3(i32, i32, i32, u32) -> i32
 ```
 
 Internal functions (`__lp_*`) are automatically registered by `lp-builtin-gen` which scans `lp-builtins/src/builtins/q32/` and adds them to the `BuiltinId` enum. The builtin generator will create enum variants like `LpHash1`, `LpSimplex1`, etc.
@@ -71,14 +71,14 @@ lpfx_hash.rs:
   __lpfx_hash_2(x: u32, y: u32, seed: u32) -> u32 - # NEW: 2D hash
   __lpfx_hash_3(x: u32, y: u32, z: u32, seed: u32) -> u32 - # NEW: 3D hash
 
-lpfx_simplex1.rs:
-  __lpfx_simplex1(x: i32, seed: u32) -> i32 - # NEW: 1D Simplex noise
+lpfx_snoise1.rs:
+  __lpfx_snoise1(x: i32, seed: u32) -> i32 - # NEW: 1D Simplex noise
 
-lpfx_simplex2.rs:
-  __lpfx_simplex2(x: i32, y: i32, seed: u32) -> i32 - # NEW: 2D Simplex noise
+lpfx_snoise2.rs:
+  __lpfx_snoise2(x: i32, y: i32, seed: u32) -> i32 - # NEW: 2D Simplex noise
 
-lpfx_simplex3.rs:
-  __lpfx_simplex3(x: i32, y: i32, z: i32, seed: u32) -> i32 - # NEW: 3D Simplex noise
+lpfx_snoise3.rs:
+  __lpfx_snoise3(x: i32, y: i32, z: i32, seed: u32) -> i32 - # NEW: 3D Simplex noise
 ```
 
 ## Design Decisions
@@ -98,16 +98,16 @@ Function calls are checked in this order:
 ### 3. Vector Argument Handling
 
 Vector arguments are flattened to individual scalar parameters:
-- `lpfx_simplex2(vec2 p, uint seed)` becomes `lpfx_simplex2(i32 x, i32 y, u32 seed)`
-- `lpfx_simplex3(vec3 p, uint seed)` becomes `lpfx_simplex3(i32 x, i32 y, i32 z, u32 seed)`
+- `lpfx_snoise2(vec2 p, uint seed)` becomes `lpfx_snoise2(i32 x, i32 y, u32 seed)`
+- `lpfx_snoise3(vec3 p, uint seed)` becomes `lpfx_snoise3(i32 x, i32 y, i32 z, u32 seed)`
 
 This matches how the compiler currently handles vectors and simplifies the implementation.
 
 ### 4. Function Signatures
 
 Function signatures are manually specified (no auto-generation initially). Each function has:
-- User-facing name: `lpfx_hash`, `lpfx_simplex1`, etc.
-- Internal symbol name: `__lpfx_hash_1`, `__lpfx_simplex1`, etc.
+- User-facing name: `lpfx_hash`, `lpfx_snoise1`, etc.
+- Internal symbol name: `__lpfx_hash_1`, `__lpfx_snoise1`, etc.
 - Parameter types: Flattened scalar types (i32, u32)
 - Return type: i32 (Q32 fixed-point) or u32 (for hash)
 
@@ -131,7 +131,7 @@ Implements Simplex noise (not Perlin):
 
 Frequency parameter removed - caller can scale coordinates themselves:
 ```glsl
-lpfx_simplex3(p.x * freq, p.y * freq, p.z * freq, seed)
+lpfx_snoise3(p.x * freq, p.y * freq, p.z * freq, seed)
 ```
 
 This simplifies the API and gives callers more flexibility.
@@ -158,15 +158,15 @@ uint lpfx_hash(uint x, uint y, uint z);
 ### Simplex Noise Functions
 
 ```glsl
-float lpfx_simplex1(float x, uint seed);
-float lpfx_simplex2(vec2 p, uint seed);
-float lpfx_simplex3(vec3 p, uint seed);
+float lpfx_snoise1(float x, uint seed);
+float lpfx_snoise2(vec2 p, uint seed);
+float lpfx_snoise3(vec3 p, uint seed);
 ```
 
 **Internal signatures (flattened):**
-- `__lpfx_simplex1(x: i32, seed: u32) -> i32`
-- `__lpfx_simplex2(x: i32, y: i32, seed: u32) -> i32`
-- `__lpfx_simplex3(x: i32, y: i32, z: i32, seed: u32) -> i32`
+- `__lpfx_snoise1(x: i32, seed: u32) -> i32`
+- `__lpfx_snoise2(x: i32, y: i32, seed: u32) -> i32`
+- `__lpfx_snoise3(x: i32, y: i32, z: i32, seed: u32) -> i32`
 
 **Return values:**
 - All return Q32 fixed-point values (i32) in range approximately [-1, 1]

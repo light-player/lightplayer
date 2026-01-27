@@ -63,9 +63,9 @@ pub fn map_testcase_to_builtin(testcase_name: &str) -> Option<(BuiltinId, usize)
         "lpfx_hash_1f" | "__lp_lpfx_hash_1" => Some((BuiltinId::LpfxHash1, 2)),
         "lpfx_hash_2f" | "__lp_lpfx_hash_2" => Some((BuiltinId::LpfxHash2, 3)),
         "lpfx_hash_3f" | "__lp_lpfx_hash_3" => Some((BuiltinId::LpfxHash3, 4)),
-        "__lpfx_simplex1" => Some((BuiltinId::LpfxSimplex1Q32, 2)),
-        "__lpfx_simplex2" => Some((BuiltinId::LpfxSimplex2Q32, 3)),
-        "__lpfx_simplex3" => Some((BuiltinId::LpfxSimplex3Q32, 4)),
+        "__lpfx_snoise1" => Some((BuiltinId::LpfxSnoise1Q32, 2)),
+        "__lpfx_snoise2" => Some((BuiltinId::LpfxSnoise2Q32, 3)),
+        "__lpfx_snoise3" => Some((BuiltinId::LpfxSnoise3Q32, 4)),
         "__lpfx_worley2" => Some((BuiltinId::LpfxWorley2Q32, 3)),
         "__lpfx_worley2_value" => Some((BuiltinId::LpfxWorley2ValueQ32, 3)),
         "__lpfx_worley3" => Some((BuiltinId::LpfxWorley3Q32, 4)),
@@ -302,16 +302,16 @@ block0:
     fn test_map_testcase_to_builtin_simplex() {
         // Test simplex function mappings
         assert_eq!(
-            map_testcase_to_builtin("__lpfx_simplex1"),
-            Some((BuiltinId::LpfxSimplex1Q32, 2))
+            map_testcase_to_builtin("__lpfx_snoise1"),
+            Some((BuiltinId::LpfxSnoise1Q32, 2))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lpfx_simplex2"),
-            Some((BuiltinId::LpfxSimplex2Q32, 3))
+            map_testcase_to_builtin("__lpfx_snoise2"),
+            Some((BuiltinId::LpfxSnoise2Q32, 3))
         );
         assert_eq!(
-            map_testcase_to_builtin("__lpfx_simplex3"),
-            Some((BuiltinId::LpfxSimplex3Q32, 4))
+            map_testcase_to_builtin("__lpfx_snoise3"),
+            Some((BuiltinId::LpfxSnoise3Q32, 4))
         );
     }
 

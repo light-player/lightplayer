@@ -7,10 +7,10 @@
 //!
 //! # GLSL Usage
 //!
-//! This function is callable from GLSL shaders using the `lpfx_simplex2` name:
+//! This function is callable from GLSL shaders using the `lpfx_snoise2` name:
 //!
 //! ```glsl
-//! float noise = lpfx_simplex2(vec2(5.0, 3.0), 123u);
+//! float noise = lpfx_snoise2(vec2(5.0, 3.0), 123u);
 //! ```
 //!
 //! # Parameters
@@ -24,7 +24,7 @@
 //!
 //! # Internal Implementation
 //!
-//! The user-facing `lpfx_simplex2` function maps to internal `__lpfx_simplex2` which
+//! The user-facing `lpfx_snoise2` function maps to internal `__lpfx_snoise2` which
 //! operates on Q32 fixed-point values. Vector arguments are automatically flattened
 //! by the compiler (vec2 becomes two i32 parameters).
 
@@ -53,9 +53,9 @@ const UNSKEW_FACTOR_2D: Q32 = Q32(13853);
 ///
 /// # Returns
 /// Noise value in Q32 fixed-point format, approximately in range [-1, 1]
-#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_simplex2(vec2 p, uint seed)")]
+#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_snoise2(vec2 p, uint seed)")]
 #[unsafe(no_mangle)]
-pub extern "C" fn __lpfx_simplex2_q32(x: i32, y: i32, seed: u32) -> i32 {
+pub extern "C" fn __lpfx_snoise2_q32(x: i32, y: i32, seed: u32) -> i32 {
     // Convert inputs to Q32
     let x = Q32::from_fixed(x);
     let y = Q32::from_fixed(y);
@@ -190,9 +190,9 @@ mod tests {
 
     #[test]
     fn test_simplex2_basic() {
-        let result1 = __lpfx_simplex2_q32(float_to_fixed(1.5), float_to_fixed(2.3), 0);
-        let result2 = __lpfx_simplex2_q32(float_to_fixed(3.7), float_to_fixed(2.3), 0);
-        let result3 = __lpfx_simplex2_q32(float_to_fixed(1.5), float_to_fixed(2.3), 1);
+        let result1 = __lpfx_snoise2_q32(float_to_fixed(1.5), float_to_fixed(2.3), 0);
+        let result2 = __lpfx_snoise2_q32(float_to_fixed(3.7), float_to_fixed(2.3), 0);
+        let result3 = __lpfx_snoise2_q32(float_to_fixed(1.5), float_to_fixed(2.3), 1);
 
         // Different inputs should produce different outputs
         assert_ne!(
@@ -208,7 +208,7 @@ mod tests {
         for i in 0..50 {
             let x = float_to_fixed(i as f32 * 0.1);
             let y = float_to_fixed(i as f32 * 0.15);
-            let result = __lpfx_simplex2_q32(x, y, 0);
+            let result = __lpfx_snoise2_q32(x, y, 0);
             let result_float = fixed_to_float(result);
 
             assert!(
@@ -222,8 +222,8 @@ mod tests {
 
     #[test]
     fn test_simplex2_deterministic() {
-        let result1 = __lpfx_simplex2_q32(float_to_fixed(42.5), float_to_fixed(37.3), 123);
-        let result2 = __lpfx_simplex2_q32(float_to_fixed(42.5), float_to_fixed(37.3), 123);
+        let result1 = __lpfx_snoise2_q32(float_to_fixed(42.5), float_to_fixed(37.3), 123);
+        let result2 = __lpfx_snoise2_q32(float_to_fixed(42.5), float_to_fixed(37.3), 123);
 
         // Same input and seed should produce same output
         assert_eq!(result1, result2, "Noise should be deterministic");

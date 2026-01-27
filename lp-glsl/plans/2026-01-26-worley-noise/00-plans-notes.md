@@ -56,7 +56,7 @@ The reference implementation is in `/Users/yona/dev/photomancer/oss/noise-rs/src
 
 ### Q4: Function Naming Convention
 
-**Context**: Simplex noise uses `lpfx_simplex1`, `lpfx_simplex2`, `lpfx_simplex3`. Worley noise needs to distinguish distance vs value.
+**Context**: Simplex noise uses `lpfx_snoise1`, `lpfx_snoise2`, `lpfx_snoise3`. Worley noise needs to distinguish distance vs value.
 
 **Question**: What naming convention should we use?
 - Option A: `lpfx_worley2_distance`, `lpfx_worley2_value`, `lpfx_worley3_distance`, `lpfx_worley3_value`

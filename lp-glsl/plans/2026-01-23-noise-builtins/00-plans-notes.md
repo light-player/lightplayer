@@ -26,9 +26,9 @@ We want to add Lightplayer-specific builtin functions for noise generation that 
 
 **UPDATED**: User wants `lp_` prefix for clarity to match usage in code. So user-facing names:
 - `lpfx_hash` (not `lp_q32_hash`)
-- `lpfx_simplex1` (not `lp_q32_simplex1`)
-- `lpfx_simplex2` (not `lp_q32_simplex2`)
-- `lpfx_simplex3` (not `lp_q32_simplex3`)
+- `lpfx_snoise1` (not `lp_q32_simplex1`)
+- `lpfx_snoise2` (not `lp_q32_simplex2`)
+- `lpfx_snoise3` (not `lp_q32_simplex3`)
 
 Internal implementation functions can still use `__lp_q32_*` naming.
 
@@ -54,7 +54,7 @@ Naming:
 - Category: `LpLibFn` / `LpLibraryFunction`
 - Registry enum: `LpLibFnId`
 - Check function: `is_lp_lib_fn()` (checks for `lp_` prefix)
-- User-facing names: `lpfx_hash`, `lpfx_simplex1`, `lpfx_simplex2`, `lpfx_simplex3`
+- User-facing names: `lpfx_hash`, `lpfx_snoise1`, `lpfx_snoise2`, `lpfx_snoise3`
 
 ### Q3: Vector Argument Handling
 
@@ -68,9 +68,9 @@ Naming:
 **Suggested Answer**: Option A - Flatten vectors to individual i32 parameters. This matches how the compiler currently handles vectors and is simplest. The function signature will be `lp_perlin3(i32 x, i32 y, i32 z, i32 frequency, u32 seed) -> i32`.
 
 **ANSWERED**: Option A - Flatten vectors to individual parameters. Function signatures (updated after removing frequency and using lp_ prefix):
-- `lpfx_simplex1(i32 x, u32 seed) -> i32`
-- `lpfx_simplex2(i32 x, i32 y, u32 seed) -> i32`
-- `lpfx_simplex3(i32 x, i32 y, i32 z, u32 seed) -> i32`
+- `lpfx_snoise1(i32 x, u32 seed) -> i32`
+- `lpfx_snoise2(i32 x, i32 y, u32 seed) -> i32`
+- `lpfx_snoise3(i32 x, i32 y, i32 z, u32 seed) -> i32`
 - `lpfx_hash(u32 x) -> u32`
 - `lpfx_hash(u32 x, u32 y) -> u32`
 - `lpfx_hash(u32 x, u32 y, u32 z) -> u32`

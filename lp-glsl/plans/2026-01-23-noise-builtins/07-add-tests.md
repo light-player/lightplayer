@@ -23,17 +23,17 @@ Add tests to each implementation file:
    - Test hash is deterministic (same input + seed = same output)
    - Test seed affects output
 
-2. **`lpfx_simplex1.rs` tests**
+2. **`lpfx_snoise1.rs` tests**
    - Compare against noise-rs Simplex 1D
    - Test output range (approximately [-1, 1])
    - Test continuity (small input changes produce small output changes)
 
-3. **`lpfx_simplex2.rs` tests**
+3. **`lpfx_snoise2.rs` tests**
    - Compare against noise-rs Simplex 2D
    - Test output range
    - Test continuity
 
-4. **`lpfx_simplex3.rs` tests**
+4. **`lpfx_snoise3.rs` tests**
    - Compare against noise-rs Simplex 3D
    - Test output range
    - Test continuity

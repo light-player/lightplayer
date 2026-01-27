@@ -2,22 +2,22 @@
 
 ## Description
 
-Create Simplex noise implementations in three files: `lpfx_simplex1.rs`, `lpfx_simplex2.rs`, and `lpfx_simplex3.rs`. These implement 1D, 2D, and 3D Simplex noise using Q32 fixed-point arithmetic.
+Create Simplex noise implementations in three files: `lpfx_snoise1.rs`, `lpfx_snoise2.rs`, and `lpfx_snoise3.rs`. These implement 1D, 2D, and 3D Simplex noise using Q32 fixed-point arithmetic.
 
 ## Implementation
 
 ### Files to Create
 
-1. **`lp-builtins/src/builtins/q32/lpfx_simplex1.rs`**
-   - `__lpfx_simplex1(x: i32, seed: u32) -> i32`
+1. **`lp-builtins/src/builtins/q32/lpfx_snoise1.rs`**
+   - `__lpfx_snoise1(x: i32, seed: u32) -> i32`
    - 1D Simplex noise
 
-2. **`lp-builtins/src/builtins/q32/lpfx_simplex2.rs`**
-   - `__lpfx_simplex2(x: i32, y: i32, seed: u32) -> i32`
+2. **`lp-builtins/src/builtins/q32/lpfx_snoise2.rs`**
+   - `__lpfx_snoise2(x: i32, y: i32, seed: u32) -> i32`
    - 2D Simplex noise
 
-3. **`lp-builtins/src/builtins/q32/lpfx_simplex3.rs`**
-   - `__lpfx_simplex3(x: i32, y: i32, z: i32, seed: u32) -> i32`
+3. **`lp-builtins/src/builtins/q32/lpfx_snoise3.rs`**
+   - `__lpfx_snoise3(x: i32, y: i32, z: i32, seed: u32) -> i32`
    - 3D Simplex noise
 
 ### Algorithm Reference

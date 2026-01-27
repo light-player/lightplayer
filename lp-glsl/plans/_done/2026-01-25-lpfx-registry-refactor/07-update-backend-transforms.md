@@ -10,7 +10,7 @@ Update backend transform code to use the registry for testcase name mapping.
 
 Replace:
 - Hardcoded `map_testcase_to_builtin` function with registry lookup
-- Look up function by testcase name (e.g., "__lpfx_simplex1") in registry
+- Look up function by testcase name (e.g., "__lpfx_snoise1") in registry
 - Use `impl.rust_fn_name` to match testcase names
 - Return `BuiltinId` from registry lookup
 

@@ -6,20 +6,20 @@
 //! Or use the build script:
 //!     scripts/build-builtins.sh
 
-use lp_builtins::builtins::lpfx::simplex::simplex1_f32::__lpfx_simplex1_f32;
-use lp_builtins::builtins::lpfx::simplex::simplex1_q32::__lpfx_simplex1_q32;
-use lp_builtins::builtins::lpfx::simplex::simplex2_f32::__lpfx_simplex2_f32;
-use lp_builtins::builtins::lpfx::simplex::simplex2_q32::__lpfx_simplex2_q32;
-use lp_builtins::builtins::lpfx::simplex::simplex3_f32::__lpfx_simplex3_f32;
-use lp_builtins::builtins::lpfx::simplex::simplex3_q32::__lpfx_simplex3_q32;
-use lp_builtins::builtins::lpfx::worley::worley2_f32::__lpfx_worley2_f32;
-use lp_builtins::builtins::lpfx::worley::worley2_q32::__lpfx_worley2_q32;
-use lp_builtins::builtins::lpfx::worley::worley2_value_f32::__lpfx_worley2_value_f32;
-use lp_builtins::builtins::lpfx::worley::worley2_value_q32::__lpfx_worley2_value_q32;
-use lp_builtins::builtins::lpfx::worley::worley3_f32::__lpfx_worley3_f32;
-use lp_builtins::builtins::lpfx::worley::worley3_q32::__lpfx_worley3_q32;
-use lp_builtins::builtins::lpfx::worley::worley3_value_f32::__lpfx_worley3_value_f32;
-use lp_builtins::builtins::lpfx::worley::worley3_value_q32::__lpfx_worley3_value_q32;
+use lp_builtins::builtins::lpfx::generative::snoise::snoise1_f32::__lpfx_snoise1_f32;
+use lp_builtins::builtins::lpfx::generative::snoise::snoise1_q32::__lpfx_snoise1_q32;
+use lp_builtins::builtins::lpfx::generative::snoise::snoise2_f32::__lpfx_snoise2_f32;
+use lp_builtins::builtins::lpfx::generative::snoise::snoise2_q32::__lpfx_snoise2_q32;
+use lp_builtins::builtins::lpfx::generative::snoise::snoise3_f32::__lpfx_snoise3_f32;
+use lp_builtins::builtins::lpfx::generative::snoise::snoise3_q32::__lpfx_snoise3_q32;
+use lp_builtins::builtins::lpfx::generative::worley::worley2_f32::__lpfx_worley2_f32;
+use lp_builtins::builtins::lpfx::generative::worley::worley2_q32::__lpfx_worley2_q32;
+use lp_builtins::builtins::lpfx::generative::worley::worley2_value_f32::__lpfx_worley2_value_f32;
+use lp_builtins::builtins::lpfx::generative::worley::worley2_value_q32::__lpfx_worley2_value_q32;
+use lp_builtins::builtins::lpfx::generative::worley::worley3_f32::__lpfx_worley3_f32;
+use lp_builtins::builtins::lpfx::generative::worley::worley3_q32::__lpfx_worley3_q32;
+use lp_builtins::builtins::lpfx::generative::worley::worley3_value_f32::__lpfx_worley3_value_f32;
+use lp_builtins::builtins::lpfx::generative::worley::worley3_value_q32::__lpfx_worley3_value_q32;
 use lp_builtins::builtins::lpfx::{hash::__lpfx_hash_1, hash::__lpfx_hash_2, hash::__lpfx_hash_3};
 use lp_builtins::builtins::q32::__lp_q32_acos;
 use lp_builtins::builtins::q32::__lp_q32_acosh;
@@ -89,12 +89,12 @@ pub fn ensure_builtins_referenced() {
         let __lpfx_hash_1_fn: extern "C" fn(u32, u32) -> u32 = __lpfx_hash_1;
         let __lpfx_hash_2_fn: extern "C" fn(u32, u32, u32) -> u32 = __lpfx_hash_2;
         let __lpfx_hash_3_fn: extern "C" fn(u32, u32, u32, u32) -> u32 = __lpfx_hash_3;
-        let __lpfx_simplex1_f32_fn: extern "C" fn(f32, u32) -> f32 = __lpfx_simplex1_f32;
-        let __lpfx_simplex1_q32_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_simplex1_q32;
-        let __lpfx_simplex2_f32_fn: extern "C" fn(f32, f32, u32) -> f32 = __lpfx_simplex2_f32;
-        let __lpfx_simplex2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_simplex2_q32;
-        let __lpfx_simplex3_f32_fn: extern "C" fn(f32, f32, f32, u32) -> f32 = __lpfx_simplex3_f32;
-        let __lpfx_simplex3_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_simplex3_q32;
+        let __lpfx_snoise1_f32_fn: extern "C" fn(f32, u32) -> f32 = __lpfx_snoise1_f32;
+        let __lpfx_snoise1_q32_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_snoise1_q32;
+        let __lpfx_snoise2_f32_fn: extern "C" fn(f32, f32, u32) -> f32 = __lpfx_snoise2_f32;
+        let __lpfx_snoise2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_snoise2_q32;
+        let __lpfx_snoise3_f32_fn: extern "C" fn(f32, f32, f32, u32) -> f32 = __lpfx_snoise3_f32;
+        let __lpfx_snoise3_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_snoise3_q32;
         let __lpfx_worley2_f32_fn: extern "C" fn(f32, f32, u32) -> f32 = __lpfx_worley2_f32;
         let __lpfx_worley2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_worley2_q32;
         let __lpfx_worley2_value_f32_fn: extern "C" fn(f32, f32, u32) -> f32 =
@@ -142,12 +142,12 @@ pub fn ensure_builtins_referenced() {
         let _ = core::ptr::read_volatile(&__lpfx_hash_1_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_hash_2_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_hash_3_fn as *const _);
-        let _ = core::ptr::read_volatile(&__lpfx_simplex1_f32_fn as *const _);
-        let _ = core::ptr::read_volatile(&__lpfx_simplex1_q32_fn as *const _);
-        let _ = core::ptr::read_volatile(&__lpfx_simplex2_f32_fn as *const _);
-        let _ = core::ptr::read_volatile(&__lpfx_simplex2_q32_fn as *const _);
-        let _ = core::ptr::read_volatile(&__lpfx_simplex3_f32_fn as *const _);
-        let _ = core::ptr::read_volatile(&__lpfx_simplex3_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_snoise1_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_snoise1_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_snoise2_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_snoise2_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_snoise3_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_snoise3_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_worley2_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_worley2_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_worley2_value_f32_fn as *const _);

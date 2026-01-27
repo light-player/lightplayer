@@ -20,12 +20,12 @@ fn test_parse_simple_signature() {
 #[test]
 fn test_parse_vector_signature() {
     // Note: GLSL uses 'uint' not 'u32' in source code
-    let sig = "float lpfx_simplex3(vec3 p, uint seed)";
+    let sig = "float lpfx_snoise3(vec3 p, uint seed)";
     let result = parse_glsl_signature(sig, "test_func", "test.rs");
     assert!(result.is_ok(), "Failed to parse signature: {:?}", result);
 
     let func_sig = result.unwrap();
-    assert_eq!(func_sig.name, "lpfx_simplex3");
+    assert_eq!(func_sig.name, "lpfx_snoise3");
     assert_eq!(func_sig.parameters.len(), 2);
 }
 

@@ -29,7 +29,7 @@ discover_lpfx_functions(dir: &Path) -> Result<Vec<LpfxFunctionInfo>, Error>
   # NEW: Walk directory tree, find all functions with #[lpfx_impl] attribute
 
 LpfxFunctionInfo - # NEW: Information about a discovered LPFX function
-├── rust_fn_name: String      # NEW: Rust function name (e.g., "__lpfx_simplex3_f32")
+├── rust_fn_name: String      # NEW: Rust function name (e.g., "__lpfx_snoise3_f32")
 ├── builtin_id: BuiltinId     # NEW: Corresponding BuiltinId enum variant
 ├── attribute: LpfxAttribute  # NEW: Parsed attribute information
 └── file_path: PathBuf        # NEW: Source file path

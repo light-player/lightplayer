@@ -12,9 +12,9 @@ Create const array `LPFX_FNS` containing all current functions:
 - `lpfx_hash1` - (u32, u32) -> u32
 - `lpfx_hash2` - (u32, u32, u32) -> u32
 - `lpfx_hash3` - (u32, u32, u32, u32) -> u32
-- `lpfx_simplex1` - (float, uint) -> float
-- `lpfx_simplex2` - (vec2, uint) -> float
-- `lpfx_simplex3` - (vec3, uint) -> float
+- `lpfx_snoise1` - (float, uint) -> float
+- `lpfx_snoise2` - (vec2, uint) -> float
+- `lpfx_snoise3` - (vec3, uint) -> float
 
 For each function:
 - Create `FunctionSignature` with proper name, parameter types, and return type

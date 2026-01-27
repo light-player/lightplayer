@@ -4,7 +4,7 @@
 
 **Context**: We need to annotate LPFX functions with their GLSL signatures so the codegen can extract them. The `#[]` things are called "attributes" in Rust.
 
-**Decision**: Use `#[lpfx_impl("float lpfx_simplex3(vec3 p, u32 seed)")]` - indicating this is an implementation, and we can use the GLSL parser to parse the declaration string.
+**Decision**: Use `#[lpfx_impl("float lpfx_snoise3(vec3 p, u32 seed)")]` - indicating this is an implementation, and we can use the GLSL parser to parse the declaration string.
 
 **Rationale**:
 - Uses existing GLSL parsing infrastructure
@@ -20,8 +20,8 @@
 
 **Syntax**:
 - Non-decimal: `#[lpfx_impl("uint lpfx_hash1(uint x, uint seed)")]` - just the signature string (note: GLSL uses 'uint' not 'u32')
-- Decimal f32: `#[lpfx_impl(f32, "float lpfx_simplex3(vec3 p, uint seed)")]` - variant type + signature
-- Decimal q32: `#[lpfx_impl(q32, "float lpfx_simplex3(vec3 p, uint seed)")]` - variant type + signature
+- Decimal f32: `#[lpfx_impl(f32, "float lpfx_snoise3(vec3 p, uint seed)")]` - variant type + signature
+- Decimal q32: `#[lpfx_impl(q32, "float lpfx_snoise3(vec3 p, uint seed)")]` - variant type + signature
 
 **Note**: GLSL syntax uses `uint` for unsigned integers, not `u32`. The attributes should use standard GLSL syntax.
 
@@ -34,7 +34,7 @@
 
 ## Q3: Correlating f32 and q32 implementations
 
-**Context**: We need to correlate `__lpfx_simplex3_f32` with `__lpfx_simplex3_q32` to generate the `LpfxFnImpl::Decimal { float_impl, q32_impl }` structure.
+**Context**: We need to correlate `__lpfx_snoise3_f32` with `__lpfx_snoise3_q32` to generate the `LpfxFnImpl::Decimal { float_impl, q32_impl }` structure.
 
 **Decision**: Both f32 and q32 have the same GLSL signature in their attributes. Codegen will:
 1. Find all functions with `#[lpfx_impl(...)]` attribute

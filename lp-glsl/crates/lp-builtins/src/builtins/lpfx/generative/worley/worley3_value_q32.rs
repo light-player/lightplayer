@@ -433,7 +433,7 @@ mod tests {
 
     #[test]
     fn test_worley3_value_different_from_distance() {
-        use crate::builtins::lpfx::worley::worley3_q32::__lpfx_worley3_q32;
+        use crate::builtins::lpfx::generative::worley::worley3_q32::__lpfx_worley3_q32;
 
         let x = float_to_fixed(5.5);
         let y = float_to_fixed(3.3);

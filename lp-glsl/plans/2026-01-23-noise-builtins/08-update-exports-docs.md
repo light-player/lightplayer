@@ -10,9 +10,9 @@ Update `mod.rs` to export new functions and add documentation. Ensure all functi
 
 The builtin generator should have already updated this file, but verify:
 - `mod lpfx_hash;` is included
-- `mod lpfx_simplex1;` is included
-- `mod lpfx_simplex2;` is included
-- `mod lpfx_simplex3;` is included
+- `mod lpfx_snoise1;` is included
+- `mod lpfx_snoise2;` is included
+- `mod lpfx_snoise3;` is included
 - `pub use` statements for all functions are present
 
 ### Documentation

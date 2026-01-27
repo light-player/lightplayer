@@ -42,9 +42,9 @@ Create new module with:
 - `lpfx_hash(u32) -> u32`
 - `lpfx_hash(u32, u32) -> u32`
 - `lpfx_hash(u32, u32, u32) -> u32`
-- `lpfx_simplex1(i32, u32) -> i32` (or `float, uint` -> `float` in GLSL types)
-- `lpfx_simplex2(vec2, uint) -> float` (maps to `i32, i32, u32` internally)
-- `lpfx_simplex3(vec3, uint) -> float` (maps to `i32, i32, i32, u32` internally)
+- `lpfx_snoise1(i32, u32) -> i32` (or `float, uint` -> `float` in GLSL types)
+- `lpfx_snoise2(vec2, uint) -> float` (maps to `i32, i32, u32` internally)
+- `lpfx_snoise3(vec3, uint) -> float` (maps to `i32, i32, i32, u32` internally)
 
 ### Integration
 

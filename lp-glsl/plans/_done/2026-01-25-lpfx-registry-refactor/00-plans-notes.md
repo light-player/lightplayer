@@ -62,7 +62,7 @@ The user has started sketching an idea in `/Users/yona/dev/photomancer/lp2025/lp
 - Have separate registry entries for each format?
 - Use a lookup function that constructs the implementation name?
 
-**Context**: The sketch shows `LpfxFnImpl` with `decimal_format`, `builtin_module`, and `rust_fn_name`. Functions like `__lpfx_simplex1_q32` need to be mapped from `lpfx_simplex1(float, uint)`.
+**Context**: The sketch shows `LpfxFnImpl` with `decimal_format`, `builtin_module`, and `rust_fn_name`. Functions like `__lpfx_snoise1_q32` need to be mapped from `lpfx_snoise1(float, uint)`.
 
 **Answer**: Store implementations in `LpfxFn` as a `Vec<LpfxFnImpl>`. When codegen needs a specific implementation, look up the appropriate `LpfxFnImpl` based on the decimal format. For functions that don't use decimal formats (like hash), have a single implementation with `decimal_format: None`.
 
