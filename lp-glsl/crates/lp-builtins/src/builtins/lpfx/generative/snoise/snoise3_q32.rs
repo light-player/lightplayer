@@ -7,10 +7,10 @@
 //!
 //! # GLSL Usage
 //!
-//! This function is callable from GLSL shaders using the `lpfx_snoise3` name:
+//! This function is callable from GLSL shaders using the `lpfx_snoise` name:
 //!
 //! ```glsl
-//! float noise = lpfx_snoise3(vec3(5.0, 3.0, 1.0), 123u);
+//! float noise = lpfx_snoise(vec3(5.0, 3.0, 1.0), 123u);
 //! ```
 //!
 //! # Parameters
@@ -24,12 +24,13 @@
 //!
 //! # Internal Implementation
 //!
-//! The user-facing `lpfx_snoise3` function maps to internal `__lpfx_snoise3` which
+//! The user-facing `lpfx_snoise` function maps to internal `__lpfx_snoise3` which
 //! operates on Q32 fixed-point values. Vector arguments are automatically flattened
 //! by the compiler (vec3 becomes three i32 parameters).
 
-use crate::builtins::lpfx::hash::__lpfx_hash_3;
+use crate::builtins::lpfx::hash::lpfx_hash3;
 use crate::util::q32::Q32;
+use crate::util::vec3_q32::Vec3Q32;
 
 /// Fixed-point constants
 const TWO: Q32 = Q32(0x00020000); // 2.0 in Q16.16
@@ -46,20 +47,16 @@ const UNSKEW_FACTOR_3D: Q32 = Q32(10923);
 /// 3D Simplex noise function.
 ///
 /// # Arguments
-/// * `x` - X coordinate in Q32 fixed-point format
-/// * `y` - Y coordinate in Q32 fixed-point format
-/// * `z` - Z coordinate in Q32 fixed-point format
+/// * `p` - Input coordinates as Vec3Q32
 /// * `seed` - Seed value for randomization
 ///
 /// # Returns
 /// Noise value in Q32 fixed-point format, approximately in range [-1, 1]
-#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_snoise3(vec3 p, uint seed)")]
-#[unsafe(no_mangle)]
-pub extern "C" fn __lpfx_snoise3_q32(x: i32, y: i32, z: i32, seed: u32) -> i32 {
-    // Convert inputs to Q32
-    let x = Q32::from_fixed(x);
-    let y = Q32::from_fixed(y);
-    let z = Q32::from_fixed(z);
+#[inline(always)]
+pub fn lpfx_snoise3(p: Vec3Q32, seed: u32) -> Q32 {
+    let x = p.x;
+    let y = p.y;
+    let z = p.z;
 
     // Skew the input space to determine which simplex cell we're in
     // skew = (x + y + z) * SKEW_FACTOR
@@ -174,25 +171,25 @@ pub extern "C" fn __lpfx_snoise3_q32(x: i32, y: i32, z: i32, seed: u32) -> i32 {
     let offset4_z = offset1_z - Q32::ONE + (THREE * UNSKEW_FACTOR_3D);
 
     // Calculate gradient indexes for each corner
-    let gi0 = __lpfx_hash_3(
+    let gi0 = lpfx_hash3(
         cell_x_int as u32,
         cell_y_int as u32,
         cell_z_int as u32,
         seed,
     );
-    let gi1 = __lpfx_hash_3(
+    let gi1 = lpfx_hash3(
         (cell_x_int + order1_x.to_i32()) as u32,
         (cell_y_int + order1_y.to_i32()) as u32,
         (cell_z_int + order1_z.to_i32()) as u32,
         seed,
     );
-    let gi2 = __lpfx_hash_3(
+    let gi2 = lpfx_hash3(
         (cell_x_int + order2_x.to_i32()) as u32,
         (cell_y_int + order2_y.to_i32()) as u32,
         (cell_z_int + order2_z.to_i32()) as u32,
         seed,
     );
-    let gi3 = __lpfx_hash_3(
+    let gi3 = lpfx_hash3(
         (cell_x_int + 1) as u32,
         (cell_y_int + 1) as u32,
         (cell_z_int + 1) as u32,
@@ -207,7 +204,24 @@ pub extern "C" fn __lpfx_snoise3_q32(x: i32, y: i32, z: i32, seed: u32) -> i32 {
 
     // Add contributions from each corner
     // Result is already approximately in [-1, 1] range due to algorithm
-    (corner0 + corner1 + corner2 + corner3).to_fixed()
+    corner0 + corner1 + corner2 + corner3
+}
+
+/// 3D Simplex noise function (extern C wrapper for compiler).
+///
+/// # Arguments
+/// * `x` - X coordinate as i32 (Q32 fixed-point)
+/// * `y` - Y coordinate as i32 (Q32 fixed-point)
+/// * `z` - Z coordinate as i32 (Q32 fixed-point)
+/// * `seed` - Seed value for randomization
+///
+/// # Returns
+/// Noise value as i32 (Q32 fixed-point format), approximately in range [-1, 1]
+#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_snoise(vec3 p, uint seed)")]
+#[unsafe(no_mangle)]
+pub extern "C" fn __lpfx_snoise3_q32(x: i32, y: i32, z: i32, seed: u32) -> i32 {
+    let p = Vec3Q32::new(Q32::from_fixed(x), Q32::from_fixed(y), Q32::from_fixed(z));
+    lpfx_snoise3(p, seed).to_fixed()
 }
 
 /// Compute magnitude squared of a 3D vector

@@ -9,10 +9,10 @@
 //!
 //! # GLSL Usage
 //!
-//! This function is callable from GLSL shaders using the `lpfx_worley3_value` name:
+//! This function is callable from GLSL shaders using the `lpfx_worley_value` name:
 //!
 //! ```glsl
-//! float noise = lpfx_worley3_value(vec3(5.0, 3.0, 1.0), 123u);
+//! float noise = lpfx_worley_value(vec3(5.0, 3.0, 1.0), 123u);
 //! ```
 //!
 //! # Parameters
@@ -24,8 +24,9 @@
 //!
 //! Hash value of nearest cell, approximately in range [-1, 1] (float)
 
-use crate::builtins::lpfx::hash::__lpfx_hash_3;
+use crate::builtins::lpfx::hash::lpfx_hash3;
 use crate::util::q32::Q32;
+use crate::util::vec3_q32::Vec3Q32;
 
 /// Fixed-point constants
 const HALF: Q32 = Q32(0x00008000); // 0.5 in Q16.16
@@ -40,20 +41,16 @@ const MAX_HASH: Q32 = Q32(255 << 16); // 255.0 in Q16.16
 /// 3D Worley noise function (value variant).
 ///
 /// # Arguments
-/// * `x` - X coordinate in Q32 fixed-point format
-/// * `y` - Y coordinate in Q32 fixed-point format
-/// * `z` - Z coordinate in Q32 fixed-point format
+/// * `p` - Input coordinates as Vec3Q32
 /// * `seed` - Seed value for randomization
 ///
 /// # Returns
 /// Hash value of nearest cell in Q32 fixed-point format, approximately in range [-1, 1]
-#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_worley3_value(vec3 p, uint seed)")]
-#[unsafe(no_mangle)]
-pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) -> i32 {
-    // Convert inputs to Q32
-    let x = Q32::from_fixed(x);
-    let y = Q32::from_fixed(y);
-    let z = Q32::from_fixed(z);
+#[inline(always)]
+pub fn lpfx_worley3_value(p: Vec3Q32, seed: u32) -> Q32 {
+    let x = p.x;
+    let y = p.y;
+    let z = p.z;
 
     // Get cell coordinates (floor)
     let cell_x_int = x.to_i32();
@@ -103,7 +100,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
     };
 
     // Generate feature point for near cell using hash
-    let seed_index = __lpfx_hash_3(
+    let seed_index = lpfx_hash3(
         near_x_int as u32,
         near_y_int as u32,
         near_z_int as u32,
@@ -133,7 +130,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
         let test_x_int = far_x_int;
         let test_y_int = near_y_int;
         let test_z_int = near_z_int;
-        let test_index = __lpfx_hash_3(
+        let test_index = lpfx_hash3(
             test_x_int as u32,
             test_y_int as u32,
             test_z_int as u32,
@@ -156,7 +153,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
         let test_x_int = near_x_int;
         let test_y_int = far_y_int;
         let test_z_int = near_z_int;
-        let test_index = __lpfx_hash_3(
+        let test_index = lpfx_hash3(
             test_x_int as u32,
             test_y_int as u32,
             test_z_int as u32,
@@ -179,7 +176,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
         let test_x_int = near_x_int;
         let test_y_int = near_y_int;
         let test_z_int = far_z_int;
-        let test_index = __lpfx_hash_3(
+        let test_index = lpfx_hash3(
             test_x_int as u32,
             test_y_int as u32,
             test_z_int as u32,
@@ -203,7 +200,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
         let test_x_int = far_x_int;
         let test_y_int = far_y_int;
         let test_z_int = near_z_int;
-        let test_index = __lpfx_hash_3(
+        let test_index = lpfx_hash3(
             test_x_int as u32,
             test_y_int as u32,
             test_z_int as u32,
@@ -226,7 +223,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
         let test_x_int = far_x_int;
         let test_y_int = near_y_int;
         let test_z_int = far_z_int;
-        let test_index = __lpfx_hash_3(
+        let test_index = lpfx_hash3(
             test_x_int as u32,
             test_y_int as u32,
             test_z_int as u32,
@@ -249,7 +246,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
         let test_x_int = near_x_int;
         let test_y_int = far_y_int;
         let test_z_int = far_z_int;
-        let test_index = __lpfx_hash_3(
+        let test_index = lpfx_hash3(
             test_x_int as u32,
             test_y_int as u32,
             test_z_int as u32,
@@ -273,7 +270,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
         let test_x_int = far_x_int;
         let test_y_int = far_y_int;
         let test_z_int = far_z_int;
-        let test_index = __lpfx_hash_3(
+        let test_index = lpfx_hash3(
             test_x_int as u32,
             test_y_int as u32,
             test_z_int as u32,
@@ -294,7 +291,7 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
     }
 
     // Hash the seed_cell coordinates
-    let hash_value = __lpfx_hash_3(
+    let hash_value = lpfx_hash3(
         seed_cell_x as u32,
         seed_cell_y as u32,
         seed_cell_z as u32,
@@ -306,7 +303,24 @@ pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) ->
 
     // Scale to [-1, 1] range: value * 2.0 - 1.0
     let scaled = normalized * TWO - Q32::ONE;
-    scaled.to_fixed()
+    scaled
+}
+
+/// 3D Worley noise function value variant (extern C wrapper for compiler).
+///
+/// # Arguments
+/// * `x` - X coordinate as i32 (Q32 fixed-point)
+/// * `y` - Y coordinate as i32 (Q32 fixed-point)
+/// * `z` - Z coordinate as i32 (Q32 fixed-point)
+/// * `seed` - Seed value for randomization
+///
+/// # Returns
+/// Hash value as i32 (Q32 fixed-point format), approximately in range [-1, 1]
+#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_worley_value(vec3 p, uint seed)")]
+#[unsafe(no_mangle)]
+pub extern "C" fn __lpfx_worley3_value_q32(x: i32, y: i32, z: i32, seed: u32) -> i32 {
+    let p = Vec3Q32::new(Q32::from_fixed(x), Q32::from_fixed(y), Q32::from_fixed(z));
+    lpfx_worley3_value(p, seed).to_fixed()
 }
 
 /// Get feature point offset from hash index and cell coordinates

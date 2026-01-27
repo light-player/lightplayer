@@ -11,9 +11,9 @@
 //! These functions are callable from GLSL shaders using the `lpfx_hash` name:
 //!
 //! ```glsl
-//! uint h1 = lpfx_hash(42u, 123u);           // 1D hash
-//! uint h2 = lpfx_hash(10u, 20u, 123u);      // 2D hash
-//! uint h3 = lpfx_hash(10u, 20u, 30u, 123u); // 3D hash
+//! uint h1 = lpfx_hash(42u, 123u);                    // 1D hash
+//! uint h2 = lpfx_hash(uvec2(10u, 20u), 123u);      // 2D hash
+//! uint h3 = lpfx_hash(uvec3(10u, 20u, 30u), 123u); // 3D hash
 //! ```
 //!
 //! # Internal Implementation
@@ -34,9 +34,8 @@ const KEY: u32 = 249_222_277;
 ///
 /// # Returns
 /// Hash value as u32
-#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash1(uint x, uint seed)")]
-#[unsafe(no_mangle)]
-pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
+#[inline(always)]
+pub fn lpfx_hash(x: u32, seed: u32) -> u32 {
     hash_impl(x, seed)
 }
 
@@ -49,9 +48,8 @@ pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
 ///
 /// # Returns
 /// Hash value as u32
-#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash2(uint x, uint y, uint seed)")]
-#[unsafe(no_mangle)]
-pub extern "C" fn __lpfx_hash_2(x: u32, y: u32, seed: u32) -> u32 {
+#[inline(always)]
+pub fn lpfx_hash2(x: u32, y: u32, seed: u32) -> u32 {
     // Combine coordinates non-commutatively (similar to noiz's UVec2::collapse_for_rng)
     let combined = (x ^ 983742189).wrapping_add((y ^ 102983473).rotate_left(8));
     hash_impl(combined, seed)
@@ -67,14 +65,58 @@ pub extern "C" fn __lpfx_hash_2(x: u32, y: u32, seed: u32) -> u32 {
 ///
 /// # Returns
 /// Hash value as u32
-#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash3(uint x, uint y, uint z, uint seed)")]
-#[unsafe(no_mangle)]
-pub extern "C" fn __lpfx_hash_3(x: u32, y: u32, z: u32, seed: u32) -> u32 {
+#[inline(always)]
+pub fn lpfx_hash3(x: u32, y: u32, z: u32, seed: u32) -> u32 {
     // Combine coordinates non-commutatively (similar to noiz's UVec3::collapse_for_rng)
     let combined = (x ^ 983742189)
         .wrapping_add((y ^ 102983473).rotate_left(8))
         .wrapping_add((z ^ 189203473).rotate_left(16));
     hash_impl(combined, seed)
+}
+
+/// Hash function for 1D coordinates (extern C wrapper for compiler).
+///
+/// # Arguments
+/// * `x` - X coordinate
+/// * `seed` - Seed value for randomization
+///
+/// # Returns
+/// Hash value as u32
+#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash(uint x, uint seed)")]
+#[unsafe(no_mangle)]
+pub extern "C" fn __lpfx_hash_1(x: u32, seed: u32) -> u32 {
+    lpfx_hash(x, seed)
+}
+
+/// Hash function for 2D coordinates (extern C wrapper for compiler).
+///
+/// # Arguments
+/// * `x` - X coordinate (from uvec2)
+/// * `y` - Y coordinate (from uvec2)
+/// * `seed` - Seed value for randomization
+///
+/// # Returns
+/// Hash value as u32
+#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash(uvec2 xy, uint seed)")]
+#[unsafe(no_mangle)]
+pub extern "C" fn __lpfx_hash_2(x: u32, y: u32, seed: u32) -> u32 {
+    lpfx_hash2(x, y, seed)
+}
+
+/// Hash function for 3D coordinates (extern C wrapper for compiler).
+///
+/// # Arguments
+/// * `x` - X coordinate (from uvec3)
+/// * `y` - Y coordinate (from uvec3)
+/// * `z` - Z coordinate (from uvec3)
+/// * `seed` - Seed value for randomization
+///
+/// # Returns
+/// Hash value as u32
+#[lpfx_impl_macro::lpfx_impl("uint lpfx_hash(uvec3 xyz, uint seed)")]
+#[unsafe(no_mangle)]
+pub extern "C" fn __lpfx_hash_3(x: u32, y: u32, z: u32, seed: u32) -> u32 {
+    lpfx_hash3(x, y, z, seed)
 }
 
 /// Core hash implementation using the noiz algorithm.

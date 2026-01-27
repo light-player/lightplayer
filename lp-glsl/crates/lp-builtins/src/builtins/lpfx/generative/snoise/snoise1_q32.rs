@@ -7,10 +7,10 @@
 //!
 //! # GLSL Usage
 //!
-//! This function is callable from GLSL shaders using the `lpfx_snoise1` name:
+//! This function is callable from GLSL shaders using the `lpfx_snoise` name:
 //!
 //! ```glsl
-//! float noise = lpfx_snoise1(5.0, 123u);
+//! float noise = lpfx_snoise(5.0, 123u);
 //! ```
 //!
 //! # Parameters
@@ -24,10 +24,10 @@
 //!
 //! # Internal Implementation
 //!
-//! The user-facing `lpfx_snoise1` function maps to internal `__lpfx_snoise1` which
+//! The user-facing `lpfx_snoise` function maps to internal `__lpfx_snoise1` which
 //! operates on Q32 fixed-point values. The compiler handles type conversion automatically.
 
-use crate::builtins::lpfx::hash::__lpfx_hash_1;
+use crate::builtins::lpfx::hash::lpfx_hash;
 use crate::util::q32::Q32;
 
 /// 1D Simplex noise function.
@@ -38,12 +38,8 @@ use crate::util::q32::Q32;
 ///
 /// # Returns
 /// Noise value in Q32 fixed-point format, approximately in range [-1, 1]
-#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_snoise1(float x, uint seed)")]
-#[unsafe(no_mangle)]
-pub extern "C" fn __lpfx_snoise1_q32(x: i32, seed: u32) -> i32 {
-    // Convert input to Q32
-    let x = Q32::from_fixed(x);
-
+#[inline(always)]
+pub fn lpfx_snoise(x: Q32, seed: u32) -> Q32 {
     // Get cell coordinate (floor)
     let cell = x.to_i32();
 
@@ -52,7 +48,7 @@ pub extern "C" fn __lpfx_snoise1_q32(x: i32, seed: u32) -> i32 {
     let dist = x - cell_origin;
 
     // Hash cell coordinate to get gradient (1 or -1 for 1D)
-    let hash = __lpfx_hash_1(cell as u32, seed);
+    let hash = lpfx_hash(cell as u32, seed);
 
     let gradient = if (hash & 1) == 0 { Q32::ONE } else { -Q32::ONE };
 
@@ -78,10 +74,24 @@ pub extern "C" fn __lpfx_snoise1_q32(x: i32, seed: u32) -> i32 {
         let term3 = Q32::from_i32(10) * t3;
         let falloff = term1 - term2 + term3;
 
-        (dot * falloff).to_fixed()
+        dot * falloff
     } else {
-        0
+        Q32::ZERO
     }
+}
+
+/// 1D Simplex noise function (extern C wrapper for compiler).
+///
+/// # Arguments
+/// * `x` - X coordinate as i32 (Q32 fixed-point)
+/// * `seed` - Seed value for randomization
+///
+/// # Returns
+/// Noise value as i32 (Q32 fixed-point format), approximately in range [-1, 1]
+#[lpfx_impl_macro::lpfx_impl(q32, "float lpfx_snoise(float x, uint seed)")]
+#[unsafe(no_mangle)]
+pub extern "C" fn __lpfx_snoise1_q32(x: i32, seed: u32) -> i32 {
+    lpfx_snoise(Q32::from_fixed(x), seed).to_fixed()
 }
 
 #[cfg(test)]
@@ -119,8 +129,8 @@ mod tests {
         // This verifies the seed parameter is being passed correctly to the hash function
 
         // Test that hash function itself works with different seeds
-        let hash0 = __lpfx_hash_1(0, 0);
-        let hash1 = __lpfx_hash_1(0, 1);
+        let hash0 = lpfx_hash(0, 0);
+        let hash1 = lpfx_hash(0, 1);
         assert_ne!(hash0, hash1, "Hash should differ for different seeds");
 
         // Test that simplex1 uses the seed correctly by checking hash values

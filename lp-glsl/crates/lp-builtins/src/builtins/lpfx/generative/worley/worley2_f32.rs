@@ -15,7 +15,7 @@ use crate::util::q32::Q32;
 ///
 /// # Returns
 /// Euclidean squared distance to nearest feature point approximately in range [-1, 1] as f32
-#[lpfx_impl_macro::lpfx_impl(f32, "float lpfx_worley2(vec2 p, uint seed)")]
+#[lpfx_impl_macro::lpfx_impl(f32, "float lpfx_worley(vec2 p, uint seed)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_worley2_f32(x: f32, y: f32, seed: u32) -> f32 {
     // Stub: convert to q32, call q32 version, convert back
