@@ -60,24 +60,6 @@ pub fn map_testcase_to_builtin(testcase_name: &str, arg_count: usize) -> Option<
         ("lp_q32_subf" | "__lp_q32_sub" | "subf", 2) => Some(BuiltinId::LpQ32Sub),
         ("lp_q32_tanf" | "__lp_q32_tan" | "tanf", 1) => Some(BuiltinId::LpQ32Tan),
         ("lp_q32_tanhf" | "__lp_q32_tanh" | "tanhf", 1) => Some(BuiltinId::LpQ32Tanh),
-        ("lpfx_hash_1f" | "__lp_lpfx_hash_1", 2) => Some(BuiltinId::LpfxHash1),
-        ("lpfx_hash_2f" | "__lp_lpfx_hash_2", 3) => Some(BuiltinId::LpfxHash2),
-        ("lpfx_hash_3f" | "__lp_lpfx_hash_3", 4) => Some(BuiltinId::LpfxHash3),
-        ("__lpfx_hsv2rgb", 4) => Some(BuiltinId::LpfxHsv2rgbQ32),
-        ("__lpfx_hsv2rgb", 5) => Some(BuiltinId::LpfxHsv2rgbVec4Q32),
-        ("__lpfx_hue2rgb", 2) => Some(BuiltinId::LpfxHue2rgbQ32),
-        ("__lpfx_rgb2hsv", 4) => Some(BuiltinId::LpfxRgb2hsvQ32),
-        ("__lpfx_rgb2hsv", 5) => Some(BuiltinId::LpfxRgb2hsvVec4Q32),
-        ("__lpfx_saturate", 1) => Some(BuiltinId::LpfxSaturateQ32),
-        ("__lpfx_saturate", 4) => Some(BuiltinId::LpfxSaturateVec3Q32),
-        ("__lpfx_saturate", 5) => Some(BuiltinId::LpfxSaturateVec4Q32),
-        ("__lpfx_snoise1", 2) => Some(BuiltinId::LpfxSnoise1Q32),
-        ("__lpfx_snoise2", 3) => Some(BuiltinId::LpfxSnoise2Q32),
-        ("__lpfx_snoise3", 4) => Some(BuiltinId::LpfxSnoise3Q32),
-        ("__lpfx_worley2", 3) => Some(BuiltinId::LpfxWorley2Q32),
-        ("__lpfx_worley2_value", 3) => Some(BuiltinId::LpfxWorley2ValueQ32),
-        ("__lpfx_worley3", 4) => Some(BuiltinId::LpfxWorley3Q32),
-        ("__lpfx_worley3_value", 4) => Some(BuiltinId::LpfxWorley3ValueQ32),
         _ => None,
     }
 }
@@ -308,48 +290,23 @@ block0:
 
     #[test]
     fn test_map_testcase_to_builtin_simplex() {
-        // Test simplex function mappings
-        assert_eq!(
-            map_testcase_to_builtin("__lpfx_snoise1", 2),
-            Some(BuiltinId::LpfxSnoise1Q32)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lpfx_snoise2", 3),
-            Some(BuiltinId::LpfxSnoise2Q32)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lpfx_snoise3", 4),
-            Some(BuiltinId::LpfxSnoise3Q32)
-        );
+        // LPFX functions are no longer handled by map_testcase_to_builtin
+        // They use the proper lookup chain (name -> BuiltinId -> LpfxFn -> q32_impl)
+        assert_eq!(map_testcase_to_builtin("__lpfx_snoise1", 2), None);
+        assert_eq!(map_testcase_to_builtin("__lpfx_snoise2", 3), None);
+        assert_eq!(map_testcase_to_builtin("__lpfx_snoise3", 4), None);
     }
 
     #[test]
     fn test_map_testcase_to_builtin_hash() {
-        // Test hash function mappings
-        assert_eq!(
-            map_testcase_to_builtin("lpfx_hash_1f", 2),
-            Some(BuiltinId::LpfxHash1)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lp_lpfx_hash_1", 2),
-            Some(BuiltinId::LpfxHash1)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("lpfx_hash_2f", 3),
-            Some(BuiltinId::LpfxHash2)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lp_lpfx_hash_2", 3),
-            Some(BuiltinId::LpfxHash2)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("lpfx_hash_3f", 4),
-            Some(BuiltinId::LpfxHash3)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lp_lpfx_hash_3", 4),
-            Some(BuiltinId::LpfxHash3)
-        );
+        // LPFX functions are no longer handled by map_testcase_to_builtin
+        // They use the proper lookup chain (name -> BuiltinId -> LpfxFn -> q32_impl)
+        assert_eq!(map_testcase_to_builtin("lpfx_hash_1f", 2), None);
+        assert_eq!(map_testcase_to_builtin("__lp_lpfx_hash_1", 2), None);
+        assert_eq!(map_testcase_to_builtin("lpfx_hash_2f", 3), None);
+        assert_eq!(map_testcase_to_builtin("__lp_lpfx_hash_2", 3), None);
+        assert_eq!(map_testcase_to_builtin("lpfx_hash_3f", 4), None);
+        assert_eq!(map_testcase_to_builtin("__lp_lpfx_hash_3", 4), None);
     }
 
     #[test]
@@ -383,16 +340,10 @@ block0:
 
     #[test]
     fn test_map_testcase_to_builtin_overloads() {
-        // Test overloaded functions - hsv2rgb has vec3 and vec4 versions
-        assert_eq!(
-            map_testcase_to_builtin("__lpfx_hsv2rgb", 4),
-            Some(BuiltinId::LpfxHsv2rgbQ32)
-        );
-        assert_eq!(
-            map_testcase_to_builtin("__lpfx_hsv2rgb", 5),
-            Some(BuiltinId::LpfxHsv2rgbVec4Q32)
-        );
-        // Wrong argument count should return None
+        // LPFX functions are no longer handled by map_testcase_to_builtin
+        // They use the proper lookup chain (name -> BuiltinId -> LpfxFn -> q32_impl)
+        assert_eq!(map_testcase_to_builtin("__lpfx_hsv2rgb", 4), None);
+        assert_eq!(map_testcase_to_builtin("__lpfx_hsv2rgb", 5), None);
         assert_eq!(map_testcase_to_builtin("__lpfx_hsv2rgb", 3), None);
         assert_eq!(map_testcase_to_builtin("__lpfx_hsv2rgb", 6), None);
     }

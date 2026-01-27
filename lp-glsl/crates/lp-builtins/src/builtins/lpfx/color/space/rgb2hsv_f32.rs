@@ -19,6 +19,8 @@ use crate::util::q32::Q32;
 #[lpfx_impl_macro::lpfx_impl(f32, "vec3 lpfx_rgb2hsv(vec3 rgb)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_rgb2hsv_f32(result_ptr: *mut f32, x: f32, y: f32, z: f32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[f32; 3]>() };
     // Stub: convert to q32, call q32 version, convert back
     let x_q32 = Q32::from_f32(x);
     let y_q32 = Q32::from_f32(y);
@@ -30,11 +32,9 @@ pub extern "C" fn __lpfx_rgb2hsv_f32(result_ptr: *mut f32, x: f32, y: f32, z: f3
         y_q32.to_fixed(),
         z_q32.to_fixed(),
     );
-    unsafe {
-        *result_ptr.offset(0) = Q32::from_fixed(result_q32[0]).to_f32();
-        *result_ptr.offset(1) = Q32::from_fixed(result_q32[1]).to_f32();
-        *result_ptr.offset(2) = Q32::from_fixed(result_q32[2]).to_f32();
-    }
+    result[0] = Q32::from_fixed(result_q32[0]).to_f32();
+    result[1] = Q32::from_fixed(result_q32[1]).to_f32();
+    result[2] = Q32::from_fixed(result_q32[2]).to_f32();
 }
 
 /// Convert RGB color to HSV color with alpha (extern C wrapper for compiler).
@@ -50,6 +50,8 @@ pub extern "C" fn __lpfx_rgb2hsv_f32(result_ptr: *mut f32, x: f32, y: f32, z: f3
 #[lpfx_impl_macro::lpfx_impl(f32, "vec4 lpfx_rgb2hsv(vec4 rgb)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_rgb2hsv_vec4_f32(result_ptr: *mut f32, x: f32, y: f32, z: f32, w: f32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[f32; 4]>() };
     // Stub: convert to q32, call q32 version, convert back
     let x_q32 = Q32::from_f32(x);
     let y_q32 = Q32::from_f32(y);
@@ -63,10 +65,8 @@ pub extern "C" fn __lpfx_rgb2hsv_vec4_f32(result_ptr: *mut f32, x: f32, y: f32, 
         z_q32.to_fixed(),
         w_q32.to_fixed(),
     );
-    unsafe {
-        *result_ptr.offset(0) = Q32::from_fixed(result_q32[0]).to_f32();
-        *result_ptr.offset(1) = Q32::from_fixed(result_q32[1]).to_f32();
-        *result_ptr.offset(2) = Q32::from_fixed(result_q32[2]).to_f32();
-        *result_ptr.offset(3) = Q32::from_fixed(result_q32[3]).to_f32();
-    }
+    result[0] = Q32::from_fixed(result_q32[0]).to_f32();
+    result[1] = Q32::from_fixed(result_q32[1]).to_f32();
+    result[2] = Q32::from_fixed(result_q32[2]).to_f32();
+    result[3] = Q32::from_fixed(result_q32[3]).to_f32();
 }

@@ -34,6 +34,8 @@ pub extern "C" fn __lpfx_saturate_f32(value: f32) -> f32 {
 #[lpfx_impl_macro::lpfx_impl(f32, "vec3 lpfx_saturate(vec3 v)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_saturate_vec3_f32(result_ptr: *mut f32, x: f32, y: f32, z: f32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[f32; 3]>() };
     use crate::builtins::lpfx::math::saturate_q32::__lpfx_saturate_vec3_q32;
     // Stub: convert to q32, call q32 version, convert back
     let x_q32 = Q32::from_f32(x);
@@ -46,11 +48,9 @@ pub extern "C" fn __lpfx_saturate_vec3_f32(result_ptr: *mut f32, x: f32, y: f32,
         y_q32.to_fixed(),
         z_q32.to_fixed(),
     );
-    unsafe {
-        *result_ptr.offset(0) = Q32::from_fixed(result_q32[0]).to_f32();
-        *result_ptr.offset(1) = Q32::from_fixed(result_q32[1]).to_f32();
-        *result_ptr.offset(2) = Q32::from_fixed(result_q32[2]).to_f32();
-    }
+    result[0] = Q32::from_fixed(result_q32[0]).to_f32();
+    result[1] = Q32::from_fixed(result_q32[1]).to_f32();
+    result[2] = Q32::from_fixed(result_q32[2]).to_f32();
 }
 
 /// Saturate function for vec4 (extern C wrapper for compiler).
@@ -66,6 +66,8 @@ pub extern "C" fn __lpfx_saturate_vec3_f32(result_ptr: *mut f32, x: f32, y: f32,
 #[lpfx_impl_macro::lpfx_impl(f32, "vec4 lpfx_saturate(vec4 v)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_saturate_vec4_f32(result_ptr: *mut f32, x: f32, y: f32, z: f32, w: f32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[f32; 4]>() };
     use crate::builtins::lpfx::math::saturate_q32::__lpfx_saturate_vec4_q32;
     // Stub: convert to q32, call q32 version, convert back
     let x_q32 = Q32::from_f32(x);
@@ -80,10 +82,8 @@ pub extern "C" fn __lpfx_saturate_vec4_f32(result_ptr: *mut f32, x: f32, y: f32,
         z_q32.to_fixed(),
         w_q32.to_fixed(),
     );
-    unsafe {
-        *result_ptr.offset(0) = Q32::from_fixed(result_q32[0]).to_f32();
-        *result_ptr.offset(1) = Q32::from_fixed(result_q32[1]).to_f32();
-        *result_ptr.offset(2) = Q32::from_fixed(result_q32[2]).to_f32();
-        *result_ptr.offset(3) = Q32::from_fixed(result_q32[3]).to_f32();
-    }
+    result[0] = Q32::from_fixed(result_q32[0]).to_f32();
+    result[1] = Q32::from_fixed(result_q32[1]).to_f32();
+    result[2] = Q32::from_fixed(result_q32[2]).to_f32();
+    result[3] = Q32::from_fixed(result_q32[3]).to_f32();
 }

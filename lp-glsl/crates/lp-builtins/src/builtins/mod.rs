@@ -24,6 +24,8 @@
 //!
 //! Example:
 //! ```rust
+//! use lp_builtins::util::q32::Q32;
+//!
 //! // Public Rust API - can be inlined
 //! #[inline(always)]
 //! pub fn lpfx_saturate_q32(value: Q32) -> Q32 {

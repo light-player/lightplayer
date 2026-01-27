@@ -363,6 +363,26 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
     output.push_str("        }\n");
     output.push_str("    }\n\n");
 
+    // Generate builtin_id_from_name() method
+    output.push_str("    /// Get the BuiltinId from its symbol name.\n");
+    output.push_str("    ///\n");
+    output.push_str("    /// Returns `None` if the name is not a known builtin function.\n");
+    output.push_str("    pub fn builtin_id_from_name(name: &str) -> Option<BuiltinId> {\n");
+    output.push_str("        match name {\n");
+    if builtins.is_empty() {
+        output.push_str("            _ => None,\n");
+    } else {
+        for builtin in builtins {
+            output.push_str(&format!(
+                "            \"{}\" => Some(BuiltinId::{}),\n",
+                builtin.symbol_name, builtin.enum_variant
+            ));
+        }
+        output.push_str("            _ => None,\n");
+    }
+    output.push_str("        }\n");
+    output.push_str("    }\n\n");
+
     // Generate signature() method
     output.push_str("    /// Get the Cranelift signature for this builtin function.\n");
     output.push_str("    pub fn signature(&self) -> Signature {\n");
@@ -917,65 +937,11 @@ fn generate_testcase_mapping(path: &Path, builtins: &[BuiltinInfo]) {
     if builtins.is_empty() {
         // No builtins, so no mappings
     } else {
-        use lp_glsl_compiler::frontend::semantic::lpfx::lpfx_fns::lpfx_fns;
-
-        // Build a map of BuiltinId -> LpfxFn for quick lookup
-        use std::collections::HashMap;
-        let mut builtin_to_func = HashMap::new();
-        for func in lpfx_fns() {
-            match &func.impls {
-                lp_glsl_compiler::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::NonDecimal(
-                    builtin_id,
-                ) => {
-                    builtin_to_func.insert(*builtin_id, func);
-                }
-                lp_glsl_compiler::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::Decimal {
-                    float_impl,
-                    q32_impl,
-                } => {
-                    builtin_to_func.insert(*float_impl, func);
-                    builtin_to_func.insert(*q32_impl, func);
-                }
-            }
-        }
-
         for builtin in builtins {
-            // Check if this is an LPFX function by checking if module_path starts with "lpfx::"
+            // Skip all LPFX functions - they are handled via proper lookup chain
+            // (name -> BuiltinId -> LpfxFn -> q32_impl) instead of string matching
             if builtin.module_path.starts_with("lpfx::") {
-                // For Q32 transform, skip f32 variants - only generate Q32 mappings
-                if builtin.symbol_name.ends_with("_f32") {
-                    continue;
-                }
-
-                // Parse BuiltinId from enum variant - try to match it
-                let builtin_id_opt = builtin_to_func
-                    .keys()
-                    .find(|id| format!("{:?}", id) == builtin.enum_variant);
-
-                if let Some(builtin_id) = builtin_id_opt
-                    && let Some(func) = builtin_to_func.get(builtin_id)
-                {
-                    // Check module_path to determine function type instead of symbol name
-                    if builtin.module_path.starts_with("lpfx::hash") {
-                        // Hash functions: use testcase pattern "1f" | "__lp_1"
-                        let base_name = strip_function_prefix(&builtin.symbol_name);
-                        let c_name = format!("{}f", base_name);
-                        let intrinsic_name = format!("__lp_{}", base_name);
-                        new_function.push_str(&format!(
-                            "        (\"{}\" | \"{}\", {}) => Some(BuiltinId::{}),\n",
-                            c_name, intrinsic_name, builtin.param_count, builtin.enum_variant
-                        ));
-                    } else {
-                        // Other lpfx functions (simplex, worley, etc.): use testcase name (GLSL name with __ prefix)
-                        // Only Q32 variants reach here (f32 filtered above)
-                        let testcase_name = format!("__{}", func.glsl_sig.name);
-                        new_function.push_str(&format!(
-                            "        (\"{}\", {}) => Some(BuiltinId::{}),\n",
-                            testcase_name, builtin.param_count, builtin.enum_variant
-                        ));
-                    }
-                    continue;
-                }
+                continue;
             }
             // Not an LPFX function or lookup failed - treat as regular q32 function
             // Regular q32 functions

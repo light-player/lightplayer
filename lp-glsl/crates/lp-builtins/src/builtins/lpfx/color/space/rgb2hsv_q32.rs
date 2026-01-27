@@ -96,13 +96,13 @@ pub fn lpfx_rgb2hsv_vec4_q32(rgb: Vec4Q32) -> Vec4Q32 {
 #[lpfx_impl_macro::lpfx_impl(q32, "vec3 lpfx_rgb2hsv(vec3 rgb)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_rgb2hsv_q32(result_ptr: *mut i32, x: i32, y: i32, z: i32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[i32; 3]>() };
     let rgb = Vec3Q32::new(Q32::from_fixed(x), Q32::from_fixed(y), Q32::from_fixed(z));
-    let result = lpfx_rgb2hsv_q32(rgb);
-    unsafe {
-        *result_ptr.offset(0) = result.x.to_fixed();
-        *result_ptr.offset(1) = result.y.to_fixed();
-        *result_ptr.offset(2) = result.z.to_fixed();
-    }
+    let hsv = lpfx_rgb2hsv_q32(rgb);
+    result[0] = hsv.x.to_fixed();
+    result[1] = hsv.y.to_fixed();
+    result[2] = hsv.z.to_fixed();
 }
 
 /// Convert RGB color to HSV color with alpha (extern C wrapper for compiler).
@@ -118,19 +118,19 @@ pub extern "C" fn __lpfx_rgb2hsv_q32(result_ptr: *mut i32, x: i32, y: i32, z: i3
 #[lpfx_impl_macro::lpfx_impl(q32, "vec4 lpfx_rgb2hsv(vec4 rgb)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_rgb2hsv_vec4_q32(result_ptr: *mut i32, x: i32, y: i32, z: i32, w: i32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[i32; 4]>() };
     let rgb = Vec4Q32::new(
         Q32::from_fixed(x),
         Q32::from_fixed(y),
         Q32::from_fixed(z),
         Q32::from_fixed(w),
     );
-    let result = lpfx_rgb2hsv_vec4_q32(rgb);
-    unsafe {
-        *result_ptr.offset(0) = result.x.to_fixed();
-        *result_ptr.offset(1) = result.y.to_fixed();
-        *result_ptr.offset(2) = result.z.to_fixed();
-        *result_ptr.offset(3) = result.w.to_fixed();
-    }
+    let hsv = lpfx_rgb2hsv_vec4_q32(rgb);
+    result[0] = hsv.x.to_fixed();
+    result[1] = hsv.y.to_fixed();
+    result[2] = hsv.z.to_fixed();
+    result[3] = hsv.w.to_fixed();
 }
 
 #[cfg(test)]

@@ -1,16 +1,17 @@
 //! Function call conversion functions.
 
+use crate::backend::builtins::registry::BuiltinId;
 use crate::backend::transform::q32::converters::math::map_testcase_to_builtin;
 use crate::backend::transform::q32::converters::{get_first_result, map_value};
 use crate::backend::transform::q32::signature::convert_signature;
 use crate::backend::transform::q32::types::FixedPointFormat;
 use crate::error::{ErrorCode, GlslError};
+use crate::frontend::semantic::lpfx::lpfx_fn_registry::find_lpfx_fn_by_builtin_id;
 use alloc::{format, string::String, vec::Vec};
 use cranelift_codegen::ir::{
-    AbiParam, ExtFuncData, ExternalName, FuncRef, Function, Inst, InstBuilder, InstructionData,
-    SigRef, Signature, UserExternalName, Value, types,
+    ArgumentPurpose, ExtFuncData, ExternalName, FuncRef, Function, Inst, InstBuilder,
+    InstructionData, SigRef, UserExternalName, Value, types,
 };
-use cranelift_codegen::isa::CallConv;
 use cranelift_frontend::FunctionBuilder;
 use cranelift_module::FuncId;
 use hashbrown::HashMap;
@@ -249,9 +250,35 @@ pub(crate) fn convert_call(
                 return Ok(());
             }
 
-            // Check if this is a math function that should be converted to a builtin
+            // Check if this is a function that should be converted to a builtin
             let old_args = args.as_slice(&old_func.dfg.value_lists);
-            if let Some(builtin_id) = map_testcase_to_builtin(func_name, old_args.len()) {
+
+            // Try LPFX function lookup chain: name -> BuiltinId -> LpfxFn -> q32_impl
+            let q32_builtin_id =
+                if let Some(builtin_id) = BuiltinId::builtin_id_from_name(func_name) {
+                    // Check if this is an LPFX function
+                    if let Some(lpfx_fn) = find_lpfx_fn_by_builtin_id(builtin_id) {
+                        // Extract q32_impl from LpfxFn
+                        match &lpfx_fn.impls {
+                            crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::Decimal {
+                                q32_impl,
+                                ..
+                            } => Some(*q32_impl),
+                            crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::NonDecimal(_) => {
+                                // Non-decimal functions don't need conversion
+                                None
+                            }
+                        }
+                    } else {
+                        // Not an LPFX function, fall back to regular q32 lookup
+                        map_testcase_to_builtin(func_name, old_args.len())
+                    }
+                } else {
+                    // Unknown builtin name, try regular q32 lookup
+                    map_testcase_to_builtin(func_name, old_args.len())
+                };
+
+            if let Some(builtin_id) = q32_builtin_id {
                 // Convert to builtin call (similar to convert_sqrt)
 
                 // Map all arguments
@@ -269,12 +296,8 @@ pub(crate) fn convert_call(
                     )
                 })?;
 
-                // Create signature for the builtin based on argument count
-                let mut sig = Signature::new(CallConv::SystemV);
-                for _ in 0..old_args.len() {
-                    sig.params.push(AbiParam::new(types::I32));
-                }
-                sig.returns.push(AbiParam::new(types::I32));
+                // Use the builtin's signature - it knows about StructReturn and correct parameter types
+                let sig = builtin_id.signature();
                 let sig_ref = builder.func.import_signature(sig);
 
                 // Create UserExternalName with the FuncId
@@ -294,12 +317,40 @@ pub(crate) fn convert_call(
                 };
                 let builtin_func_ref = builder.func.import_function(ext_func);
 
+                // Handle return values based on whether this is a StructReturn function
+                let sig = builtin_id.signature();
+                let uses_struct_return = sig.uses_special_param(ArgumentPurpose::StructReturn);
+
                 // Call the builtin function with mapped arguments
                 let call_inst = builder.ins().call(builtin_func_ref, &mapped_args);
-                let result = builder.inst_results(call_inst)[0];
 
-                let old_result = get_first_result(old_func, old_inst);
-                value_map.insert(old_result, result);
+                if uses_struct_return {
+                    // StructReturn functions return void - the call doesn't produce results
+                    // The old call instruction's results come from loads from the buffer that happen after the call
+                    // Those loads are separate instructions that will be processed by the transform
+                    // The buffer pointer is already in mapped_args[0], so the loads will read from the correct buffer
+                    // We don't need to map any results here - the loads handle that
+                } else {
+                    // Scalar return: extract from call results
+                    let results = builder.inst_results(call_inst);
+                    if results.is_empty() {
+                        return Err(GlslError::new(
+                            ErrorCode::E0400,
+                            "Expected return value from builtin function, but got none",
+                        ));
+                    }
+                    if results.len() != 1 {
+                        return Err(GlslError::new(
+                            ErrorCode::E0400,
+                            format!(
+                                "Expected 1 return value from builtin function, got {}",
+                                results.len()
+                            ),
+                        ));
+                    }
+                    let old_result = get_first_result(old_func, old_inst);
+                    value_map.insert(old_result, results[0]);
+                }
 
                 return Ok(());
             } else {

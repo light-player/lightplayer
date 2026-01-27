@@ -48,12 +48,12 @@ pub fn lpfx_hue2rgb_q32(hue: Q32) -> Vec3Q32 {
 #[lpfx_impl_macro::lpfx_impl(q32, "vec3 lpfx_hue2rgb(float hue)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_hue2rgb_q32(result_ptr: *mut i32, hue: i32) {
-    let result = lpfx_hue2rgb_q32(Q32::from_fixed(hue));
-    unsafe {
-        *result_ptr.offset(0) = result.x.to_fixed();
-        *result_ptr.offset(1) = result.y.to_fixed();
-        *result_ptr.offset(2) = result.z.to_fixed();
-    }
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[i32; 3]>() };
+    let rgb = lpfx_hue2rgb_q32(Q32::from_fixed(hue));
+    result[0] = rgb.x.to_fixed();
+    result[1] = rgb.y.to_fixed();
+    result[2] = rgb.z.to_fixed();
 }
 
 #[cfg(test)]
@@ -61,7 +61,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
+    use crate::util::test_helpers::fixed_to_float;
 
     #[test]
     fn test_hue2rgb_red() {

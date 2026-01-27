@@ -285,4 +285,90 @@ mod tests {
         assert!(!is_lpfx_fn("lpfx"));
         assert!(!is_lpfx_fn(""));
     }
+
+    #[test]
+    fn test_find_lpfx_fn_by_builtin_id_f32_to_q32() {
+        use crate::backend::builtins::registry::BuiltinId;
+
+        // Test that f32 builtin IDs map to LPFX functions, and we can extract q32_impl
+        let f32_builtin = BuiltinId::LpfxSaturateVec3F32;
+        let lpfx_fn = find_lpfx_fn_by_builtin_id(f32_builtin);
+        assert!(lpfx_fn.is_some());
+        let lpfx_fn = lpfx_fn.unwrap();
+
+        // Verify it's the correct function
+        assert_eq!(lpfx_fn.glsl_sig.name, "lpfx_saturate");
+        assert_eq!(
+            lpfx_fn.glsl_sig.return_type,
+            crate::semantic::types::Type::Vec3
+        );
+
+        // Extract q32_impl
+        match &lpfx_fn.impls {
+            crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::Decimal {
+                float_impl,
+                q32_impl,
+            } => {
+                assert_eq!(*float_impl, BuiltinId::LpfxSaturateVec3F32);
+                assert_eq!(*q32_impl, BuiltinId::LpfxSaturateVec3Q32);
+            }
+            _ => panic!("Expected Decimal implementation"),
+        }
+    }
+
+    #[test]
+    fn test_find_lpfx_fn_by_builtin_id_q32() {
+        use crate::backend::builtins::registry::BuiltinId;
+
+        // Test that q32 builtin IDs also map to LPFX functions
+        let q32_builtin = BuiltinId::LpfxSaturateVec3Q32;
+        let lpfx_fn = find_lpfx_fn_by_builtin_id(q32_builtin);
+        assert!(lpfx_fn.is_some());
+        let lpfx_fn = lpfx_fn.unwrap();
+
+        // Verify it's the correct function
+        assert_eq!(lpfx_fn.glsl_sig.name, "lpfx_saturate");
+    }
+
+    #[test]
+    fn test_find_lpfx_fn_by_builtin_id_non_lpfx() {
+        use crate::backend::builtins::registry::BuiltinId;
+
+        // Test that non-LPFX builtins return None
+        let regular_builtin = BuiltinId::LpQ32Sin;
+        let lpfx_fn = find_lpfx_fn_by_builtin_id(regular_builtin);
+        assert!(
+            lpfx_fn.is_none(),
+            "Regular q32 builtin should not map to LPFX function"
+        );
+    }
+
+    #[test]
+    fn test_full_lookup_chain_f32_to_q32() {
+        use crate::backend::builtins::registry::BuiltinId;
+
+        // Test full lookup chain: name -> BuiltinId -> LpfxFn -> q32_impl -> name
+        let f32_name = "__lpfx_saturate_vec3_f32";
+
+        // Step 1: name -> BuiltinId
+        let f32_builtin = BuiltinId::builtin_id_from_name(f32_name);
+        assert_eq!(f32_builtin, Some(BuiltinId::LpfxSaturateVec3F32));
+
+        // Step 2: BuiltinId -> LpfxFn
+        let lpfx_fn = find_lpfx_fn_by_builtin_id(f32_builtin.unwrap());
+        assert!(lpfx_fn.is_some());
+        let lpfx_fn = lpfx_fn.unwrap();
+
+        // Step 3: LpfxFn -> q32_impl
+        match &lpfx_fn.impls {
+            crate::frontend::semantic::lpfx::lpfx_fn::LpfxFnImpl::Decimal { q32_impl, .. } => {
+                assert_eq!(*q32_impl, BuiltinId::LpfxSaturateVec3Q32);
+
+                // Step 4: q32_impl -> name
+                let q32_name = q32_impl.name();
+                assert_eq!(q32_name, "__lpfx_saturate_vec3_q32");
+            }
+            _ => panic!("Expected Decimal implementation"),
+        }
+    }
 }

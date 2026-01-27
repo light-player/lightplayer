@@ -77,13 +77,13 @@ pub extern "C" fn __lpfx_saturate_q32(value: i32) -> i32 {
 #[lpfx_impl_macro::lpfx_impl(q32, "vec3 lpfx_saturate(vec3 v)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_saturate_vec3_q32(result_ptr: *mut i32, x: i32, y: i32, z: i32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[i32; 3]>() };
     let v = Vec3Q32::new(Q32::from_fixed(x), Q32::from_fixed(y), Q32::from_fixed(z));
-    let result = lpfx_saturate_vec3_q32(v);
-    unsafe {
-        *result_ptr.offset(0) = result.x.to_fixed();
-        *result_ptr.offset(1) = result.y.to_fixed();
-        *result_ptr.offset(2) = result.z.to_fixed();
-    }
+    let saturated = lpfx_saturate_vec3_q32(v);
+    result[0] = saturated.x.to_fixed();
+    result[1] = saturated.y.to_fixed();
+    result[2] = saturated.z.to_fixed();
 }
 
 /// Saturate function for vec4 (extern C wrapper for compiler).
@@ -99,19 +99,19 @@ pub extern "C" fn __lpfx_saturate_vec3_q32(result_ptr: *mut i32, x: i32, y: i32,
 #[lpfx_impl_macro::lpfx_impl(q32, "vec4 lpfx_saturate(vec4 v)")]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_saturate_vec4_q32(result_ptr: *mut i32, x: i32, y: i32, z: i32, w: i32) {
+    // Convert raw pointer to safe array reference at boundary
+    let result = unsafe { &mut *result_ptr.cast::<[i32; 4]>() };
     let v = Vec4Q32::new(
         Q32::from_fixed(x),
         Q32::from_fixed(y),
         Q32::from_fixed(z),
         Q32::from_fixed(w),
     );
-    let result = lpfx_saturate_vec4_q32(v);
-    unsafe {
-        *result_ptr.offset(0) = result.x.to_fixed();
-        *result_ptr.offset(1) = result.y.to_fixed();
-        *result_ptr.offset(2) = result.z.to_fixed();
-        *result_ptr.offset(3) = result.w.to_fixed();
-    }
+    let saturated = lpfx_saturate_vec4_q32(v);
+    result[0] = saturated.x.to_fixed();
+    result[1] = saturated.y.to_fixed();
+    result[2] = saturated.z.to_fixed();
+    result[3] = saturated.w.to_fixed();
 }
 
 #[cfg(test)]
@@ -119,7 +119,7 @@ mod tests {
     #[cfg(test)]
     extern crate std;
     use super::*;
-    use crate::util::test_helpers::{fixed_to_float, float_to_fixed};
+    use crate::util::test_helpers::fixed_to_float;
 
     #[test]
     fn test_saturate_q32_below_zero() {

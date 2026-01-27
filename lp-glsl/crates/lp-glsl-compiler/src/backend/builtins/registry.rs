@@ -155,6 +155,77 @@ impl BuiltinId {
         }
     }
 
+    /// Get the BuiltinId from its symbol name.
+    ///
+    /// Returns `None` if the name is not a known builtin function.
+    pub fn builtin_id_from_name(name: &str) -> Option<BuiltinId> {
+        match name {
+            "__lp_q32_acos" => Some(BuiltinId::LpQ32Acos),
+            "__lp_q32_acosh" => Some(BuiltinId::LpQ32Acosh),
+            "__lp_q32_add" => Some(BuiltinId::LpQ32Add),
+            "__lp_q32_asin" => Some(BuiltinId::LpQ32Asin),
+            "__lp_q32_asinh" => Some(BuiltinId::LpQ32Asinh),
+            "__lp_q32_atan" => Some(BuiltinId::LpQ32Atan),
+            "__lp_q32_atan2" => Some(BuiltinId::LpQ32Atan2),
+            "__lp_q32_atanh" => Some(BuiltinId::LpQ32Atanh),
+            "__lp_q32_cos" => Some(BuiltinId::LpQ32Cos),
+            "__lp_q32_cosh" => Some(BuiltinId::LpQ32Cosh),
+            "__lp_q32_div" => Some(BuiltinId::LpQ32Div),
+            "__lp_q32_exp" => Some(BuiltinId::LpQ32Exp),
+            "__lp_q32_exp2" => Some(BuiltinId::LpQ32Exp2),
+            "__lp_q32_fma" => Some(BuiltinId::LpQ32Fma),
+            "__lp_q32_inversesqrt" => Some(BuiltinId::LpQ32Inversesqrt),
+            "__lp_q32_ldexp" => Some(BuiltinId::LpQ32Ldexp),
+            "__lp_q32_log" => Some(BuiltinId::LpQ32Log),
+            "__lp_q32_log2" => Some(BuiltinId::LpQ32Log2),
+            "__lp_q32_mod" => Some(BuiltinId::LpQ32Mod),
+            "__lp_q32_mul" => Some(BuiltinId::LpQ32Mul),
+            "__lp_q32_pow" => Some(BuiltinId::LpQ32Pow),
+            "__lp_q32_round" => Some(BuiltinId::LpQ32Round),
+            "__lp_q32_roundeven" => Some(BuiltinId::LpQ32Roundeven),
+            "__lp_q32_sin" => Some(BuiltinId::LpQ32Sin),
+            "__lp_q32_sinh" => Some(BuiltinId::LpQ32Sinh),
+            "__lp_q32_sqrt" => Some(BuiltinId::LpQ32Sqrt),
+            "__lp_q32_sub" => Some(BuiltinId::LpQ32Sub),
+            "__lp_q32_tan" => Some(BuiltinId::LpQ32Tan),
+            "__lp_q32_tanh" => Some(BuiltinId::LpQ32Tanh),
+            "__lpfx_hash_1" => Some(BuiltinId::LpfxHash1),
+            "__lpfx_hash_2" => Some(BuiltinId::LpfxHash2),
+            "__lpfx_hash_3" => Some(BuiltinId::LpfxHash3),
+            "__lpfx_hsv2rgb_f32" => Some(BuiltinId::LpfxHsv2rgbF32),
+            "__lpfx_hsv2rgb_q32" => Some(BuiltinId::LpfxHsv2rgbQ32),
+            "__lpfx_hsv2rgb_vec4_f32" => Some(BuiltinId::LpfxHsv2rgbVec4F32),
+            "__lpfx_hsv2rgb_vec4_q32" => Some(BuiltinId::LpfxHsv2rgbVec4Q32),
+            "__lpfx_hue2rgb_f32" => Some(BuiltinId::LpfxHue2rgbF32),
+            "__lpfx_hue2rgb_q32" => Some(BuiltinId::LpfxHue2rgbQ32),
+            "__lpfx_rgb2hsv_f32" => Some(BuiltinId::LpfxRgb2hsvF32),
+            "__lpfx_rgb2hsv_q32" => Some(BuiltinId::LpfxRgb2hsvQ32),
+            "__lpfx_rgb2hsv_vec4_f32" => Some(BuiltinId::LpfxRgb2hsvVec4F32),
+            "__lpfx_rgb2hsv_vec4_q32" => Some(BuiltinId::LpfxRgb2hsvVec4Q32),
+            "__lpfx_saturate_f32" => Some(BuiltinId::LpfxSaturateF32),
+            "__lpfx_saturate_q32" => Some(BuiltinId::LpfxSaturateQ32),
+            "__lpfx_saturate_vec3_f32" => Some(BuiltinId::LpfxSaturateVec3F32),
+            "__lpfx_saturate_vec3_q32" => Some(BuiltinId::LpfxSaturateVec3Q32),
+            "__lpfx_saturate_vec4_f32" => Some(BuiltinId::LpfxSaturateVec4F32),
+            "__lpfx_saturate_vec4_q32" => Some(BuiltinId::LpfxSaturateVec4Q32),
+            "__lpfx_snoise1_f32" => Some(BuiltinId::LpfxSnoise1F32),
+            "__lpfx_snoise1_q32" => Some(BuiltinId::LpfxSnoise1Q32),
+            "__lpfx_snoise2_f32" => Some(BuiltinId::LpfxSnoise2F32),
+            "__lpfx_snoise2_q32" => Some(BuiltinId::LpfxSnoise2Q32),
+            "__lpfx_snoise3_f32" => Some(BuiltinId::LpfxSnoise3F32),
+            "__lpfx_snoise3_q32" => Some(BuiltinId::LpfxSnoise3Q32),
+            "__lpfx_worley2_f32" => Some(BuiltinId::LpfxWorley2F32),
+            "__lpfx_worley2_q32" => Some(BuiltinId::LpfxWorley2Q32),
+            "__lpfx_worley2_value_f32" => Some(BuiltinId::LpfxWorley2ValueF32),
+            "__lpfx_worley2_value_q32" => Some(BuiltinId::LpfxWorley2ValueQ32),
+            "__lpfx_worley3_f32" => Some(BuiltinId::LpfxWorley3F32),
+            "__lpfx_worley3_q32" => Some(BuiltinId::LpfxWorley3Q32),
+            "__lpfx_worley3_value_f32" => Some(BuiltinId::LpfxWorley3ValueF32),
+            "__lpfx_worley3_value_q32" => Some(BuiltinId::LpfxWorley3ValueQ32),
+            _ => None,
+        }
+    }
+
     /// Get the Cranelift signature for this builtin function.
     pub fn signature(&self) -> Signature {
         let mut sig = Signature::new(CallConv::SystemV);
