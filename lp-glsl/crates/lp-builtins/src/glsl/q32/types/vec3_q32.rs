@@ -280,6 +280,13 @@ impl Vec3Q32 {
         fns::mod_vec3_scalar(self, y)
     }
 
+    /// Component-wise linear interpolation
+    /// Returns a + t * (b - a) for each component
+    #[inline(always)]
+    pub fn mix(self, other: Self, t: Self) -> Self {
+        fns::mix_vec3(self, other, t)
+    }
+
     // Extended swizzles for psrdnoise
     #[inline(always)]
     pub fn xyx(self) -> Vec3Q32 {

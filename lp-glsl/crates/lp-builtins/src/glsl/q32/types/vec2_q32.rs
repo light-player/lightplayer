@@ -227,6 +227,13 @@ impl Vec2Q32 {
     pub fn modulo(self, other: Self) -> Self {
         fns::mod_vec2(self, other)
     }
+
+    /// Component-wise linear interpolation
+    /// Returns a + t * (b - a) for each component
+    #[inline(always)]
+    pub fn mix(self, other: Self, t: Self) -> Self {
+        fns::mix_vec2(self, other, t)
+    }
 }
 
 impl Add for Vec2Q32 {

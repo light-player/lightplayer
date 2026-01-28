@@ -14,14 +14,31 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     vec2 dir = fragCoord - center;
     vec2 scaledCoord = center + dir * scale;
 
+    // return prsd_demo(scaledCoord, time);
+    return fbm_demo(scaledCoord, time);
+}
+
+vec4 fbm_demo(vec2 scaledCoord, float time) {
+    float noiseValue = lpfx_fbm(
+        scaledCoord,
+        3,
+        0u
+    );
+    float hue = cos(noiseValue*3.1415 + time)/2+.5;
+    vec3 rgb = lpfx_hsv2rgb(vec3(mod(time * 0.1 + hue/3.0, 1.0), 1.0, 1.0));
+
+    return vec4(rgb, 1.0);
+}
+
+vec4 prsd_demo(vec2 scaledCoord, float time) {
     // Sample Periodic Simplex Rotational Domain noise
     // psrdnoise returns both noise value and gradient vector
     vec2 gradient;
     float noiseValue = lpfx_psrdnoise(
-        scaledCoord,           // Input coordinates
-        vec2(0.0),            // Period (0.0 = no tiling, or use vec2(10.0) for tiling)
-        time,            // Rotation angle (alpha) - animate with time
-        gradient                // Output gradient vector (out parameter)
+        scaledCoord,   // Input coordinates
+        vec2(0.0),     // Period (0.0 = no tiling, or use vec2(10.0) for tiling)
+        time,          // Rotation angle (alpha) - animate with time
+        gradient       // Output gradient vector (out parameter)
     );
     
     // Use gradient to add detail:

@@ -40,6 +40,7 @@ use crate::glsl::q32::types::q32::Q32;
     f32,
     "float lpfx_psrdnoise(vec2 x, vec2 period, float alpha, out vec2 gradient)"
 )]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_psrdnoise2_f32(
     x: f32,

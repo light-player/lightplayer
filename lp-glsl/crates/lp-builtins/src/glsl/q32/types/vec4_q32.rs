@@ -282,6 +282,13 @@ impl Vec4Q32 {
         fns::mod_vec4_scalar(self, y)
     }
 
+    /// Component-wise linear interpolation
+    /// Returns a + t * (b - a) for each component
+    #[inline(always)]
+    pub fn mix(self, other: Self, t: Self) -> Self {
+        fns::mix_vec4(self, other, t)
+    }
+
     /// Create Vec4 from Vec3 + scalar
     /// Useful for patterns like vec4(v0.x, v1.x, v2.x, v3.x)
     #[inline(always)]

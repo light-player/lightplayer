@@ -441,29 +441,29 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
         let count_i32_before_pointer = |sig: &str| -> usize {
             // Extract the parameter list: "extern \"C\" fn(i32, i32, *mut i32, u32) -> i32"
             // We want to find the part between fn( and ) ->
-            if let Some(start) = sig.find("fn(") {
-                if let Some(end) = sig.find(") ->") {
-                    let params_str = &sig[start + 3..end];
-                    let params: Vec<&str> = params_str.split(',').map(|s| s.trim()).collect();
-                    // Count params that are "i32" or "f32" before we hit "*mut"
-                    let mut count = 0;
-                    for param in params {
-                        if param.contains("*mut") {
-                            break;
-                        }
-                        // Check if param is "i32" or "f32" (exact match or starts with "i32"/"f32" followed by space/end)
-                        if param == "i32"
-                            || param == "f32"
-                            || (param.starts_with("i32")
-                                && (param.len() == 3 || param.chars().nth(3) == Some(' ')))
-                            || (param.starts_with("f32")
-                                && (param.len() == 3 || param.chars().nth(3) == Some(' ')))
-                        {
-                            count += 1;
-                        }
+            if let Some(start) = sig.find("fn(")
+                && let Some(end) = sig.find(") ->")
+            {
+                let params_str = &sig[start + 3..end];
+                let params: Vec<&str> = params_str.split(',').map(|s| s.trim()).collect();
+                // Count params that are "i32" or "f32" before we hit "*mut"
+                let mut count = 0;
+                for param in params {
+                    if param.contains("*mut") {
+                        break;
                     }
-                    return count;
+                    // Check if param is "i32" or "f32" (exact match or starts with "i32"/"f32" followed by space/end)
+                    if param == "i32"
+                        || param == "f32"
+                        || (param.starts_with("i32")
+                            && (param.len() == 3 || param.chars().nth(3) == Some(' ')))
+                        || (param.starts_with("f32")
+                            && (param.len() == 3 || param.chars().nth(3) == Some(' ')))
+                    {
+                        count += 1;
+                    }
                 }
+                return count;
             }
             0
         };
@@ -508,6 +508,10 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
         }
 
         // Group StructReturn functions by parameter count
+        let struct_return_6_params: Vec<_> = struct_return_builtins
+            .iter()
+            .filter(|b| b.param_count == 6)
+            .collect();
         let struct_return_5_params: Vec<_> = struct_return_builtins
             .iter()
             .filter(|b| b.param_count == 5)
@@ -526,6 +530,28 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
             .collect();
 
         // Generate StructReturn signatures
+        if !struct_return_6_params.is_empty() {
+            output.push_str("            ");
+            for (i, builtin) in struct_return_6_params.iter().enumerate() {
+                if i > 0 {
+                    output.push_str(" | ");
+                }
+                output.push_str(&format!("BuiltinId::{}", builtin.enum_variant));
+            }
+            output.push_str(" => {\n");
+            output.push_str(
+                "                // Result pointer as normal parameter: (pointer_type, i32, i32, i32, i32, i32) -> ()\n",
+            );
+            output.push_str("                sig.params.insert(0, AbiParam::new(pointer_type));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                // Functions with result pointer return void\n");
+            output.push_str("            }\n");
+        }
+
         if !struct_return_5_params.is_empty() {
             output.push_str("            ");
             for (i, builtin) in struct_return_5_params.iter().enumerate() {
@@ -599,6 +625,14 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
         }
 
         // Group regular functions by parameter count
+        let senary_ops: Vec<_> = regular_builtins
+            .iter()
+            .filter(|b| b.param_count == 6)
+            .collect();
+        let quinary_ops: Vec<_> = regular_builtins
+            .iter()
+            .filter(|b| b.param_count == 5)
+            .collect();
         let quaternary_ops: Vec<_> = regular_builtins
             .iter()
             .filter(|b| b.param_count == 4)
@@ -615,6 +649,45 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
             .iter()
             .filter(|b| b.param_count == 1)
             .collect();
+
+        if !senary_ops.is_empty() {
+            output.push_str("            ");
+            for (i, builtin) in senary_ops.iter().enumerate() {
+                if i > 0 {
+                    output.push_str(" | ");
+                }
+                output.push_str(&format!("BuiltinId::{}", builtin.enum_variant));
+            }
+            output.push_str(" => {\n");
+            output.push_str("                // (i32, i32, i32, i32, i32, i32) -> i32\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.returns.push(AbiParam::new(types::I32));\n");
+            output.push_str("            }\n");
+        }
+
+        if !quinary_ops.is_empty() {
+            output.push_str("            ");
+            for (i, builtin) in quinary_ops.iter().enumerate() {
+                if i > 0 {
+                    output.push_str(" | ");
+                }
+                output.push_str(&format!("BuiltinId::{}", builtin.enum_variant));
+            }
+            output.push_str(" => {\n");
+            output.push_str("                // (i32, i32, i32, i32, i32) -> i32\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
+            output.push_str("                sig.returns.push(AbiParam::new(types::I32));\n");
+            output.push_str("            }\n");
+        }
 
         if !quaternary_ops.is_empty() {
             output.push_str("            ");

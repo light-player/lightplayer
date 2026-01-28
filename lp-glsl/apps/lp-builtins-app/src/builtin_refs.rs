@@ -20,16 +20,46 @@ use lp_builtins::builtins::lpfx::color::space::{
 use lp_builtins::builtins::lpfx::color::space::{
     rgb2hsv_q32::__lpfx_rgb2hsv_q32, rgb2hsv_q32::__lpfx_rgb2hsv_vec4_q32,
 };
+use lp_builtins::builtins::lpfx::generative::fbm::fbm2_f32::__lpfx_fbm2_f32;
+use lp_builtins::builtins::lpfx::generative::fbm::fbm2_q32::__lpfx_fbm2_q32;
+use lp_builtins::builtins::lpfx::generative::fbm::fbm3_f32::__lpfx_fbm3_f32;
+use lp_builtins::builtins::lpfx::generative::fbm::fbm3_q32::__lpfx_fbm3_q32;
+use lp_builtins::builtins::lpfx::generative::fbm::fbm3_tile_f32::__lpfx_fbm3_tile_f32;
+use lp_builtins::builtins::lpfx::generative::fbm::fbm3_tile_q32::__lpfx_fbm3_tile_q32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise1_f32::__lpfx_gnoise1_f32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise1_q32::__lpfx_gnoise1_q32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise2_f32::__lpfx_gnoise2_f32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise2_q32::__lpfx_gnoise2_q32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise3_f32::__lpfx_gnoise3_f32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise3_q32::__lpfx_gnoise3_q32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise3_tile_f32::__lpfx_gnoise3_tile_f32;
+use lp_builtins::builtins::lpfx::generative::gnoise::gnoise3_tile_q32::__lpfx_gnoise3_tile_q32;
 use lp_builtins::builtins::lpfx::generative::psrdnoise::psrdnoise2_f32::__lpfx_psrdnoise2_f32;
 use lp_builtins::builtins::lpfx::generative::psrdnoise::psrdnoise2_q32::__lpfx_psrdnoise2_q32;
 use lp_builtins::builtins::lpfx::generative::psrdnoise::psrdnoise3_f32::__lpfx_psrdnoise3_f32;
 use lp_builtins::builtins::lpfx::generative::psrdnoise::psrdnoise3_q32::__lpfx_psrdnoise3_q32;
+use lp_builtins::builtins::lpfx::generative::random::random1_f32::__lpfx_random1_f32;
+use lp_builtins::builtins::lpfx::generative::random::random1_q32::__lpfx_random1_q32;
+use lp_builtins::builtins::lpfx::generative::random::random2_f32::__lpfx_random2_f32;
+use lp_builtins::builtins::lpfx::generative::random::random2_q32::__lpfx_random2_q32;
+use lp_builtins::builtins::lpfx::generative::random::random3_f32::__lpfx_random3_f32;
+use lp_builtins::builtins::lpfx::generative::random::random3_q32::__lpfx_random3_q32;
 use lp_builtins::builtins::lpfx::generative::snoise::snoise1_f32::__lpfx_snoise1_f32;
 use lp_builtins::builtins::lpfx::generative::snoise::snoise1_q32::__lpfx_snoise1_q32;
 use lp_builtins::builtins::lpfx::generative::snoise::snoise2_f32::__lpfx_snoise2_f32;
 use lp_builtins::builtins::lpfx::generative::snoise::snoise2_q32::__lpfx_snoise2_q32;
 use lp_builtins::builtins::lpfx::generative::snoise::snoise3_f32::__lpfx_snoise3_f32;
 use lp_builtins::builtins::lpfx::generative::snoise::snoise3_q32::__lpfx_snoise3_q32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom1_f32::__lpfx_srandom1_f32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom1_q32::__lpfx_srandom1_q32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom2_f32::__lpfx_srandom2_f32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom2_q32::__lpfx_srandom2_q32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom3_f32::__lpfx_srandom3_f32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom3_q32::__lpfx_srandom3_q32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom3_tile_f32::__lpfx_srandom3_tile_f32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom3_tile_q32::__lpfx_srandom3_tile_q32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom3_vec_f32::__lpfx_srandom3_vec_f32;
+use lp_builtins::builtins::lpfx::generative::srandom::srandom3_vec_q32::__lpfx_srandom3_vec_q32;
 use lp_builtins::builtins::lpfx::generative::worley::worley2_f32::__lpfx_worley2_f32;
 use lp_builtins::builtins::lpfx::generative::worley::worley2_q32::__lpfx_worley2_q32;
 use lp_builtins::builtins::lpfx::generative::worley::worley2_value_f32::__lpfx_worley2_value_f32;
@@ -112,6 +142,24 @@ pub fn ensure_builtins_referenced() {
         let _q32_sub_fn: extern "C" fn(i32, i32) -> i32 = __lp_q32_sub;
         let _q32_tan_fn: extern "C" fn(i32) -> i32 = __lp_q32_tan;
         let _q32_tanh_fn: extern "C" fn(i32) -> i32 = __lp_q32_tanh;
+        let __lpfx_fbm2_f32_fn: extern "C" fn(f32, f32, i32, u32) -> f32 = __lpfx_fbm2_f32;
+        let __lpfx_fbm2_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_fbm2_q32;
+        let __lpfx_fbm3_f32_fn: extern "C" fn(f32, f32, f32, i32, u32) -> f32 = __lpfx_fbm3_f32;
+        let __lpfx_fbm3_q32_fn: extern "C" fn(i32, i32, i32, i32, u32) -> i32 = __lpfx_fbm3_q32;
+        let __lpfx_fbm3_tile_f32_fn: extern "C" fn(f32, f32, f32, f32, i32, u32) -> f32 =
+            __lpfx_fbm3_tile_f32;
+        let __lpfx_fbm3_tile_q32_fn: extern "C" fn(i32, i32, i32, i32, i32, u32) -> i32 =
+            __lpfx_fbm3_tile_q32;
+        let __lpfx_gnoise1_f32_fn: extern "C" fn(f32, u32) -> f32 = __lpfx_gnoise1_f32;
+        let __lpfx_gnoise1_q32_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_gnoise1_q32;
+        let __lpfx_gnoise2_f32_fn: extern "C" fn(f32, f32, u32) -> f32 = __lpfx_gnoise2_f32;
+        let __lpfx_gnoise2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_gnoise2_q32;
+        let __lpfx_gnoise3_f32_fn: extern "C" fn(f32, f32, f32, u32) -> f32 = __lpfx_gnoise3_f32;
+        let __lpfx_gnoise3_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_gnoise3_q32;
+        let __lpfx_gnoise3_tile_f32_fn: extern "C" fn(f32, f32, f32, f32, u32) -> f32 =
+            __lpfx_gnoise3_tile_f32;
+        let __lpfx_gnoise3_tile_q32_fn: extern "C" fn(i32, i32, i32, i32, u32) -> i32 =
+            __lpfx_gnoise3_tile_q32;
         let __lpfx_hash_1_fn: extern "C" fn(u32, u32) -> u32 = __lpfx_hash_1;
         let __lpfx_hash_2_fn: extern "C" fn(u32, u32, u32) -> u32 = __lpfx_hash_2;
         let __lpfx_hash_3_fn: extern "C" fn(u32, u32, u32, u32) -> u32 = __lpfx_hash_3;
@@ -151,6 +199,12 @@ pub fn ensure_builtins_referenced() {
             *mut i32,
             u32,
         ) -> i32 = __lpfx_psrdnoise3_q32;
+        let __lpfx_random1_f32_fn: extern "C" fn(f32, u32) -> f32 = __lpfx_random1_f32;
+        let __lpfx_random1_q32_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_random1_q32;
+        let __lpfx_random2_f32_fn: extern "C" fn(f32, f32, u32) -> f32 = __lpfx_random2_f32;
+        let __lpfx_random2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_random2_q32;
+        let __lpfx_random3_f32_fn: extern "C" fn(f32, f32, f32, u32) -> f32 = __lpfx_random3_f32;
+        let __lpfx_random3_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_random3_q32;
         let __lpfx_rgb2hsv_f32_fn: extern "C" fn(*mut f32, f32, f32, f32) -> () =
             __lpfx_rgb2hsv_f32;
         let __lpfx_rgb2hsv_q32_fn: extern "C" fn(*mut i32, i32, i32, i32) -> () =
@@ -175,6 +229,20 @@ pub fn ensure_builtins_referenced() {
         let __lpfx_snoise2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_snoise2_q32;
         let __lpfx_snoise3_f32_fn: extern "C" fn(f32, f32, f32, u32) -> f32 = __lpfx_snoise3_f32;
         let __lpfx_snoise3_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_snoise3_q32;
+        let __lpfx_srandom1_f32_fn: extern "C" fn(f32, u32) -> f32 = __lpfx_srandom1_f32;
+        let __lpfx_srandom1_q32_fn: extern "C" fn(i32, u32) -> i32 = __lpfx_srandom1_q32;
+        let __lpfx_srandom2_f32_fn: extern "C" fn(f32, f32, u32) -> f32 = __lpfx_srandom2_f32;
+        let __lpfx_srandom2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_srandom2_q32;
+        let __lpfx_srandom3_f32_fn: extern "C" fn(f32, f32, f32, u32) -> f32 = __lpfx_srandom3_f32;
+        let __lpfx_srandom3_q32_fn: extern "C" fn(i32, i32, i32, u32) -> i32 = __lpfx_srandom3_q32;
+        let __lpfx_srandom3_tile_f32_fn: extern "C" fn(*mut f32, f32, f32, f32, f32, u32) -> () =
+            __lpfx_srandom3_tile_f32;
+        let __lpfx_srandom3_tile_q32_fn: extern "C" fn(*mut i32, i32, i32, i32, i32, u32) -> () =
+            __lpfx_srandom3_tile_q32;
+        let __lpfx_srandom3_vec_f32_fn: extern "C" fn(*mut f32, f32, f32, f32, u32) -> () =
+            __lpfx_srandom3_vec_f32;
+        let __lpfx_srandom3_vec_q32_fn: extern "C" fn(*mut i32, i32, i32, i32, u32) -> () =
+            __lpfx_srandom3_vec_q32;
         let __lpfx_worley2_f32_fn: extern "C" fn(f32, f32, u32) -> f32 = __lpfx_worley2_f32;
         let __lpfx_worley2_q32_fn: extern "C" fn(i32, i32, u32) -> i32 = __lpfx_worley2_q32;
         let __lpfx_worley2_value_f32_fn: extern "C" fn(f32, f32, u32) -> f32 =
@@ -219,6 +287,20 @@ pub fn ensure_builtins_referenced() {
         let _ = core::ptr::read_volatile(&_q32_sub_fn as *const _);
         let _ = core::ptr::read_volatile(&_q32_tan_fn as *const _);
         let _ = core::ptr::read_volatile(&_q32_tanh_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_fbm2_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_fbm2_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_fbm3_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_fbm3_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_fbm3_tile_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_fbm3_tile_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise1_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise1_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise2_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise2_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise3_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise3_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise3_tile_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_gnoise3_tile_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_hash_1_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_hash_2_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_hash_3_fn as *const _);
@@ -232,6 +314,12 @@ pub fn ensure_builtins_referenced() {
         let _ = core::ptr::read_volatile(&__lpfx_psrdnoise2_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_psrdnoise3_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_psrdnoise3_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_random1_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_random1_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_random2_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_random2_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_random3_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_random3_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_rgb2hsv_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_rgb2hsv_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_rgb2hsv_vec4_f32_fn as *const _);
@@ -248,6 +336,16 @@ pub fn ensure_builtins_referenced() {
         let _ = core::ptr::read_volatile(&__lpfx_snoise2_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_snoise3_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_snoise3_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom1_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom1_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom2_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom2_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom3_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom3_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom3_tile_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom3_tile_q32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom3_vec_f32_fn as *const _);
+        let _ = core::ptr::read_volatile(&__lpfx_srandom3_vec_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_worley2_f32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_worley2_q32_fn as *const _);
         let _ = core::ptr::read_volatile(&__lpfx_worley2_value_f32_fn as *const _);

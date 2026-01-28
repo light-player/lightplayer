@@ -106,6 +106,13 @@ impl Q32 {
     pub const fn mul_int(self, i: i32) -> Q32 {
         Q32(self.0 * i)
     }
+
+    /// Linear interpolation
+    /// Returns a + t * (b - a)
+    #[inline(always)]
+    pub fn mix(self, other: Q32, t: Q32) -> Q32 {
+        crate::glsl::q32::fns::mix_q32(self, other, t)
+    }
 }
 
 impl Add for Q32 {

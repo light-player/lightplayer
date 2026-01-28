@@ -307,6 +307,7 @@ pub fn lpfx_psrdnoise2(x: Vec2Q32, period: Vec2Q32, alpha: Q32, _seed: u32) -> (
     q32,
     "float lpfx_psrdnoise(vec2 x, vec2 period, float alpha, out vec2 gradient)"
 )]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
 pub extern "C" fn __lpfx_psrdnoise2_q32(
     x: i32,

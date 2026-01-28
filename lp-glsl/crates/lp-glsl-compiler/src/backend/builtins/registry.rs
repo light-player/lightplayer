@@ -51,6 +51,20 @@ pub enum BuiltinId {
     LpQ32Sub,
     LpQ32Tan,
     LpQ32Tanh,
+    LpfxFbm2F32,
+    LpfxFbm2Q32,
+    LpfxFbm3F32,
+    LpfxFbm3Q32,
+    LpfxFbm3TileF32,
+    LpfxFbm3TileQ32,
+    LpfxGnoise1F32,
+    LpfxGnoise1Q32,
+    LpfxGnoise2F32,
+    LpfxGnoise2Q32,
+    LpfxGnoise3F32,
+    LpfxGnoise3Q32,
+    LpfxGnoise3TileF32,
+    LpfxGnoise3TileQ32,
     LpfxHash1,
     LpfxHash2,
     LpfxHash3,
@@ -64,6 +78,12 @@ pub enum BuiltinId {
     LpfxPsrdnoise2Q32,
     LpfxPsrdnoise3F32,
     LpfxPsrdnoise3Q32,
+    LpfxRandom1F32,
+    LpfxRandom1Q32,
+    LpfxRandom2F32,
+    LpfxRandom2Q32,
+    LpfxRandom3F32,
+    LpfxRandom3Q32,
     LpfxRgb2hsvF32,
     LpfxRgb2hsvQ32,
     LpfxRgb2hsvVec4F32,
@@ -80,6 +100,16 @@ pub enum BuiltinId {
     LpfxSnoise2Q32,
     LpfxSnoise3F32,
     LpfxSnoise3Q32,
+    LpfxSrandom1F32,
+    LpfxSrandom1Q32,
+    LpfxSrandom2F32,
+    LpfxSrandom2Q32,
+    LpfxSrandom3F32,
+    LpfxSrandom3Q32,
+    LpfxSrandom3TileF32,
+    LpfxSrandom3TileQ32,
+    LpfxSrandom3VecF32,
+    LpfxSrandom3VecQ32,
     LpfxWorley2F32,
     LpfxWorley2Q32,
     LpfxWorley2ValueF32,
@@ -123,6 +153,20 @@ impl BuiltinId {
             BuiltinId::LpQ32Sub => "__lp_q32_sub",
             BuiltinId::LpQ32Tan => "__lp_q32_tan",
             BuiltinId::LpQ32Tanh => "__lp_q32_tanh",
+            BuiltinId::LpfxFbm2F32 => "__lpfx_fbm2_f32",
+            BuiltinId::LpfxFbm2Q32 => "__lpfx_fbm2_q32",
+            BuiltinId::LpfxFbm3F32 => "__lpfx_fbm3_f32",
+            BuiltinId::LpfxFbm3Q32 => "__lpfx_fbm3_q32",
+            BuiltinId::LpfxFbm3TileF32 => "__lpfx_fbm3_tile_f32",
+            BuiltinId::LpfxFbm3TileQ32 => "__lpfx_fbm3_tile_q32",
+            BuiltinId::LpfxGnoise1F32 => "__lpfx_gnoise1_f32",
+            BuiltinId::LpfxGnoise1Q32 => "__lpfx_gnoise1_q32",
+            BuiltinId::LpfxGnoise2F32 => "__lpfx_gnoise2_f32",
+            BuiltinId::LpfxGnoise2Q32 => "__lpfx_gnoise2_q32",
+            BuiltinId::LpfxGnoise3F32 => "__lpfx_gnoise3_f32",
+            BuiltinId::LpfxGnoise3Q32 => "__lpfx_gnoise3_q32",
+            BuiltinId::LpfxGnoise3TileF32 => "__lpfx_gnoise3_tile_f32",
+            BuiltinId::LpfxGnoise3TileQ32 => "__lpfx_gnoise3_tile_q32",
             BuiltinId::LpfxHash1 => "__lpfx_hash_1",
             BuiltinId::LpfxHash2 => "__lpfx_hash_2",
             BuiltinId::LpfxHash3 => "__lpfx_hash_3",
@@ -136,6 +180,12 @@ impl BuiltinId {
             BuiltinId::LpfxPsrdnoise2Q32 => "__lpfx_psrdnoise2_q32",
             BuiltinId::LpfxPsrdnoise3F32 => "__lpfx_psrdnoise3_f32",
             BuiltinId::LpfxPsrdnoise3Q32 => "__lpfx_psrdnoise3_q32",
+            BuiltinId::LpfxRandom1F32 => "__lpfx_random1_f32",
+            BuiltinId::LpfxRandom1Q32 => "__lpfx_random1_q32",
+            BuiltinId::LpfxRandom2F32 => "__lpfx_random2_f32",
+            BuiltinId::LpfxRandom2Q32 => "__lpfx_random2_q32",
+            BuiltinId::LpfxRandom3F32 => "__lpfx_random3_f32",
+            BuiltinId::LpfxRandom3Q32 => "__lpfx_random3_q32",
             BuiltinId::LpfxRgb2hsvF32 => "__lpfx_rgb2hsv_f32",
             BuiltinId::LpfxRgb2hsvQ32 => "__lpfx_rgb2hsv_q32",
             BuiltinId::LpfxRgb2hsvVec4F32 => "__lpfx_rgb2hsv_vec4_f32",
@@ -152,6 +202,16 @@ impl BuiltinId {
             BuiltinId::LpfxSnoise2Q32 => "__lpfx_snoise2_q32",
             BuiltinId::LpfxSnoise3F32 => "__lpfx_snoise3_f32",
             BuiltinId::LpfxSnoise3Q32 => "__lpfx_snoise3_q32",
+            BuiltinId::LpfxSrandom1F32 => "__lpfx_srandom1_f32",
+            BuiltinId::LpfxSrandom1Q32 => "__lpfx_srandom1_q32",
+            BuiltinId::LpfxSrandom2F32 => "__lpfx_srandom2_f32",
+            BuiltinId::LpfxSrandom2Q32 => "__lpfx_srandom2_q32",
+            BuiltinId::LpfxSrandom3F32 => "__lpfx_srandom3_f32",
+            BuiltinId::LpfxSrandom3Q32 => "__lpfx_srandom3_q32",
+            BuiltinId::LpfxSrandom3TileF32 => "__lpfx_srandom3_tile_f32",
+            BuiltinId::LpfxSrandom3TileQ32 => "__lpfx_srandom3_tile_q32",
+            BuiltinId::LpfxSrandom3VecF32 => "__lpfx_srandom3_vec_f32",
+            BuiltinId::LpfxSrandom3VecQ32 => "__lpfx_srandom3_vec_q32",
             BuiltinId::LpfxWorley2F32 => "__lpfx_worley2_f32",
             BuiltinId::LpfxWorley2Q32 => "__lpfx_worley2_q32",
             BuiltinId::LpfxWorley2ValueF32 => "__lpfx_worley2_value_f32",
@@ -197,6 +257,20 @@ impl BuiltinId {
             "__lp_q32_sub" => Some(BuiltinId::LpQ32Sub),
             "__lp_q32_tan" => Some(BuiltinId::LpQ32Tan),
             "__lp_q32_tanh" => Some(BuiltinId::LpQ32Tanh),
+            "__lpfx_fbm2_f32" => Some(BuiltinId::LpfxFbm2F32),
+            "__lpfx_fbm2_q32" => Some(BuiltinId::LpfxFbm2Q32),
+            "__lpfx_fbm3_f32" => Some(BuiltinId::LpfxFbm3F32),
+            "__lpfx_fbm3_q32" => Some(BuiltinId::LpfxFbm3Q32),
+            "__lpfx_fbm3_tile_f32" => Some(BuiltinId::LpfxFbm3TileF32),
+            "__lpfx_fbm3_tile_q32" => Some(BuiltinId::LpfxFbm3TileQ32),
+            "__lpfx_gnoise1_f32" => Some(BuiltinId::LpfxGnoise1F32),
+            "__lpfx_gnoise1_q32" => Some(BuiltinId::LpfxGnoise1Q32),
+            "__lpfx_gnoise2_f32" => Some(BuiltinId::LpfxGnoise2F32),
+            "__lpfx_gnoise2_q32" => Some(BuiltinId::LpfxGnoise2Q32),
+            "__lpfx_gnoise3_f32" => Some(BuiltinId::LpfxGnoise3F32),
+            "__lpfx_gnoise3_q32" => Some(BuiltinId::LpfxGnoise3Q32),
+            "__lpfx_gnoise3_tile_f32" => Some(BuiltinId::LpfxGnoise3TileF32),
+            "__lpfx_gnoise3_tile_q32" => Some(BuiltinId::LpfxGnoise3TileQ32),
             "__lpfx_hash_1" => Some(BuiltinId::LpfxHash1),
             "__lpfx_hash_2" => Some(BuiltinId::LpfxHash2),
             "__lpfx_hash_3" => Some(BuiltinId::LpfxHash3),
@@ -210,6 +284,12 @@ impl BuiltinId {
             "__lpfx_psrdnoise2_q32" => Some(BuiltinId::LpfxPsrdnoise2Q32),
             "__lpfx_psrdnoise3_f32" => Some(BuiltinId::LpfxPsrdnoise3F32),
             "__lpfx_psrdnoise3_q32" => Some(BuiltinId::LpfxPsrdnoise3Q32),
+            "__lpfx_random1_f32" => Some(BuiltinId::LpfxRandom1F32),
+            "__lpfx_random1_q32" => Some(BuiltinId::LpfxRandom1Q32),
+            "__lpfx_random2_f32" => Some(BuiltinId::LpfxRandom2F32),
+            "__lpfx_random2_q32" => Some(BuiltinId::LpfxRandom2Q32),
+            "__lpfx_random3_f32" => Some(BuiltinId::LpfxRandom3F32),
+            "__lpfx_random3_q32" => Some(BuiltinId::LpfxRandom3Q32),
             "__lpfx_rgb2hsv_f32" => Some(BuiltinId::LpfxRgb2hsvF32),
             "__lpfx_rgb2hsv_q32" => Some(BuiltinId::LpfxRgb2hsvQ32),
             "__lpfx_rgb2hsv_vec4_f32" => Some(BuiltinId::LpfxRgb2hsvVec4F32),
@@ -226,6 +306,16 @@ impl BuiltinId {
             "__lpfx_snoise2_q32" => Some(BuiltinId::LpfxSnoise2Q32),
             "__lpfx_snoise3_f32" => Some(BuiltinId::LpfxSnoise3F32),
             "__lpfx_snoise3_q32" => Some(BuiltinId::LpfxSnoise3Q32),
+            "__lpfx_srandom1_f32" => Some(BuiltinId::LpfxSrandom1F32),
+            "__lpfx_srandom1_q32" => Some(BuiltinId::LpfxSrandom1Q32),
+            "__lpfx_srandom2_f32" => Some(BuiltinId::LpfxSrandom2F32),
+            "__lpfx_srandom2_q32" => Some(BuiltinId::LpfxSrandom2Q32),
+            "__lpfx_srandom3_f32" => Some(BuiltinId::LpfxSrandom3F32),
+            "__lpfx_srandom3_q32" => Some(BuiltinId::LpfxSrandom3Q32),
+            "__lpfx_srandom3_tile_f32" => Some(BuiltinId::LpfxSrandom3TileF32),
+            "__lpfx_srandom3_tile_q32" => Some(BuiltinId::LpfxSrandom3TileQ32),
+            "__lpfx_srandom3_vec_f32" => Some(BuiltinId::LpfxSrandom3VecF32),
+            "__lpfx_srandom3_vec_q32" => Some(BuiltinId::LpfxSrandom3VecQ32),
             "__lpfx_worley2_f32" => Some(BuiltinId::LpfxWorley2F32),
             "__lpfx_worley2_q32" => Some(BuiltinId::LpfxWorley2Q32),
             "__lpfx_worley2_value_f32" => Some(BuiltinId::LpfxWorley2ValueF32),
@@ -246,16 +336,6 @@ impl BuiltinId {
     pub fn signature(&self, pointer_type: types::Type) -> Signature {
         let mut sig = Signature::new(CallConv::SystemV);
         match self {
-            BuiltinId::LpfxPsrdnoise2F32 | BuiltinId::LpfxPsrdnoise2Q32 => {
-                // Out parameter function: (5 i32 params, pointer_type) -> i32
-                sig.params.push(AbiParam::new(types::I32));
-                sig.params.push(AbiParam::new(types::I32));
-                sig.params.push(AbiParam::new(types::I32));
-                sig.params.push(AbiParam::new(types::I32));
-                sig.params.push(AbiParam::new(types::I32));
-                sig.params.push(AbiParam::new(pointer_type));
-                sig.returns.push(AbiParam::new(types::I32));
-            }
             BuiltinId::LpfxPsrdnoise3F32 | BuiltinId::LpfxPsrdnoise3Q32 => {
                 // Out parameter function: (7 i32 params, pointer_type) -> i32
                 sig.params.push(AbiParam::new(types::I32));
@@ -268,12 +348,34 @@ impl BuiltinId {
                 sig.params.push(AbiParam::new(pointer_type));
                 sig.returns.push(AbiParam::new(types::I32));
             }
+            BuiltinId::LpfxPsrdnoise2F32 | BuiltinId::LpfxPsrdnoise2Q32 => {
+                // Out parameter function: (5 i32 params, pointer_type) -> i32
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(pointer_type));
+                sig.returns.push(AbiParam::new(types::I32));
+            }
+            BuiltinId::LpfxSrandom3TileF32 | BuiltinId::LpfxSrandom3TileQ32 => {
+                // Result pointer as normal parameter: (pointer_type, i32, i32, i32, i32, i32) -> ()
+                sig.params.insert(0, AbiParam::new(pointer_type));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                // Functions with result pointer return void
+            }
             BuiltinId::LpfxHsv2rgbVec4F32
             | BuiltinId::LpfxHsv2rgbVec4Q32
             | BuiltinId::LpfxRgb2hsvVec4F32
             | BuiltinId::LpfxRgb2hsvVec4Q32
             | BuiltinId::LpfxSaturateVec4F32
-            | BuiltinId::LpfxSaturateVec4Q32 => {
+            | BuiltinId::LpfxSaturateVec4Q32
+            | BuiltinId::LpfxSrandom3VecF32
+            | BuiltinId::LpfxSrandom3VecQ32 => {
                 // Result pointer as normal parameter: (pointer_type, i32, i32, i32, i32) -> ()
                 sig.params.insert(0, AbiParam::new(pointer_type));
                 sig.params.push(AbiParam::new(types::I32));
@@ -301,9 +403,39 @@ impl BuiltinId {
                 sig.params.push(AbiParam::new(types::I32));
                 // Functions with result pointer return void
             }
-            BuiltinId::LpfxHash3
+            BuiltinId::LpfxFbm3TileF32 | BuiltinId::LpfxFbm3TileQ32 => {
+                // (i32, i32, i32, i32, i32, i32) -> i32
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.returns.push(AbiParam::new(types::I32));
+            }
+            BuiltinId::LpfxFbm3F32
+            | BuiltinId::LpfxFbm3Q32
+            | BuiltinId::LpfxGnoise3TileF32
+            | BuiltinId::LpfxGnoise3TileQ32 => {
+                // (i32, i32, i32, i32, i32) -> i32
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.params.push(AbiParam::new(types::I32));
+                sig.returns.push(AbiParam::new(types::I32));
+            }
+            BuiltinId::LpfxFbm2F32
+            | BuiltinId::LpfxFbm2Q32
+            | BuiltinId::LpfxGnoise3F32
+            | BuiltinId::LpfxGnoise3Q32
+            | BuiltinId::LpfxHash3
+            | BuiltinId::LpfxRandom3F32
+            | BuiltinId::LpfxRandom3Q32
             | BuiltinId::LpfxSnoise3F32
             | BuiltinId::LpfxSnoise3Q32
+            | BuiltinId::LpfxSrandom3F32
+            | BuiltinId::LpfxSrandom3Q32
             | BuiltinId::LpfxWorley3F32
             | BuiltinId::LpfxWorley3Q32
             | BuiltinId::LpfxWorley3ValueF32
@@ -316,9 +448,15 @@ impl BuiltinId {
                 sig.returns.push(AbiParam::new(types::I32));
             }
             BuiltinId::LpQ32Fma
+            | BuiltinId::LpfxGnoise2F32
+            | BuiltinId::LpfxGnoise2Q32
             | BuiltinId::LpfxHash2
+            | BuiltinId::LpfxRandom2F32
+            | BuiltinId::LpfxRandom2Q32
             | BuiltinId::LpfxSnoise2F32
             | BuiltinId::LpfxSnoise2Q32
+            | BuiltinId::LpfxSrandom2F32
+            | BuiltinId::LpfxSrandom2Q32
             | BuiltinId::LpfxWorley2F32
             | BuiltinId::LpfxWorley2Q32
             | BuiltinId::LpfxWorley2ValueF32
@@ -337,9 +475,15 @@ impl BuiltinId {
             | BuiltinId::LpQ32Mul
             | BuiltinId::LpQ32Pow
             | BuiltinId::LpQ32Sub
+            | BuiltinId::LpfxGnoise1F32
+            | BuiltinId::LpfxGnoise1Q32
             | BuiltinId::LpfxHash1
+            | BuiltinId::LpfxRandom1F32
+            | BuiltinId::LpfxRandom1Q32
             | BuiltinId::LpfxSnoise1F32
-            | BuiltinId::LpfxSnoise1Q32 => {
+            | BuiltinId::LpfxSnoise1Q32
+            | BuiltinId::LpfxSrandom1F32
+            | BuiltinId::LpfxSrandom1Q32 => {
                 // (i32, i32) -> i32
                 sig.params.push(AbiParam::new(types::I32));
                 sig.params.push(AbiParam::new(types::I32));
@@ -407,6 +551,20 @@ impl BuiltinId {
             BuiltinId::LpQ32Sub,
             BuiltinId::LpQ32Tan,
             BuiltinId::LpQ32Tanh,
+            BuiltinId::LpfxFbm2F32,
+            BuiltinId::LpfxFbm2Q32,
+            BuiltinId::LpfxFbm3F32,
+            BuiltinId::LpfxFbm3Q32,
+            BuiltinId::LpfxFbm3TileF32,
+            BuiltinId::LpfxFbm3TileQ32,
+            BuiltinId::LpfxGnoise1F32,
+            BuiltinId::LpfxGnoise1Q32,
+            BuiltinId::LpfxGnoise2F32,
+            BuiltinId::LpfxGnoise2Q32,
+            BuiltinId::LpfxGnoise3F32,
+            BuiltinId::LpfxGnoise3Q32,
+            BuiltinId::LpfxGnoise3TileF32,
+            BuiltinId::LpfxGnoise3TileQ32,
             BuiltinId::LpfxHash1,
             BuiltinId::LpfxHash2,
             BuiltinId::LpfxHash3,
@@ -420,6 +578,12 @@ impl BuiltinId {
             BuiltinId::LpfxPsrdnoise2Q32,
             BuiltinId::LpfxPsrdnoise3F32,
             BuiltinId::LpfxPsrdnoise3Q32,
+            BuiltinId::LpfxRandom1F32,
+            BuiltinId::LpfxRandom1Q32,
+            BuiltinId::LpfxRandom2F32,
+            BuiltinId::LpfxRandom2Q32,
+            BuiltinId::LpfxRandom3F32,
+            BuiltinId::LpfxRandom3Q32,
             BuiltinId::LpfxRgb2hsvF32,
             BuiltinId::LpfxRgb2hsvQ32,
             BuiltinId::LpfxRgb2hsvVec4F32,
@@ -436,6 +600,16 @@ impl BuiltinId {
             BuiltinId::LpfxSnoise2Q32,
             BuiltinId::LpfxSnoise3F32,
             BuiltinId::LpfxSnoise3Q32,
+            BuiltinId::LpfxSrandom1F32,
+            BuiltinId::LpfxSrandom1Q32,
+            BuiltinId::LpfxSrandom2F32,
+            BuiltinId::LpfxSrandom2Q32,
+            BuiltinId::LpfxSrandom3F32,
+            BuiltinId::LpfxSrandom3Q32,
+            BuiltinId::LpfxSrandom3TileF32,
+            BuiltinId::LpfxSrandom3TileQ32,
+            BuiltinId::LpfxSrandom3VecF32,
+            BuiltinId::LpfxSrandom3VecQ32,
             BuiltinId::LpfxWorley2F32,
             BuiltinId::LpfxWorley2Q32,
             BuiltinId::LpfxWorley2ValueF32,
@@ -483,6 +657,40 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         BuiltinId::LpQ32Sub => q32::__lp_q32_sub as *const u8,
         BuiltinId::LpQ32Tan => q32::__lp_q32_tan as *const u8,
         BuiltinId::LpQ32Tanh => q32::__lp_q32_tanh as *const u8,
+        BuiltinId::LpfxFbm2F32 => generative::fbm::fbm2_f32::__lpfx_fbm2_f32 as *const u8,
+        BuiltinId::LpfxFbm2Q32 => generative::fbm::fbm2_q32::__lpfx_fbm2_q32 as *const u8,
+        BuiltinId::LpfxFbm3F32 => generative::fbm::fbm3_f32::__lpfx_fbm3_f32 as *const u8,
+        BuiltinId::LpfxFbm3Q32 => generative::fbm::fbm3_q32::__lpfx_fbm3_q32 as *const u8,
+        BuiltinId::LpfxFbm3TileF32 => {
+            generative::fbm::fbm3_tile_f32::__lpfx_fbm3_tile_f32 as *const u8
+        }
+        BuiltinId::LpfxFbm3TileQ32 => {
+            generative::fbm::fbm3_tile_q32::__lpfx_fbm3_tile_q32 as *const u8
+        }
+        BuiltinId::LpfxGnoise1F32 => {
+            generative::gnoise::gnoise1_f32::__lpfx_gnoise1_f32 as *const u8
+        }
+        BuiltinId::LpfxGnoise1Q32 => {
+            generative::gnoise::gnoise1_q32::__lpfx_gnoise1_q32 as *const u8
+        }
+        BuiltinId::LpfxGnoise2F32 => {
+            generative::gnoise::gnoise2_f32::__lpfx_gnoise2_f32 as *const u8
+        }
+        BuiltinId::LpfxGnoise2Q32 => {
+            generative::gnoise::gnoise2_q32::__lpfx_gnoise2_q32 as *const u8
+        }
+        BuiltinId::LpfxGnoise3F32 => {
+            generative::gnoise::gnoise3_f32::__lpfx_gnoise3_f32 as *const u8
+        }
+        BuiltinId::LpfxGnoise3Q32 => {
+            generative::gnoise::gnoise3_q32::__lpfx_gnoise3_q32 as *const u8
+        }
+        BuiltinId::LpfxGnoise3TileF32 => {
+            generative::gnoise::gnoise3_tile_f32::__lpfx_gnoise3_tile_f32 as *const u8
+        }
+        BuiltinId::LpfxGnoise3TileQ32 => {
+            generative::gnoise::gnoise3_tile_q32::__lpfx_gnoise3_tile_q32 as *const u8
+        }
         BuiltinId::LpfxHash1 => hash::__lpfx_hash_1 as *const u8,
         BuiltinId::LpfxHash2 => hash::__lpfx_hash_2 as *const u8,
         BuiltinId::LpfxHash3 => hash::__lpfx_hash_3 as *const u8,
@@ -507,6 +715,24 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         }
         BuiltinId::LpfxPsrdnoise3Q32 => {
             generative::psrdnoise::psrdnoise3_q32::__lpfx_psrdnoise3_q32 as *const u8
+        }
+        BuiltinId::LpfxRandom1F32 => {
+            generative::random::random1_f32::__lpfx_random1_f32 as *const u8
+        }
+        BuiltinId::LpfxRandom1Q32 => {
+            generative::random::random1_q32::__lpfx_random1_q32 as *const u8
+        }
+        BuiltinId::LpfxRandom2F32 => {
+            generative::random::random2_f32::__lpfx_random2_f32 as *const u8
+        }
+        BuiltinId::LpfxRandom2Q32 => {
+            generative::random::random2_q32::__lpfx_random2_q32 as *const u8
+        }
+        BuiltinId::LpfxRandom3F32 => {
+            generative::random::random3_f32::__lpfx_random3_f32 as *const u8
+        }
+        BuiltinId::LpfxRandom3Q32 => {
+            generative::random::random3_q32::__lpfx_random3_q32 as *const u8
         }
         BuiltinId::LpfxRgb2hsvF32 => color::space::rgb2hsv_f32::__lpfx_rgb2hsv_f32 as *const u8,
         BuiltinId::LpfxRgb2hsvQ32 => color::space::rgb2hsv_q32::__lpfx_rgb2hsv_q32 as *const u8,
@@ -539,6 +765,36 @@ pub fn get_function_pointer(builtin: BuiltinId) -> *const u8 {
         }
         BuiltinId::LpfxSnoise3Q32 => {
             generative::snoise::snoise3_q32::__lpfx_snoise3_q32 as *const u8
+        }
+        BuiltinId::LpfxSrandom1F32 => {
+            generative::srandom::srandom1_f32::__lpfx_srandom1_f32 as *const u8
+        }
+        BuiltinId::LpfxSrandom1Q32 => {
+            generative::srandom::srandom1_q32::__lpfx_srandom1_q32 as *const u8
+        }
+        BuiltinId::LpfxSrandom2F32 => {
+            generative::srandom::srandom2_f32::__lpfx_srandom2_f32 as *const u8
+        }
+        BuiltinId::LpfxSrandom2Q32 => {
+            generative::srandom::srandom2_q32::__lpfx_srandom2_q32 as *const u8
+        }
+        BuiltinId::LpfxSrandom3F32 => {
+            generative::srandom::srandom3_f32::__lpfx_srandom3_f32 as *const u8
+        }
+        BuiltinId::LpfxSrandom3Q32 => {
+            generative::srandom::srandom3_q32::__lpfx_srandom3_q32 as *const u8
+        }
+        BuiltinId::LpfxSrandom3TileF32 => {
+            generative::srandom::srandom3_tile_f32::__lpfx_srandom3_tile_f32 as *const u8
+        }
+        BuiltinId::LpfxSrandom3TileQ32 => {
+            generative::srandom::srandom3_tile_q32::__lpfx_srandom3_tile_q32 as *const u8
+        }
+        BuiltinId::LpfxSrandom3VecF32 => {
+            generative::srandom::srandom3_vec_f32::__lpfx_srandom3_vec_f32 as *const u8
+        }
+        BuiltinId::LpfxSrandom3VecQ32 => {
+            generative::srandom::srandom3_vec_q32::__lpfx_srandom3_vec_q32 as *const u8
         }
         BuiltinId::LpfxWorley2F32 => {
             generative::worley::worley2_f32::__lpfx_worley2_f32 as *const u8
