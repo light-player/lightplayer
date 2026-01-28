@@ -21,7 +21,64 @@ pub fn write_lvalue<M: cranelift_module::Module>(
     ctx.ensure_block()?;
 
     match lvalue {
-        LValue::Variable { vars, .. } => {
+        LValue::Variable { vars, ty, name } => {
+            // Check if this is an out/inout parameter (has pointer)
+            if let Some(var_name) = name {
+                if let Some(var_info) = ctx.lookup_var_info(var_name) {
+                    if let Some(ptr) = var_info.out_inout_ptr {
+                        // Out/inout parameter: store to pointer
+                        let component_count = if ty.is_vector() {
+                            ty.component_count().unwrap()
+                        } else if ty.is_matrix() {
+                            ty.matrix_element_count().unwrap()
+                        } else {
+                            1
+                        };
+
+                        if values.len() != component_count {
+                            return Err(GlslError::new(
+                                ErrorCode::E0400,
+                                format!(
+                                    "component count mismatch: expected {}, got {}",
+                                    component_count,
+                                    values.len()
+                                ),
+                            ));
+                        }
+
+                        let base_cranelift_ty = if ty.is_vector() {
+                            ty.vector_base_type()
+                                .unwrap()
+                                .to_cranelift_type()
+                                .map_err(|e| {
+                                    GlslError::new(
+                                        ErrorCode::E0400,
+                                        format!("Failed to convert type: {}", e.message),
+                                    )
+                                })?
+                        } else if ty.is_matrix() {
+                            cranelift_codegen::ir::types::F32
+                        } else {
+                            ty.to_cranelift_type().map_err(|e| {
+                                GlslError::new(
+                                    ErrorCode::E0400,
+                                    format!("Failed to convert type: {}", e.message),
+                                )
+                            })?
+                        };
+
+                        let component_size_bytes = base_cranelift_ty.bytes() as usize;
+                        let flags = cranelift_codegen::ir::MemFlags::trusted();
+                        for (i, &val) in values.iter().enumerate() {
+                            let offset = (i * component_size_bytes) as i32;
+                            ctx.builder.ins().store(flags, val, ptr, offset);
+                        }
+                        return Ok(());
+                    }
+                }
+            }
+
+            // Normal variable: use vars
             if vars.len() != values.len() {
                 return Err(GlslError::new(
                     ErrorCode::E0400,
@@ -39,8 +96,51 @@ pub fn write_lvalue<M: cranelift_module::Module>(
         }
 
         LValue::Component {
-            base_vars, indices, ..
+            base_vars,
+            base_ty,
+            indices,
+            result_ty: _result_ty,
+            name,
+            ..
         } => {
+            // Check if this is an out/inout parameter (has pointer)
+            if let Some(var_name) = name {
+                if let Some(var_info) = ctx.lookup_var_info(var_name) {
+                    if let Some(ptr) = var_info.out_inout_ptr {
+                        // Out/inout parameter: store components to pointer
+                        if values.len() != indices.len() {
+                            return Err(GlslError::new(
+                                ErrorCode::E0400,
+                                format!(
+                                    "component count mismatch: {} indices, {} values",
+                                    indices.len(),
+                                    values.len()
+                                ),
+                            ));
+                        }
+                        // Use base_ty to get the component type (base_ty is the original vector type)
+                        let base_cranelift_ty = base_ty
+                            .vector_base_type()
+                            .unwrap()
+                            .to_cranelift_type()
+                            .map_err(|e| {
+                                GlslError::new(
+                                    ErrorCode::E0400,
+                                    format!("Failed to convert type: {}", e.message),
+                                )
+                            })?;
+                        let component_size_bytes = base_cranelift_ty.bytes() as usize;
+                        let flags = cranelift_codegen::ir::MemFlags::trusted();
+                        for (idx, val) in indices.iter().zip(values.iter()) {
+                            let offset = (*idx * component_size_bytes) as i32;
+                            ctx.builder.ins().store(flags, *val, ptr, offset);
+                        }
+                        return Ok(());
+                    }
+                }
+            }
+
+            // Normal component access: use vars
             if indices.len() != values.len() {
                 return Err(GlslError::new(
                     ErrorCode::E0400,

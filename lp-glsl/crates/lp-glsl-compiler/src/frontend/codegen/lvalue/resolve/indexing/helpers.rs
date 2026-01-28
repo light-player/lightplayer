@@ -37,7 +37,7 @@ pub fn extract_base_vars_and_ty<M: cranelift_module::Module>(
 
         // Get base variables and type
         match base_lvalue {
-            LValue::Variable { vars, ty } => Ok((vars, ty)),
+            LValue::Variable { vars, ty, .. } => Ok((vars, ty)),
             LValue::Component {
                 base_vars, base_ty, ..
             } => Ok((base_vars, base_ty)),

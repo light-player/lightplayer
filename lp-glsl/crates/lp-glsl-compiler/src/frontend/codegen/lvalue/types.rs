@@ -1,7 +1,7 @@
 //! LValue type definitions
 
 use crate::semantic::types::Type as GlslType;
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use cranelift_frontend::Variable;
 
 /// Represents a modifiable location (LValue) in GLSL
@@ -11,13 +11,18 @@ use cranelift_frontend::Variable;
 #[derive(Debug, Clone)]
 pub enum LValue {
     /// Simple variable: `x`
-    Variable { vars: Vec<Variable>, ty: GlslType },
+    Variable {
+        vars: Vec<Variable>,
+        ty: GlslType,
+        name: Option<String>,
+    }, // name for out/inout parameter lookup
     /// Vector component access: `v.x` or `v.xy`
     Component {
         base_vars: Vec<Variable>,
         base_ty: GlslType,
         indices: Vec<usize>, // Component indices
         result_ty: GlslType,
+        name: Option<String>, // Variable name for out/inout parameter lookup
     },
     /// Matrix element: `m[0][1]` (single scalar)
     MatrixElement {

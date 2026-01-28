@@ -8,7 +8,7 @@ use crate::error::{ErrorCode, GlslError};
 use crate::frontend::codegen::constants::{F32_ALIGN_SHIFT, F32_SIZE_BYTES};
 use crate::frontend::codegen::context::CodegenContext;
 use crate::frontend::semantic::lpfx::lpfx_fn_registry::find_lpfx_fn;
-use crate::frontend::semantic::lpfx::lpfx_sig::{build_call_signature, expand_vector_args};
+use crate::frontend::semantic::lpfx::lpfx_sig::build_call_signature;
 use crate::semantic::types::Type;
 use alloc::{format, vec, vec::Vec};
 use cranelift_codegen::ir::{ExtFuncData, ExternalName, FuncRef, InstBuilder, MemFlags, Value};
@@ -40,21 +40,31 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
             )
         })?;
 
-        // Flatten vector arguments to individual components
-        let mut flat_values = Vec::new();
-        let mut flat_types = Vec::new(); // Track types for each flattened value
-        for ((vals, _ty), param_ty) in args.iter().zip(&param_types) {
-            let base_ty = if param_ty.is_vector() {
-                param_ty.vector_base_type().unwrap()
-            } else {
-                param_ty.clone()
-            };
-            for _val in vals {
-                flat_types.push(base_ty.clone());
+        // Prepare call arguments: handle out/inout as pointers, in as flattened components
+        use crate::semantic::functions::ParamQualifier;
+        let mut call_args = Vec::new();
+
+        for ((vals, _arg_ty), param) in args.iter().zip(func.glsl_sig.parameters.iter()) {
+            match param.qualifier {
+                ParamQualifier::Out | ParamQualifier::InOut => {
+                    // Out/inout: pass pointer directly (should be single pointer value)
+                    if vals.len() != 1 {
+                        return Err(GlslError::new(
+                            ErrorCode::E0400,
+                            format!(
+                                "Expected single pointer value for out/inout parameter, got {} values",
+                                vals.len()
+                            ),
+                        ));
+                    }
+                    call_args.push(vals[0]);
+                }
+                ParamQualifier::In => {
+                    // In: flatten to components (existing behavior)
+                    call_args.extend(vals);
+                }
             }
-            flat_values.extend(vals);
         }
-        let flat_args = expand_vector_args(&param_types, &flat_values);
 
         // Check if function returns a vector (needs result pointer parameter)
         let return_type = &func.glsl_sig.return_type;
@@ -79,13 +89,13 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
             None
         };
 
-        // Prepare call arguments: result pointer first (if present), then regular args
+        // Prepare final call arguments: result pointer first (if present), then regular args
         // Note: result pointer is a normal parameter, not StructReturn
-        let mut call_args = Vec::new();
+        let mut final_call_args = Vec::new();
         if let Some(buffer_ptr) = return_buffer_ptr {
-            call_args.push(buffer_ptr);
+            final_call_args.push(buffer_ptr);
         }
-        call_args.extend(flat_args);
+        final_call_args.extend(call_args);
 
         // Handle Decimal vs NonDecimal implementations
         match &func.impls {
@@ -98,7 +108,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
                 // Emit call instruction
                 self.ensure_block()?;
-                let call_inst = self.builder.ins().call(func_ref, &call_args);
+                let call_inst = self.builder.ins().call(func_ref, &final_call_args);
 
                 // Handle return values
                 if let Some(buffer_ptr) = return_buffer_ptr {
@@ -150,7 +160,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
                 // Emit call instruction
                 self.ensure_block()?;
-                let call_inst = self.builder.ins().call(func_ref, &call_args);
+                let call_inst = self.builder.ins().call(func_ref, &final_call_args);
 
                 // Handle return values
                 if let Some(buffer_ptr) = return_buffer_ptr {

@@ -195,18 +195,22 @@ pub fn build_call_signature(
         }
     }
 
-    // Get parameter types from function signature
-    let param_types: Vec<Type> = func
-        .glsl_sig
-        .parameters
-        .iter()
-        .map(|p| p.ty.clone())
-        .collect();
-
-    // Convert to Cranelift types and add as parameters
-    let cranelift_param_types = convert_to_cranelift_types(&param_types, format);
-    for ty in cranelift_param_types {
-        sig.params.push(AbiParam::new(ty));
+    // Add parameters, handling out/inout as pointers
+    use crate::semantic::functions::ParamQualifier;
+    for param in &func.glsl_sig.parameters {
+        match param.qualifier {
+            ParamQualifier::Out | ParamQualifier::InOut => {
+                // Out/inout parameters: pass as single pointer
+                sig.params.push(AbiParam::new(pointer_type));
+            }
+            ParamQualifier::In => {
+                // In parameters: expand to components (existing behavior)
+                let cranelift_param_types = convert_to_cranelift_types(&[param.ty.clone()], format);
+                for ty in cranelift_param_types {
+                    sig.params.push(AbiParam::new(ty));
+                }
+            }
+        }
     }
 
     sig

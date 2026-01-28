@@ -1,7 +1,7 @@
 //! Component access on MatrixColumn LValue
 
 use crate::semantic::types::Type as GlslType;
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use cranelift_frontend::Variable;
 
 use super::super::super::types::LValue;
@@ -14,6 +14,7 @@ pub fn resolve_component_on_matrix_column(
     col: usize,
     indices: Vec<usize>,
     result_ty: GlslType,
+    name: Option<String>,
 ) -> LValue {
     // When accessing components of a matrix column, we need to map component indices
     // (0=x, 1=y, etc.) to the correct matrix variable indices.
@@ -24,5 +25,6 @@ pub fn resolve_component_on_matrix_column(
         base_ty: matrix_ty,
         indices: matrix_indices,
         result_ty,
+        name,
     }
 }
