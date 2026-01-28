@@ -4,7 +4,23 @@
 //! that supports seamless tiling and rotational gradients for flow-like effects.
 //! This implementation uses Q32 fixed-point arithmetic (16.16 format).
 //!
-//! Reference: Lygia's psrdnoise implementation by Stefan Gustavson and Ian McEwan
+//! # Source
+//!
+//! This is a derivative work based on the psrdnoise implementation from Lygia:
+//! https://github.com/patriciogonzalezvivo/lygia/blob/main/generative/psrdnoise.glsl
+//!
+//! Original algorithm by Stefan Gustavson and Ian McEwan:
+//! https://github.com/stegu/psrdnoise
+//!
+//! # License
+//!
+//! Original work:
+//! Copyright 2021-2023 by Stefan Gustavson and Ian McEwan.
+//! Published under the terms of the MIT license:
+//! https://opensource.org/license/mit/
+//!
+//! This derivative work (Rust/Q32 fixed-point implementation):
+//! Also published under the terms of the MIT license.
 //!
 //! # GLSL Usage
 //!

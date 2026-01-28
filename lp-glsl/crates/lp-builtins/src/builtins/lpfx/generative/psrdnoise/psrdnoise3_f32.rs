@@ -1,6 +1,24 @@
 //! 3D Periodic Simplex Rotational Domain noise function (float implementation - stub).
 //!
 //! This is a stub implementation that calls the q32 version with conversion.
+//!
+//! # Source
+//!
+//! This is a derivative work based on the psrdnoise implementation from Lygia:
+//! https://github.com/patriciogonzalezvivo/lygia/blob/main/generative/psrdnoise.glsl
+//!
+//! Original algorithm by Stefan Gustavson and Ian McEwan:
+//! https://github.com/stegu/psrdnoise
+//!
+//! # License
+//!
+//! Original work:
+//! Copyright 2021-2023 by Stefan Gustavson and Ian McEwan.
+//! Published under the terms of the MIT license:
+//! https://opensource.org/license/mit/
+//!
+//! This derivative work (Rust/f32 wrapper implementation):
+//! Also published under the terms of the MIT license.
 
 use crate::builtins::lpfx::generative::psrdnoise::psrdnoise3_q32::__lpfx_psrdnoise3_q32;
 use crate::glsl::q32::types::q32::Q32;

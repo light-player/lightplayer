@@ -681,34 +681,6 @@ fn generate_registry(path: &Path, builtins: &[BuiltinInfo]) {
             output.push_str("                sig.returns.push(AbiParam::new(types::I32));\n");
             output.push_str("            }\n");
         }
-
-        // Hardcode psrdnoise functions (psrdnoise2: 5 i32 params + pointer, psrdnoise3: 7 i32 params + pointer)
-        output.push_str(
-            "            BuiltinId::LpfxPsrdnoise2F32 | BuiltinId::LpfxPsrdnoise2Q32 => {\n",
-        );
-        output.push_str(
-            "                // Out parameter function: (5 i32 params, pointer_type) -> i32\n",
-        );
-        output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
-        output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
-        output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
-        output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
-        output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
-        output.push_str("                sig.params.push(AbiParam::new(pointer_type));\n");
-        output.push_str("                sig.returns.push(AbiParam::new(types::I32));\n");
-        output.push_str("            }\n");
-        output.push_str(
-            "            BuiltinId::LpfxPsrdnoise3F32 | BuiltinId::LpfxPsrdnoise3Q32 => {\n",
-        );
-        output.push_str(
-            "                // Out parameter function: (7 i32 params, pointer_type) -> i32\n",
-        );
-        for _ in 0..7 {
-            output.push_str("                sig.params.push(AbiParam::new(types::I32));\n");
-        }
-        output.push_str("                sig.params.push(AbiParam::new(pointer_type));\n");
-        output.push_str("                sig.returns.push(AbiParam::new(types::I32));\n");
-        output.push_str("            }\n");
     }
 
     output.push_str("        }\n");
