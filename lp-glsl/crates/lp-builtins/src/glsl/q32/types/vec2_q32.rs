@@ -1,7 +1,8 @@
 use core::ops::{Add, Div, Mul, Neg, Sub};
 
-use crate::glsl::q32::types::q32::Q32;
 use crate::builtins::q32::__lp_q32_sqrt;
+use crate::glsl::q32::fns;
+use crate::glsl::q32::types::q32::Q32;
 
 /// 2D vector for Q32 fixed-point arithmetic
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -188,6 +189,43 @@ impl Vec2Q32 {
     #[inline(always)]
     pub fn div_comp(self, rhs: Self) -> Self {
         Vec2Q32::new(self.x / rhs.x, self.y / rhs.y)
+    }
+
+    /// Component-wise floor
+    #[inline(always)]
+    pub fn floor(self) -> Self {
+        fns::floor_vec2(self)
+    }
+
+    /// Component-wise fractional part
+    #[inline(always)]
+    pub fn fract(self) -> Self {
+        fns::fract_vec2(self)
+    }
+
+    /// Component-wise step function
+    /// Returns 1.0 if edge <= x, else 0.0 for each component
+    #[inline(always)]
+    pub fn step(self, edge: Self) -> Self {
+        fns::step_vec2(edge, self)
+    }
+
+    /// Component-wise minimum
+    #[inline(always)]
+    pub fn min(self, other: Self) -> Self {
+        fns::min_vec2(self, other)
+    }
+
+    /// Component-wise maximum
+    #[inline(always)]
+    pub fn max(self, other: Self) -> Self {
+        fns::max_vec2(self, other)
+    }
+
+    /// Component-wise modulo
+    #[inline(always)]
+    pub fn modulo(self, other: Self) -> Self {
+        fns::mod_vec2(self, other)
     }
 }
 

@@ -1,8 +1,9 @@
 use core::ops::{Add, Div, Mul, Neg, Sub};
 
+use crate::builtins::q32::__lp_q32_sqrt;
+use crate::glsl::q32::fns;
 use crate::glsl::q32::types::q32::Q32;
 use crate::glsl::q32::types::vec2_q32::Vec2Q32;
-use crate::builtins::q32::__lp_q32_sqrt;
 
 /// 3D vector for Q32 fixed-point arithmetic
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -234,6 +235,60 @@ impl Vec3Q32 {
             self.y.clamp(min, max),
             self.z.clamp(min, max),
         )
+    }
+
+    /// Component-wise floor
+    #[inline(always)]
+    pub fn floor(self) -> Self {
+        fns::floor_vec3(self)
+    }
+
+    /// Component-wise fractional part
+    #[inline(always)]
+    pub fn fract(self) -> Self {
+        fns::fract_vec3(self)
+    }
+
+    /// Component-wise step function
+    /// Returns 1.0 if edge <= x, else 0.0 for each component
+    #[inline(always)]
+    pub fn step(self, edge: Self) -> Self {
+        fns::step_vec3(edge, self)
+    }
+
+    /// Component-wise minimum
+    #[inline(always)]
+    pub fn min(self, other: Self) -> Self {
+        fns::min_vec3(self, other)
+    }
+
+    /// Component-wise maximum
+    #[inline(always)]
+    pub fn max(self, other: Self) -> Self {
+        fns::max_vec3(self, other)
+    }
+
+    /// Component-wise modulo
+    #[inline(always)]
+    pub fn modulo(self, other: Self) -> Self {
+        fns::mod_vec3(self, other)
+    }
+
+    /// Modulo with scalar
+    #[inline(always)]
+    pub fn modulo_scalar(self, y: Q32) -> Self {
+        fns::mod_vec3_scalar(self, y)
+    }
+
+    // Extended swizzles for psrdnoise
+    #[inline(always)]
+    pub fn xyx(self) -> Vec3Q32 {
+        Vec3Q32::new(self.x, self.y, self.x)
+    }
+
+    #[inline(always)]
+    pub fn yzz(self) -> Vec3Q32 {
+        Vec3Q32::new(self.y, self.z, self.z)
     }
 }
 

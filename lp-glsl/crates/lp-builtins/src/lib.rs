@@ -7,9 +7,9 @@
 
 // mem module provides memcpy/memset/memcmp for no_std environments
 pub mod builtins;
+pub mod glsl;
 pub mod host;
 pub mod mem;
 pub mod util;
-pub mod glsl;
 // Panic handler must be provided by the executable that uses this library
 // This crate is only used as a dependency, never built standalone

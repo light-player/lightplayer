@@ -26,9 +26,11 @@
 //!
 //! Noise value approximately in range [-1, 1] (float)
 
-use crate::builtins::q32::{__lp_q32_cos, __lp_q32_mod, __lp_q32_sin, __lp_q32_sqrt};
+use crate::builtins::q32::__lp_q32_mod;
+use crate::glsl::q32::fns;
 use crate::glsl::q32::types::q32::Q32;
 use crate::glsl::q32::types::vec3_q32::Vec3Q32;
+use crate::glsl::q32::types::vec4_q32::Vec4Q32;
 
 /// Fixed-point constants
 const HALF: Q32 = Q32(0x00008000); // 0.5 in Q16.16
@@ -96,98 +98,68 @@ pub fn lpfx_psrdnoise3(
     // Transform to simplex space (tetrahedral grid)
     // Using optimized transformation: uvw = x + dot(x, vec3(1.0/3.0))
     let dot_sum = x.x + x.y + x.z;
-    let uvw_x = x.x + dot_sum * ONE_THIRD;
-    let uvw_y = x.y + dot_sum * ONE_THIRD;
-    let uvw_z = x.z + dot_sum * ONE_THIRD;
+    let uvw = x + Vec3Q32::new(
+        dot_sum * ONE_THIRD,
+        dot_sum * ONE_THIRD,
+        dot_sum * ONE_THIRD,
+    );
 
     // Determine which simplex we're in, i0 is the "base corner"
     // i0 = floor(uvw)
-    let i0_x_int = uvw_x.to_i32();
-    let i0_y_int = uvw_y.to_i32();
-    let i0_z_int = uvw_z.to_i32();
-    let i0_x = Q32::from_i32(i0_x_int);
-    let i0_y = Q32::from_i32(i0_y_int);
-    let i0_z = Q32::from_i32(i0_z_int);
+    let i0 = uvw.floor();
+    let i0_x_int = i0.x.to_i32();
+    let i0_y_int = i0.y.to_i32();
+    let i0_z_int = i0.z.to_i32();
 
     // f0 = fract(uvw)
-    let f0_x = uvw_x - i0_x;
-    let f0_y = uvw_y - i0_y;
-    let f0_z = uvw_z - i0_z;
+    let f0 = uvw.fract();
 
     // To determine which simplex corners are closest, rank order the
     // magnitudes of u,v,w, resolving ties in priority order u,v,w
     // g_ = step(f0.xyx, f0.yzz) -> 1.0 if f0.xyx <= f0.yzz, else 0.0
-    let g_x = if f0_x <= f0_y { Q32::ONE } else { Q32::ZERO };
-    let g_y = if f0_y <= f0_z { Q32::ONE } else { Q32::ZERO };
-    let g_z = if f0_x <= f0_z { Q32::ONE } else { Q32::ZERO };
+    let g_ = f0.xyx().step(f0.yzz());
     // l_ = 1.0 - g_
-    let l_x = Q32::ONE - g_x;
-    let l_y = Q32::ONE - g_y;
-    let l_z = Q32::ONE - g_z;
+    let l_ = Vec3Q32::one() - g_;
     // g = vec3(l_.z, g_.xy)
-    let g_x_final = l_z;
-    let g_y_final = g_x;
-    let g_z_final = g_y;
+    let g = Vec3Q32::new(l_.z, g_.x, g_.y);
     // l = vec3(l_.xy, g_.z)
-    let l_x_final = l_x;
-    let l_y_final = l_y;
-    let l_z_final = g_z;
+    let l = Vec3Q32::new(l_.x, l_.y, g_.z);
     // o1 = min(g, l), o2 = max(g, l)
-    let o1_x = g_x_final.min(l_x_final);
-    let o1_y = g_y_final.min(l_y_final);
-    let o1_z = g_z_final.min(l_z_final);
-    let o2_x = g_x_final.max(l_x_final);
-    let o2_y = g_y_final.max(l_y_final);
-    let o2_z = g_z_final.max(l_z_final);
+    let o1 = g.min(l);
+    let o2 = g.max(l);
 
     // Enumerate the remaining simplex corners
     // i1 = i0 + o1, i2 = i0 + o2, i3 = i0 + vec3(1.0)
-    let i1_x_int = i0_x_int + o1_x.to_i32();
-    let i1_y_int = i0_y_int + o1_y.to_i32();
-    let i1_z_int = i0_z_int + o1_z.to_i32();
-    let i2_x_int = i0_x_int + o2_x.to_i32();
-    let i2_y_int = i0_y_int + o2_y.to_i32();
-    let i2_z_int = i0_z_int + o2_z.to_i32();
-    let i3_x_int = i0_x_int + 1;
-    let i3_y_int = i0_y_int + 1;
-    let i3_z_int = i0_z_int + 1;
+    let i1 = i0 + o1;
+    let i2 = i0 + o2;
+    let i3 = i0 + Vec3Q32::one();
+    let i1_x_int = i1.x.to_i32();
+    let i1_y_int = i1.y.to_i32();
+    let i1_z_int = i1.z.to_i32();
+    let i2_x_int = i2.x.to_i32();
+    let i2_y_int = i2.y.to_i32();
+    let i2_z_int = i2.z.to_i32();
+    let i3_x_int = i3.x.to_i32();
+    let i3_y_int = i3.y.to_i32();
+    let i3_z_int = i3.z.to_i32();
 
     // Transform the corners back to texture space
     // Using optimized transformation: v = i - dot(i, vec3(1.0/6.0))
-    let dot0 = (i0_x + i0_y + i0_z) * ONE_SIXTH;
-    let dot1 =
-        (Q32::from_i32(i1_x_int) + Q32::from_i32(i1_y_int) + Q32::from_i32(i1_z_int)) * ONE_SIXTH;
-    let dot2 =
-        (Q32::from_i32(i2_x_int) + Q32::from_i32(i2_y_int) + Q32::from_i32(i2_z_int)) * ONE_SIXTH;
-    let dot3 =
-        (Q32::from_i32(i3_x_int) + Q32::from_i32(i3_y_int) + Q32::from_i32(i3_z_int)) * ONE_SIXTH;
+    let dot0 = i0.dot(Vec3Q32::one()) * ONE_SIXTH;
+    let dot1 = i1.dot(Vec3Q32::one()) * ONE_SIXTH;
+    let dot2 = i2.dot(Vec3Q32::one()) * ONE_SIXTH;
+    let dot3 = i3.dot(Vec3Q32::one()) * ONE_SIXTH;
 
-    let v0_x = i0_x - dot0;
-    let v0_y = i0_y - dot0;
-    let v0_z = i0_z - dot0;
-    let v1_x = Q32::from_i32(i1_x_int) - dot1;
-    let v1_y = Q32::from_i32(i1_y_int) - dot1;
-    let v1_z = Q32::from_i32(i1_z_int) - dot1;
-    let v2_x = Q32::from_i32(i2_x_int) - dot2;
-    let v2_y = Q32::from_i32(i2_y_int) - dot2;
-    let v2_z = Q32::from_i32(i2_z_int) - dot2;
-    let v3_x = Q32::from_i32(i3_x_int) - dot3;
-    let v3_y = Q32::from_i32(i3_y_int) - dot3;
-    let v3_z = Q32::from_i32(i3_z_int) - dot3;
+    let v0 = i0 - Vec3Q32::new(dot0, dot0, dot0);
+    let v1 = i1 - Vec3Q32::new(dot1, dot1, dot1);
+    let v2 = i2 - Vec3Q32::new(dot2, dot2, dot2);
+    let v3 = i3 - Vec3Q32::new(dot3, dot3, dot3);
 
     // Compute vectors to each of the simplex corners
-    let x0_x = x.x - v0_x;
-    let x0_y = x.y - v0_y;
-    let x0_z = x.z - v0_z;
-    let x1_x = x.x - v1_x;
-    let x1_y = x.y - v1_y;
-    let x1_z = x.z - v1_z;
-    let x2_x = x.x - v2_x;
-    let x2_y = x.y - v2_y;
-    let x2_z = x.z - v2_z;
-    let x3_x = x.x - v3_x;
-    let x3_y = x.y - v3_y;
-    let x3_z = x.z - v3_z;
+    let x0 = x - v0;
+    let x1 = x - v1;
+    let x2 = x - v2;
+    let x3 = x - v3;
 
     // Wrap to periods, if desired
     let (
@@ -204,72 +176,59 @@ pub fn lpfx_psrdnoise3(
         i3_y_final,
         i3_z_final,
     ) = if period.x > Q32::ZERO || period.y > Q32::ZERO || period.z > Q32::ZERO {
-        let mut vx_x = v0_x;
-        let mut vx_y = v1_x;
-        let mut vx_z = v2_x;
-        let mut vx_w = v3_x;
-        let mut vy_x = v0_y;
-        let mut vy_y = v1_y;
-        let mut vy_z = v2_y;
-        let mut vy_w = v3_y;
-        let mut vz_x = v0_z;
-        let mut vz_y = v1_z;
-        let mut vz_z = v2_z;
-        let mut vz_w = v3_z;
+        let mut vx = Vec4Q32::new(v0.x, v1.x, v2.x, v3.x);
+        let mut vy = Vec4Q32::new(v0.y, v1.y, v2.y, v3.y);
+        let mut vz = Vec4Q32::new(v0.z, v1.z, v2.z, v3.z);
 
         // Wrap to periods where specified
         if period.x > Q32::ZERO {
-            vx_x = Q32::from_fixed(__lp_q32_mod(v0_x.to_fixed(), period.x.to_fixed()));
-            vx_y = Q32::from_fixed(__lp_q32_mod(v1_x.to_fixed(), period.x.to_fixed()));
-            vx_z = Q32::from_fixed(__lp_q32_mod(v2_x.to_fixed(), period.x.to_fixed()));
-            vx_w = Q32::from_fixed(__lp_q32_mod(v3_x.to_fixed(), period.x.to_fixed()));
+            vx = vx.modulo_scalar(period.x);
         }
         if period.y > Q32::ZERO {
-            vy_x = Q32::from_fixed(__lp_q32_mod(v0_y.to_fixed(), period.y.to_fixed()));
-            vy_y = Q32::from_fixed(__lp_q32_mod(v1_y.to_fixed(), period.y.to_fixed()));
-            vy_z = Q32::from_fixed(__lp_q32_mod(v2_y.to_fixed(), period.y.to_fixed()));
-            vy_w = Q32::from_fixed(__lp_q32_mod(v3_y.to_fixed(), period.y.to_fixed()));
+            vy = vy.modulo_scalar(period.y);
         }
         if period.z > Q32::ZERO {
-            vz_x = Q32::from_fixed(__lp_q32_mod(v0_z.to_fixed(), period.z.to_fixed()));
-            vz_y = Q32::from_fixed(__lp_q32_mod(v1_z.to_fixed(), period.z.to_fixed()));
-            vz_z = Q32::from_fixed(__lp_q32_mod(v2_z.to_fixed(), period.z.to_fixed()));
-            vz_w = Q32::from_fixed(__lp_q32_mod(v3_z.to_fixed(), period.z.to_fixed()));
+            vz = vz.modulo_scalar(period.z);
         }
 
         // Transform wrapped coordinates back to uvw
         // i = v + dot(v, vec3(1.0/3.0))
-        let dot_v0 = (vx_x + vy_x + vz_x) * ONE_THIRD;
-        let dot_v1 = (vx_y + vy_y + vz_y) * ONE_THIRD;
-        let dot_v2 = (vx_z + vy_z + vz_z) * ONE_THIRD;
-        let dot_v3 = (vx_w + vy_w + vz_w) * ONE_THIRD;
+        let dot_v0 = (vx.x + vy.x + vz.x) * ONE_THIRD;
+        let dot_v1 = (vx.y + vy.y + vz.y) * ONE_THIRD;
+        let dot_v2 = (vx.z + vy.z + vz.z) * ONE_THIRD;
+        let dot_v3 = (vx.w + vy.w + vz.w) * ONE_THIRD;
 
-        let i0_x_wrapped = (vx_x + dot_v0 + HALF).to_i32();
-        let i0_y_wrapped = (vy_x + dot_v0 + HALF).to_i32();
-        let i0_z_wrapped = (vz_x + dot_v0 + HALF).to_i32();
-        let i1_x_wrapped = (vx_y + dot_v1 + HALF).to_i32();
-        let i1_y_wrapped = (vy_y + dot_v1 + HALF).to_i32();
-        let i1_z_wrapped = (vz_y + dot_v1 + HALF).to_i32();
-        let i2_x_wrapped = (vx_z + dot_v2 + HALF).to_i32();
-        let i2_y_wrapped = (vy_z + dot_v2 + HALF).to_i32();
-        let i2_z_wrapped = (vz_z + dot_v2 + HALF).to_i32();
-        let i3_x_wrapped = (vx_w + dot_v3 + HALF).to_i32();
-        let i3_y_wrapped = (vy_w + dot_v3 + HALF).to_i32();
-        let i3_z_wrapped = (vz_w + dot_v3 + HALF).to_i32();
+        let v0_wrapped = Vec3Q32::new(vx.x, vy.x, vz.x);
+        let v1_wrapped = Vec3Q32::new(vx.y, vy.y, vz.y);
+        let v2_wrapped = Vec3Q32::new(vx.z, vy.z, vz.z);
+        let v3_wrapped = Vec3Q32::new(vx.w, vy.w, vz.w);
+
+        let i0_wrapped =
+            (v0_wrapped + Vec3Q32::new(dot_v0, dot_v0, dot_v0) + Vec3Q32::new(HALF, HALF, HALF))
+                .floor();
+        let i1_wrapped =
+            (v1_wrapped + Vec3Q32::new(dot_v1, dot_v1, dot_v1) + Vec3Q32::new(HALF, HALF, HALF))
+                .floor();
+        let i2_wrapped =
+            (v2_wrapped + Vec3Q32::new(dot_v2, dot_v2, dot_v2) + Vec3Q32::new(HALF, HALF, HALF))
+                .floor();
+        let i3_wrapped =
+            (v3_wrapped + Vec3Q32::new(dot_v3, dot_v3, dot_v3) + Vec3Q32::new(HALF, HALF, HALF))
+                .floor();
 
         (
-            i0_x_wrapped,
-            i0_y_wrapped,
-            i0_z_wrapped,
-            i1_x_wrapped,
-            i1_y_wrapped,
-            i1_z_wrapped,
-            i2_x_wrapped,
-            i2_y_wrapped,
-            i2_z_wrapped,
-            i3_x_wrapped,
-            i3_y_wrapped,
-            i3_z_wrapped,
+            i0_wrapped.x.to_i32(),
+            i0_wrapped.y.to_i32(),
+            i0_wrapped.z.to_i32(),
+            i1_wrapped.x.to_i32(),
+            i1_wrapped.y.to_i32(),
+            i1_wrapped.z.to_i32(),
+            i2_wrapped.x.to_i32(),
+            i2_wrapped.y.to_i32(),
+            i2_wrapped.z.to_i32(),
+            i3_wrapped.x.to_i32(),
+            i3_wrapped.y.to_i32(),
+            i3_wrapped.z.to_i32(),
         )
     } else {
         (
@@ -312,174 +271,98 @@ pub fn lpfx_psrdnoise3(
 
     // Compute generating gradients from a Fibonacci spiral on the unit sphere
     // theta = hash * 3.883222077 (2*pi/golden ratio)
-    let theta_x = Q32::from_fixed(hash_x0) * THETA_MULT;
-    let theta_y = Q32::from_fixed(hash_x1) * THETA_MULT;
-    let theta_z = Q32::from_fixed(hash_x2) * THETA_MULT;
-    let theta_w = Q32::from_fixed(hash_x3) * THETA_MULT;
+    let hash = Vec4Q32::new(
+        Q32::from_fixed(hash_x0),
+        Q32::from_fixed(hash_x1),
+        Q32::from_fixed(hash_x2),
+        Q32::from_fixed(hash_x3),
+    );
+    let theta = hash * THETA_MULT;
 
     // sz = hash * -0.006920415 + 0.996539792 (1-(hash+0.5)*2/289)
-    let sz_x = Q32::from_fixed(hash_x0) * SZ_MULT + SZ_ADD;
-    let sz_y = Q32::from_fixed(hash_x1) * SZ_MULT + SZ_ADD;
-    let sz_z = Q32::from_fixed(hash_x2) * SZ_MULT + SZ_ADD;
-    let sz_w = Q32::from_fixed(hash_x3) * SZ_MULT + SZ_ADD;
+    let sz = hash * SZ_MULT + Vec4Q32::new(SZ_ADD, SZ_ADD, SZ_ADD, SZ_ADD);
 
     // psi = hash * 0.108705628 (10*pi/289)
-    let psi_x = Q32::from_fixed(hash_x0) * PSI_MULT;
-    let psi_y = Q32::from_fixed(hash_x1) * PSI_MULT;
-    let psi_z = Q32::from_fixed(hash_x2) * PSI_MULT;
-    let psi_w = Q32::from_fixed(hash_x3) * PSI_MULT;
+    let psi = hash * PSI_MULT;
 
     // Ct = cos(theta), St = sin(theta)
-    let ct_x = Q32::from_fixed(__lp_q32_cos(theta_x.to_fixed()));
-    let ct_y = Q32::from_fixed(__lp_q32_cos(theta_y.to_fixed()));
-    let ct_z = Q32::from_fixed(__lp_q32_cos(theta_z.to_fixed()));
-    let ct_w = Q32::from_fixed(__lp_q32_cos(theta_w.to_fixed()));
-    let st_x = Q32::from_fixed(__lp_q32_sin(theta_x.to_fixed()));
-    let st_y = Q32::from_fixed(__lp_q32_sin(theta_y.to_fixed()));
-    let st_z = Q32::from_fixed(__lp_q32_sin(theta_z.to_fixed()));
-    let st_w = Q32::from_fixed(__lp_q32_sin(theta_w.to_fixed()));
+    let ct = fns::cos_vec4(theta);
+    let st = fns::sin_vec4(theta);
 
     // sz_prime = sqrt(1.0 - sz*sz)
-    let sz_prime_x = Q32::from_fixed(__lp_q32_sqrt((Q32::ONE - sz_x * sz_x).to_fixed()));
-    let sz_prime_y = Q32::from_fixed(__lp_q32_sqrt((Q32::ONE - sz_y * sz_y).to_fixed()));
-    let sz_prime_z = Q32::from_fixed(__lp_q32_sqrt((Q32::ONE - sz_z * sz_z).to_fixed()));
-    let sz_prime_w = Q32::from_fixed(__lp_q32_sqrt((Q32::ONE - sz_w * sz_w).to_fixed()));
+    let sz_prime = fns::sqrt_vec4(Vec4Q32::one() - sz.mul_comp(sz));
 
     // Rotate gradients by angle alpha around a pseudo-random orthogonal axis
     // Using fast rotation algorithm (PSRDNOISE_FAST_ROTATION)
     // qx = St, qy = -Ct, qz = 0.0
-    let qx_x = st_x;
-    let qx_y = st_y;
-    let qx_z = st_z;
-    let qx_w = st_w;
-    let qy_x = -ct_x;
-    let qy_y = -ct_y;
-    let qy_z = -ct_z;
-    let qy_w = -ct_w;
-    let qz_x = Q32::ZERO;
-    let qz_y = Q32::ZERO;
-    let qz_z = Q32::ZERO;
-    let qz_w = Q32::ZERO;
+    let qx = st;
+    let qy = -ct;
+    let qz = Vec4Q32::zero();
 
     // px = sz * qy, py = -sz * qx, pz = sz_prime
-    let px_x = sz_x * qy_x;
-    let px_y = sz_y * qy_y;
-    let px_z = sz_z * qy_z;
-    let px_w = sz_w * qy_w;
-    let py_x = -sz_x * qx_x;
-    let py_y = -sz_y * qx_y;
-    let py_z = -sz_z * qx_z;
-    let py_w = -sz_w * qx_w;
-    let pz_x = sz_prime_x;
-    let pz_y = sz_prime_y;
-    let pz_z = sz_prime_z;
-    let pz_w = sz_prime_w;
+    let px = sz.mul_comp(qy);
+    let py = -sz.mul_comp(qx);
+    let pz = sz_prime;
 
     // psi += alpha (psi and alpha in the same plane)
-    let psi_x_final = psi_x + alpha;
-    let psi_y_final = psi_y + alpha;
-    let psi_z_final = psi_z + alpha;
-    let psi_w_final = psi_w + alpha;
+    let psi_final = psi + Vec4Q32::new(alpha, alpha, alpha, alpha);
 
     // Sa = sin(psi), Ca = cos(psi)
-    let sa_x = Q32::from_fixed(__lp_q32_sin(psi_x_final.to_fixed()));
-    let sa_y = Q32::from_fixed(__lp_q32_sin(psi_y_final.to_fixed()));
-    let sa_z = Q32::from_fixed(__lp_q32_sin(psi_z_final.to_fixed()));
-    let sa_w = Q32::from_fixed(__lp_q32_sin(psi_w_final.to_fixed()));
-    let ca_x = Q32::from_fixed(__lp_q32_cos(psi_x_final.to_fixed()));
-    let ca_y = Q32::from_fixed(__lp_q32_cos(psi_y_final.to_fixed()));
-    let ca_z = Q32::from_fixed(__lp_q32_cos(psi_z_final.to_fixed()));
-    let ca_w = Q32::from_fixed(__lp_q32_cos(psi_w_final.to_fixed()));
+    let sa = fns::sin_vec4(psi_final);
+    let ca = fns::cos_vec4(psi_final);
 
     // gx = Ca * px + Sa * qx, gy = Ca * py + Sa * qy, gz = Ca * pz + Sa * qz
-    let gx_x = ca_x * px_x + sa_x * qx_x;
-    let gx_y = ca_y * px_y + sa_y * qx_y;
-    let gx_z = ca_z * px_z + sa_z * qx_z;
-    let gx_w = ca_w * px_w + sa_w * qx_w;
-    let gy_x = ca_x * py_x + sa_x * qy_x;
-    let gy_y = ca_y * py_y + sa_y * qy_y;
-    let gy_z = ca_z * py_z + sa_z * qy_z;
-    let gy_w = ca_w * py_w + sa_w * qy_w;
-    let gz_x = ca_x * pz_x + sa_x * qz_x;
-    let gz_y = ca_y * pz_y + sa_y * qz_y;
-    let gz_z = ca_z * pz_z + sa_z * qz_z;
-    let gz_w = ca_w * pz_w + sa_w * qz_w;
+    let gx = ca.mul_comp(px) + sa.mul_comp(qx);
+    let gy = ca.mul_comp(py) + sa.mul_comp(qy);
+    let gz = ca.mul_comp(pz) + sa.mul_comp(qz);
 
     // Reorganize for dot products below
-    let g0_x = gx_x;
-    let g0_y = gy_x;
-    let g0_z = gz_x;
-    let g1_x = gx_y;
-    let g1_y = gy_y;
-    let g1_z = gz_y;
-    let g2_x = gx_z;
-    let g2_y = gy_z;
-    let g2_z = gz_z;
-    let g3_x = gx_w;
-    let g3_y = gy_w;
-    let g3_z = gz_w;
+    let g0 = Vec3Q32::new(gx.x, gy.x, gz.x);
+    let g1 = Vec3Q32::new(gx.y, gy.y, gz.y);
+    let g2 = Vec3Q32::new(gx.z, gy.z, gz.z);
+    let g3 = Vec3Q32::new(gx.w, gy.w, gz.w);
 
     // Radial decay with distance from each simplex corner
     // w = 0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3))
-    let dot0 = x0_x * x0_x + x0_y * x0_y + x0_z * x0_z;
-    let dot1 = x1_x * x1_x + x1_y * x1_y + x1_z * x1_z;
-    let dot2 = x2_x * x2_x + x2_y * x2_y + x2_z * x2_z;
-    let dot3 = x3_x * x3_x + x3_y * x3_y + x3_z * x3_z;
-    let mut w_x = RADIAL_DECAY_0_5 - dot0;
-    let mut w_y = RADIAL_DECAY_0_5 - dot1;
-    let mut w_z = RADIAL_DECAY_0_5 - dot2;
-    let mut w_w = RADIAL_DECAY_0_5 - dot3;
+    let dot0 = x0.length_squared();
+    let dot1 = x1.length_squared();
+    let dot2 = x2.length_squared();
+    let dot3 = x3.length_squared();
+    let mut w = Vec4Q32::new(
+        RADIAL_DECAY_0_5 - dot0,
+        RADIAL_DECAY_0_5 - dot1,
+        RADIAL_DECAY_0_5 - dot2,
+        RADIAL_DECAY_0_5 - dot3,
+    );
 
     // w = max(w, 0.0)
-    w_x = w_x.max(Q32::ZERO);
-    w_y = w_y.max(Q32::ZERO);
-    w_z = w_z.max(Q32::ZERO);
-    w_w = w_w.max(Q32::ZERO);
+    w = w.max(Vec4Q32::zero());
 
     // w2 = w * w, w3 = w2 * w
-    let w2_x = w_x * w_x;
-    let w2_y = w_y * w_y;
-    let w2_z = w_z * w_z;
-    let w2_w = w_w * w_w;
-    let w3_x = w2_x * w_x;
-    let w3_y = w2_y * w_y;
-    let w3_z = w2_z * w_z;
-    let w3_w = w2_w * w_w;
+    let w2 = w.mul_comp(w);
+    let w3 = w2.mul_comp(w);
 
     // The value of the linear ramp from each of the corners
     // gdotx = vec4(dot(g0,x0), dot(g1,x1), dot(g2,x2), dot(g3,x3))
-    let gdotx_x = g0_x * x0_x + g0_y * x0_y + g0_z * x0_z;
-    let gdotx_y = g1_x * x1_x + g1_y * x1_y + g1_z * x1_z;
-    let gdotx_z = g2_x * x2_x + g2_y * x2_y + g2_z * x2_z;
-    let gdotx_w = g3_x * x3_x + g3_y * x3_y + g3_z * x3_z;
+    let gdotx = Vec4Q32::new(g0.dot(x0), g1.dot(x1), g2.dot(x2), g3.dot(x3));
 
     // Multiply by the radial decay and sum up the noise value
     // n = dot(w3, gdotx)
-    let n = w3_x * gdotx_x + w3_y * gdotx_y + w3_z * gdotx_z + w3_w * gdotx_w;
+    let n = w3.dot(gdotx);
 
     // Compute the first order partial derivatives
     // dw = -6.0 * w2 * gdotx
-    let dw_x = -SIX * w2_x * gdotx_x;
-    let dw_y = -SIX * w2_y * gdotx_y;
-    let dw_z = -SIX * w2_z * gdotx_z;
-    let dw_w = -SIX * w2_w * gdotx_w;
+    let dw = w2.mul_comp(gdotx) * -SIX;
     // dn0 = w3.x * g0 + dw.x * x0, etc.
-    let dn0_x = w3_x * g0_x + dw_x * x0_x;
-    let dn0_y = w3_x * g0_y + dw_x * x0_y;
-    let dn0_z = w3_x * g0_z + dw_x * x0_z;
-    let dn1_x = w3_y * g1_x + dw_y * x1_x;
-    let dn1_y = w3_y * g1_y + dw_y * x1_y;
-    let dn1_z = w3_y * g1_z + dw_y * x1_z;
-    let dn2_x = w3_z * g2_x + dw_z * x2_x;
-    let dn2_y = w3_z * g2_y + dw_z * x2_y;
-    let dn2_z = w3_z * g2_z + dw_z * x2_z;
-    let dn3_x = w3_w * g3_x + dw_w * x3_x;
-    let dn3_y = w3_w * g3_y + dw_w * x3_y;
-    let dn3_z = w3_w * g3_z + dw_w * x3_z;
+    let dn0 = g0 * w3.x + x0 * dw.x;
+    let dn1 = g1 * w3.y + x1 * dw.y;
+    let dn2 = g2 * w3.z + x2 * dw.z;
+    let dn3 = g3 * w3.w + x3 * dw.w;
     // gradient = 39.5 * (dn0 + dn1 + dn2 + dn3)
-    let gradient_x = SCALE_39_5 * (dn0_x + dn1_x + dn2_x + dn3_x);
-    let gradient_y = SCALE_39_5 * (dn0_y + dn1_y + dn2_y + dn3_y);
-    let gradient_z = SCALE_39_5 * (dn0_z + dn1_z + dn2_z + dn3_z);
+    let gradient = (dn0 + dn1 + dn2 + dn3) * SCALE_39_5;
+    let gradient_x = gradient.x;
+    let gradient_y = gradient.y;
+    let gradient_z = gradient.z;
 
     // Scale the return value to fit nicely into the range [-1,1]
     let noise_value = SCALE_39_5 * n;

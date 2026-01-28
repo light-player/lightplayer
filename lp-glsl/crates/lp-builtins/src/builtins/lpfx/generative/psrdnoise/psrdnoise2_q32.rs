@@ -69,72 +69,64 @@ const HASH_CONST_10: Q32 = Q32(10 << 16); // 10.0
 pub fn lpfx_psrdnoise2(x: Vec2Q32, period: Vec2Q32, alpha: Q32, _seed: u32) -> (Q32, Q32, Q32) {
     // Transform to simplex space (axis-aligned hexagonal grid)
     // uv = vec2(x.x + x.y*0.5, x.y)
-    let uv_x = x.x + x.y * HALF;
-    let uv_y = x.y;
+    let uv = Vec2Q32::new(x.x + x.y * HALF, x.y);
 
     // Determine which simplex we're in, with i0 being the "base"
     // i0 = floor(uv)
-    let i0_x_int = uv_x.to_i32();
-    let i0_y_int = uv_y.to_i32();
-    let i0_x = Q32::from_i32(i0_x_int);
-    let i0_y = Q32::from_i32(i0_y_int);
+    let i0 = uv.floor();
+    let i0_x_int = i0.x.to_i32();
+    let i0_y_int = i0.y.to_i32();
 
     // f0 = fract(uv)
-    let f0_x = uv_x - i0_x;
-    let f0_y = uv_y - i0_y;
+    let f0 = uv.fract();
 
     // o1 is the offset in simplex space to the second corner
     // cmp = step(f0.y, f0.x) -> 1.0 if f0.y <= f0.x, else 0.0
-    let cmp = if f0_y <= f0_x { Q32::ONE } else { Q32::ZERO };
-    let o1_x = cmp;
-    let o1_y = Q32::ONE - cmp;
+    let cmp = if f0.y <= f0.x { Q32::ONE } else { Q32::ZERO };
+    let o1 = Vec2Q32::new(cmp, Q32::ONE - cmp);
 
     // Enumerate the remaining simplex corners
     // i1 = i0 + o1
-    let i1_x_int = i0_x_int + o1_x.to_i32();
-    let i1_y_int = i0_y_int + o1_y.to_i32();
+    let i1 = i0 + o1;
+    let i1_x_int = i1.x.to_i32();
+    let i1_y_int = i1.y.to_i32();
     // i2 = i0 + vec2(1.0, 1.0)
-    let i2_x_int = i0_x_int + 1;
-    let i2_y_int = i0_y_int + 1;
+    let i2 = i0 + Vec2Q32::one();
+    let i2_x_int = i2.x.to_i32();
+    let i2_y_int = i2.y.to_i32();
 
     // Transform corners back to texture space
     // v0 = vec2(i0.x - i0.y * 0.5, i0.y)
-    let v0_x = i0_x - i0_y * HALF;
-    let v0_y = i0_y;
+    let v0 = Vec2Q32::new(i0.x - i0.y * HALF, i0.y);
     // v1 = vec2(v0.x + o1.x - o1.y * 0.5, v0.y + o1.y)
-    let v1_x = v0_x + o1_x - o1_y * HALF;
-    let v1_y = v0_y + o1_y;
+    let v1 = Vec2Q32::new(v0.x + o1.x - o1.y * HALF, v0.y + o1.y);
     // v2 = vec2(v0.x + 0.5, v0.y + 1.0)
-    let v2_x = v0_x + HALF;
-    let v2_y = v0_y + Q32::ONE;
+    let v2 = Vec2Q32::new(v0.x + HALF, v0.y + Q32::ONE);
 
     // Compute vectors from x to each of the simplex corners
-    let x0_x = x.x - v0_x;
-    let x0_y = x.y - v0_y;
-    let x1_x = x.x - v1_x;
-    let x1_y = x.y - v1_y;
-    let x2_x = x.x - v2_x;
-    let x2_y = x.y - v2_y;
+    let x0 = x - v0;
+    let x1 = x - v1;
+    let x2 = x - v2;
 
     // Wrap to periods, if desired
     let (iu_x, iu_y, iu_z, iv_x, iv_y, iv_z) = if period.x > Q32::ZERO || period.y > Q32::ZERO {
-        let mut xw_x = v0_x;
-        let mut xw_y = v1_x;
-        let mut xw_z = v2_x;
-        let mut yw_x = v0_y;
-        let mut yw_y = v1_y;
-        let mut yw_z = v2_y;
+        let mut xw_x = v0.x;
+        let mut xw_y = v1.x;
+        let mut xw_z = v2.x;
+        let mut yw_x = v0.y;
+        let mut yw_y = v1.y;
+        let mut yw_z = v2.y;
 
         // Wrap to periods where specified
         if period.x > Q32::ZERO {
-            xw_x = Q32::from_fixed(__lp_q32_mod(v0_x.to_fixed(), period.x.to_fixed()));
-            xw_y = Q32::from_fixed(__lp_q32_mod(v1_x.to_fixed(), period.x.to_fixed()));
-            xw_z = Q32::from_fixed(__lp_q32_mod(v2_x.to_fixed(), period.x.to_fixed()));
+            xw_x = Q32::from_fixed(__lp_q32_mod(v0.x.to_fixed(), period.x.to_fixed()));
+            xw_y = Q32::from_fixed(__lp_q32_mod(v1.x.to_fixed(), period.x.to_fixed()));
+            xw_z = Q32::from_fixed(__lp_q32_mod(v2.x.to_fixed(), period.x.to_fixed()));
         }
         if period.y > Q32::ZERO {
-            yw_x = Q32::from_fixed(__lp_q32_mod(v0_y.to_fixed(), period.y.to_fixed()));
-            yw_y = Q32::from_fixed(__lp_q32_mod(v1_y.to_fixed(), period.y.to_fixed()));
-            yw_z = Q32::from_fixed(__lp_q32_mod(v2_y.to_fixed(), period.y.to_fixed()));
+            yw_x = Q32::from_fixed(__lp_q32_mod(v0.y.to_fixed(), period.y.to_fixed()));
+            yw_y = Q32::from_fixed(__lp_q32_mod(v1.y.to_fixed(), period.y.to_fixed()));
+            yw_z = Q32::from_fixed(__lp_q32_mod(v2.y.to_fixed(), period.y.to_fixed()));
         }
 
         // Transform back to simplex space and fix rounding errors
@@ -223,9 +215,9 @@ pub fn lpfx_psrdnoise2(x: Vec2Q32, period: Vec2Q32, alpha: Q32, _seed: u32) -> (
 
     // Radial decay with distance from each simplex corner
     // w = 0.8 - vec3(dot(x0, x0), dot(x1, x1), dot(x2, x2))
-    let dot0 = x0_x * x0_x + x0_y * x0_y;
-    let dot1 = x1_x * x1_x + x1_y * x1_y;
-    let dot2 = x2_x * x2_x + x2_y * x2_y;
+    let dot0 = x0.length_squared();
+    let dot1 = x1.length_squared();
+    let dot2 = x2.length_squared();
     let mut w_x = RADIAL_DECAY_0_8 - dot0;
     let mut w_y = RADIAL_DECAY_0_8 - dot1;
     let mut w_z = RADIAL_DECAY_0_8 - dot2;
@@ -245,9 +237,12 @@ pub fn lpfx_psrdnoise2(x: Vec2Q32, period: Vec2Q32, alpha: Q32, _seed: u32) -> (
 
     // The value of the linear ramp from each of the corners
     // gdotx = vec3(dot(g0, x0), dot(g1, x1), dot(g2, x2))
-    let gdotx_x = g0_x * x0_x + g0_y * x0_y;
-    let gdotx_y = g1_x * x1_x + g1_y * x1_y;
-    let gdotx_z = g2_x * x2_x + g2_y * x2_y;
+    let g0 = Vec2Q32::new(g0_x, g0_y);
+    let g1 = Vec2Q32::new(g1_x, g1_y);
+    let g2 = Vec2Q32::new(g2_x, g2_y);
+    let gdotx_x = g0.dot(x0);
+    let gdotx_y = g1.dot(x1);
+    let gdotx_z = g2.dot(x2);
 
     // Multiply by the radial decay and sum up the noise value
     // n = dot(w4, gdotx)
@@ -263,17 +258,15 @@ pub fn lpfx_psrdnoise2(x: Vec2Q32, period: Vec2Q32, alpha: Q32, _seed: u32) -> (
     let dw_y = -EIGHT * w3_y * gdotx_y;
     let dw_z = -EIGHT * w3_z * gdotx_z;
     // dn0 = w4.x * g0 + dw.x * x0
-    let dn0_x = w4_x * g0_x + dw_x * x0_x;
-    let dn0_y = w4_x * g0_y + dw_x * x0_y;
+    let dn0 = g0 * w4_x + x0 * dw_x;
     // dn1 = w4.y * g1 + dw.y * x1
-    let dn1_x = w4_y * g1_x + dw_y * x1_x;
-    let dn1_y = w4_y * g1_y + dw_y * x1_y;
+    let dn1 = g1 * w4_y + x1 * dw_y;
     // dn2 = w4.z * g2 + dw.z * x2
-    let dn2_x = w4_z * g2_x + dw_z * x2_x;
-    let dn2_y = w4_z * g2_y + dw_z * x2_y;
+    let dn2 = g2 * w4_z + x2 * dw_z;
     // gradient = 10.9 * (dn0 + dn1 + dn2)
-    let gradient_x = SCALE_10_9 * (dn0_x + dn1_x + dn2_x);
-    let gradient_y = SCALE_10_9 * (dn0_y + dn1_y + dn2_y);
+    let gradient = (dn0 + dn1 + dn2) * SCALE_10_9;
+    let gradient_x = gradient.x;
+    let gradient_y = gradient.y;
 
     // Scale the return value to fit nicely into the range [-1,1]
     let noise_value = SCALE_10_9 * n;

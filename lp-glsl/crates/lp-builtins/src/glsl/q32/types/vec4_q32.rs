@@ -1,9 +1,10 @@
 use core::ops::{Add, Div, Mul, Neg, Sub};
 
+use crate::builtins::q32::__lp_q32_sqrt;
+use crate::glsl::q32::fns;
 use crate::glsl::q32::types::q32::Q32;
 use crate::glsl::q32::types::vec2_q32::Vec2Q32;
 use crate::glsl::q32::types::vec3_q32::Vec3Q32;
-use crate::builtins::q32::__lp_q32_sqrt;
 
 /// 4D vector for Q32 fixed-point arithmetic (useful for RGBA colors and homogeneous coordinates)
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -236,6 +237,56 @@ impl Vec4Q32 {
             self.z.clamp(min, max),
             self.w.clamp(min, max),
         )
+    }
+
+    /// Component-wise floor
+    #[inline(always)]
+    pub fn floor(self) -> Self {
+        fns::floor_vec4(self)
+    }
+
+    /// Component-wise fractional part
+    #[inline(always)]
+    pub fn fract(self) -> Self {
+        fns::fract_vec4(self)
+    }
+
+    /// Component-wise step function
+    /// Returns 1.0 if edge <= x, else 0.0 for each component
+    #[inline(always)]
+    pub fn step(self, edge: Self) -> Self {
+        fns::step_vec4(edge, self)
+    }
+
+    /// Component-wise minimum
+    #[inline(always)]
+    pub fn min(self, other: Self) -> Self {
+        fns::min_vec4(self, other)
+    }
+
+    /// Component-wise maximum
+    #[inline(always)]
+    pub fn max(self, other: Self) -> Self {
+        fns::max_vec4(self, other)
+    }
+
+    /// Component-wise modulo
+    #[inline(always)]
+    pub fn modulo(self, other: Self) -> Self {
+        fns::mod_vec4(self, other)
+    }
+
+    /// Modulo with scalar
+    #[inline(always)]
+    pub fn modulo_scalar(self, y: Q32) -> Self {
+        fns::mod_vec4_scalar(self, y)
+    }
+
+    /// Create Vec4 from Vec3 + scalar
+    /// Useful for patterns like vec4(v0.x, v1.x, v2.x, v3.x)
+    #[inline(always)]
+    pub fn from_vec3_scalar(v: Vec3Q32, w: Q32) -> Self {
+        Vec4Q32::new(v.x, v.y, v.z, w)
     }
 }
 
