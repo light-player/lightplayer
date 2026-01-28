@@ -4,7 +4,7 @@ use crate::error::{GlslError, extract_span_from_identifier, source_span_to_locat
 use crate::frontend::codegen::context::CodegenContext;
 use alloc::vec::Vec;
 
-use super::super::types::LValue;
+use super::super::types::{LValue, PointerAccessPattern};
 
 /// Resolve a variable expression to an LValue
 pub fn resolve_variable_lvalue<M: cranelift_module::Module>(
@@ -27,7 +27,37 @@ pub fn resolve_variable_lvalue<M: cranelift_module::Module>(
     let var_info = ctx.lookup_var_info(&ident.name);
     let is_out_inout = var_info.and_then(|info| info.out_inout_ptr).is_some();
 
-    // For arrays, return LValue::Variable with empty vars (arrays use pointer-based storage)
+    // For out/inout parameters, create PointerBased LValue
+    if is_out_inout {
+        let ptr = var_info
+            .and_then(|info| info.out_inout_ptr)
+            .expect("out/inout param must have pointer");
+        let component_count = if ty.is_vector() {
+            ty.component_count().unwrap()
+        } else if ty.is_matrix() {
+            ty.matrix_element_count().unwrap()
+        } else if ty.is_array() {
+            // For arrays, calculate total component count
+            let element_ty = ty.array_element_type().unwrap();
+            let array_size = ty.array_dimensions()[0];
+            if element_ty.is_vector() {
+                array_size * element_ty.component_count().unwrap()
+            } else if element_ty.is_matrix() {
+                array_size * element_ty.matrix_element_count().unwrap()
+            } else {
+                array_size
+            }
+        } else {
+            1
+        };
+        return Ok(LValue::PointerBased {
+            ptr,
+            base_ty: ty,
+            access_pattern: PointerAccessPattern::Direct { component_count },
+        });
+    }
+
+    // For arrays (non-out/inout), return LValue::Variable with empty vars (arrays use pointer-based storage)
     if ty.is_array() {
         return Ok(LValue::Variable {
             vars: Vec::new(),
@@ -48,10 +78,6 @@ pub fn resolve_variable_lvalue<M: cranelift_module::Module>(
     Ok(LValue::Variable {
         vars,
         ty,
-        name: if is_out_inout {
-            Some(ident.name.clone())
-        } else {
-            None
-        },
+        name: None,
     })
 }

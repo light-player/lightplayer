@@ -21,7 +21,7 @@ mod variable;
 use array_element::resolve_component_on_array_element;
 use matrix_column::resolve_component_on_matrix_column;
 use nested::resolve_component_on_component;
-use variable::resolve_component_on_variable;
+use variable::{resolve_component_on_pointer_based, resolve_component_on_variable};
 
 /// Resolve component access (Dot expression) to an LValue
 pub fn resolve_component_lvalue<M: cranelift_module::Module>(
@@ -85,9 +85,23 @@ pub fn resolve_component_lvalue<M: cranelift_module::Module>(
             ty: base_ty,
             name,
             ..
-        } => Ok(resolve_component_on_variable(
-            vars, base_ty, indices, result_ty, name,
-        )),
+        } => {
+            // Check if this is an out/inout parameter (has name for lookup)
+            if let Some(var_name) = &name {
+                if let Some(var_info) = ctx.lookup_var_info(var_name) {
+                    if let Some(ptr) = var_info.out_inout_ptr {
+                        // Out/inout parameter: create PointerBased with Component pattern
+                        return Ok(resolve_component_on_pointer_based(
+                            ptr, base_ty, indices, result_ty,
+                        ));
+                    }
+                }
+            }
+            // Regular variable: use SSA vars
+            Ok(resolve_component_on_variable(
+                vars, base_ty, indices, result_ty, name,
+            ))
+        }
         LValue::Component {
             base_vars,
             base_ty,
@@ -121,14 +135,14 @@ pub fn resolve_component_lvalue<M: cranelift_module::Module>(
             element_size_bytes,
             indices,
         )),
-        LValue::PointerBased { .. } => {
-            // TODO: Implement in Phase 2
-            let span = extract_span_from_expr(base_expr);
-            Err(GlslError::new(
-                ErrorCode::E0400,
-                "component access on PointerBased LValue not yet implemented",
-            )
-            .with_location(source_span_to_location(&span)))
+        LValue::PointerBased { ptr, base_ty, .. } => {
+            // Component access on PointerBased (out/inout parameter)
+            Ok(resolve_component_on_pointer_based(
+                ptr,
+                base_ty.clone(),
+                indices,
+                result_ty,
+            ))
         }
         LValue::MatrixElement { .. } | LValue::VectorElement { .. } => unreachable!(), // Already handled above
     }
