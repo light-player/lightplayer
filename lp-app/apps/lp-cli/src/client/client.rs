@@ -358,6 +358,7 @@ pub fn serializable_response_to_project_response(
             node_handles,
             node_changes,
             node_details,
+            theoretical_fps,
         } => {
             use lp_model::project::api::{NodeDetail, ProjectResponse};
             use std::collections::BTreeMap;
@@ -411,6 +412,7 @@ pub fn serializable_response_to_project_response(
                 node_handles,
                 node_changes,
                 node_details: node_details_map,
+                theoretical_fps,
             })
         }
     }

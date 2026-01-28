@@ -54,6 +54,8 @@ pub enum ProjectResponse {
         node_changes: Vec<NodeChange>,
         /// Full detail for requested nodes
         node_details: BTreeMap<NodeHandle, NodeDetail>,
+        /// Theoretical FPS based on frame processing time (None if not available)
+        theoretical_fps: Option<f32>,
     },
 }
 
@@ -182,6 +184,8 @@ pub enum SerializableProjectResponse {
         /// Full detail for requested nodes (serializable)
         /// Uses Vec instead of BTreeMap for JSON compatibility
         node_details: Vec<(NodeHandle, SerializableNodeDetail)>,
+        /// Theoretical FPS based on frame processing time (None if not available)
+        theoretical_fps: Option<f32>,
     },
 }
 
@@ -255,6 +259,7 @@ impl ProjectResponse {
                 node_handles,
                 node_changes,
                 node_details,
+                theoretical_fps,
             } => {
                 let mut serializable_details = Vec::new();
                 for (handle, detail) in node_details {
@@ -266,6 +271,7 @@ impl ProjectResponse {
                     node_handles: node_handles.clone(),
                     node_changes: node_changes.clone(),
                     node_details: serializable_details,
+                    theoretical_fps: *theoretical_fps,
                 })
             }
         }
@@ -422,6 +428,7 @@ mod tests {
             node_handles: vec![NodeHandle::new(1)],
             node_changes: vec![],
             node_details,
+            theoretical_fps: None,
         };
 
         let serializable = response.to_serializable().unwrap();
@@ -431,6 +438,7 @@ mod tests {
                 node_handles,
                 node_changes,
                 node_details,
+                theoretical_fps: _,
             } => {
                 assert_eq!(current_frame, FrameId::default());
                 assert_eq!(node_handles.len(), 1);
@@ -503,6 +511,7 @@ mod tests {
             node_handles: vec![NodeHandle::new(1)],
             node_changes: vec![],
             node_details,
+            theoretical_fps: None,
         };
 
         let json = serde_json::to_string(&response).unwrap();
@@ -513,6 +522,7 @@ mod tests {
                 node_handles,
                 node_changes,
                 node_details,
+                theoretical_fps: _,
             } => {
                 assert_eq!(current_frame, FrameId::default());
                 assert_eq!(node_handles.len(), 1);

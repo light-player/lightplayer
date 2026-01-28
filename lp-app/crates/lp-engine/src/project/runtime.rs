@@ -832,6 +832,7 @@ impl ProjectRuntime {
         &self,
         since_frame: FrameId,
         detail_specifier: &ApiNodeSpecifier,
+        theoretical_fps: Option<f32>,
     ) -> Result<ProjectResponse, Error> {
         let mut node_handles = Vec::new();
         let mut node_changes = Vec::new();
@@ -1159,6 +1160,7 @@ impl ProjectRuntime {
             node_handles,
             node_changes,
             node_details,
+            theoretical_fps,
         })
     }
 }

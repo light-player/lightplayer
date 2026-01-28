@@ -12,12 +12,17 @@ pub fn render_status_panel(
     frame_id: FrameId,
     _current_server_fps: f32,
     avg_server_fps: f32,
+    theoretical_fps: Option<f32>,
     sync_in_progress: bool,
 ) {
     ui.horizontal(|ui| {
         ui.label(format!("Frame: {}", frame_id.as_i64()));
         ui.separator();
         ui.label(format!("Server FPS: {avg_server_fps:.0}"));
+        if let Some(theoretical) = theoretical_fps {
+            ui.separator();
+            ui.label(format!("Theoretical FPS: {theoretical:.0}"));
+        }
         ui.separator();
         if sync_in_progress {
             ui.label(egui::RichText::new("Syncing...").color(egui::Color32::YELLOW));

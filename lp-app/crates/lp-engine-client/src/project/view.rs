@@ -91,6 +91,7 @@ impl ClientProjectView {
                 node_handles,
                 node_changes,
                 node_details,
+                theoretical_fps: _,
             } => {
                 // Update frame ID
                 self.frame_id = *current_frame;
