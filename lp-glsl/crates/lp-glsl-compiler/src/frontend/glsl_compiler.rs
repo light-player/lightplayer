@@ -422,7 +422,7 @@ impl GlslCompiler {
                     param_idx += 1;
 
                     // For arrays: store pointer in array_ptr field
-                    // For non-arrays: store pointer in out_inout_ptr field
+                    // For non-arrays: also store pointer in array_ptr (even though not an array)
                     if param.ty.is_array() {
                         // Arrays: create VarInfo with array_ptr
                         use crate::frontend::codegen::context::VarInfo;
@@ -431,22 +431,21 @@ impl GlslCompiler {
                             glsl_type: param.ty.clone(),
                             array_ptr: Some(pointer_val),
                             stack_slot: None,
-                            out_inout_ptr: None,
                         };
                         if let Some(current_scope) = codegen_ctx.variable_scopes.last_mut() {
                             current_scope.insert(param.name.clone(), var_info);
                         }
                     } else {
-                        // Non-arrays: declare variable and store pointer in out_inout_ptr
+                        // Non-arrays: declare variable and store pointer in array_ptr
                         let _vars =
                             codegen_ctx.declare_variable(param.name.clone(), param.ty.clone())?;
 
-                        // Store pointer in VarInfo
+                        // Store pointer in VarInfo (using array_ptr even though not an array)
                         if let Some(current_scope) = codegen_ctx.variable_scopes.last_mut() {
                             if let Some(info) = current_scope.remove(&param.name) {
                                 use crate::frontend::codegen::context::VarInfo;
                                 let updated_info = VarInfo {
-                                    out_inout_ptr: Some(pointer_val),
+                                    array_ptr: Some(pointer_val),
                                     ..info
                                 };
                                 current_scope.insert(param.name.clone(), updated_info);

@@ -81,24 +81,18 @@ pub fn resolve_component_lvalue<M: cranelift_module::Module>(
     // Get the base variables and compute indices based on the base LValue type
     match base_lvalue {
         LValue::Variable {
-            vars,
-            ty: base_ty,
-            name,
-            ..
+            vars, ty: base_ty, ..
         } => {
             // Regular variable: use SSA vars
             // Out/inout parameters now use PointerBased variant directly
             Ok(resolve_component_on_variable(
-                vars, base_ty, indices, result_ty, name,
+                vars, base_ty, indices, result_ty,
             ))
         }
         LValue::Component {
-            base_vars,
-            base_ty,
-            name,
-            ..
+            base_vars, base_ty, ..
         } => Ok(resolve_component_on_component(
-            base_vars, base_ty, indices, result_ty, name,
+            base_vars, base_ty, indices, result_ty,
         )),
         LValue::MatrixColumn {
             base_vars,
@@ -106,7 +100,7 @@ pub fn resolve_component_lvalue<M: cranelift_module::Module>(
             col,
             ..
         } => Ok(resolve_component_on_matrix_column(
-            base_vars, matrix_ty, col, indices, result_ty, None,
+            base_vars, matrix_ty, col, indices, result_ty,
         )),
         LValue::ArrayElement {
             array_ptr,

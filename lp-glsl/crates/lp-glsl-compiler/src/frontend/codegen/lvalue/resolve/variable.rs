@@ -24,13 +24,20 @@ pub fn resolve_variable_lvalue<M: cranelift_module::Module>(
         .clone();
 
     // Check if this is an out/inout parameter
+    // For non-arrays: has array_ptr but is not an array
+    // For arrays: has array_ptr but no stack_slot (out/inout arrays don't have stack_slot)
     let var_info = ctx.lookup_var_info(&ident.name);
-    let is_out_inout = var_info.and_then(|info| info.out_inout_ptr).is_some();
+    let is_out_inout = var_info
+        .map(|info| {
+            info.array_ptr.is_some()
+                && (!ty.is_array() || (ty.is_array() && info.stack_slot.is_none()))
+        })
+        .unwrap_or(false);
 
     // For out/inout parameters, create PointerBased LValue
     if is_out_inout {
         let ptr = var_info
-            .and_then(|info| info.out_inout_ptr)
+            .and_then(|info| info.array_ptr)
             .expect("out/inout param must have pointer");
         let component_count = if ty.is_vector() {
             ty.component_count().unwrap()
@@ -62,7 +69,6 @@ pub fn resolve_variable_lvalue<M: cranelift_module::Module>(
         return Ok(LValue::Variable {
             vars: Vec::new(),
             ty,
-            name: Some(ident.name.clone()),
         });
     }
 
@@ -75,9 +81,5 @@ pub fn resolve_variable_lvalue<M: cranelift_module::Module>(
         })?
         .to_vec();
 
-    Ok(LValue::Variable {
-        vars,
-        ty,
-        name: None,
-    })
+    Ok(LValue::Variable { vars, ty })
 }

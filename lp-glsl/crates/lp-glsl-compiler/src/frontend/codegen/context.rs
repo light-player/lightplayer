@@ -17,11 +17,9 @@ use alloc::{format, vec, vec::Vec};
 pub struct VarInfo {
     pub cranelift_vars: Vec<Variable>, // Changed from single Variable to support vectors
     pub glsl_type: GlslType,
-    // Array storage: pointer to stack-allocated memory block
-    pub array_ptr: Option<Value>, // Pointer to array memory (for arrays)
-    pub stack_slot: Option<StackSlot>, // Stack slot for array storage (for arrays)
-    // Out/inout parameter storage: pointer to caller's stack slot
-    pub out_inout_ptr: Option<Value>, // Pointer for out/inout parameters
+    // Pointer-based storage: array memory or out/inout parameter pointer
+    pub array_ptr: Option<Value>, // Pointer to array memory (for arrays) or out/inout param (for non-arrays)
+    pub stack_slot: Option<StackSlot>, // Stack slot for array storage (for arrays only)
 }
 
 pub struct CodegenContext<'a, M: Module> {
@@ -210,7 +208,6 @@ impl<'a, M: Module> CodegenContext<'a, M> {
                 glsl_type: glsl_ty.clone(),
                 array_ptr: Some(array_ptr),
                 stack_slot: Some(stack_slot),
-                out_inout_ptr: None,
             };
 
             // Declare in current scope (innermost scope)
@@ -259,7 +256,6 @@ impl<'a, M: Module> CodegenContext<'a, M> {
             glsl_type: glsl_ty.clone(),
             array_ptr: None,
             stack_slot: None,
-            out_inout_ptr: None,
         };
 
         // Declare in current scope (innermost scope)

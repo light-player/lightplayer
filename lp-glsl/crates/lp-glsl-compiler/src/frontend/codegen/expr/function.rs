@@ -167,39 +167,17 @@ fn emit_lp_lib_fn_call_expr<M: cranelift_module::Module>(
                 // For arrays: use existing array pointer directly (no copy-back needed)
                 let stack_slot_ptr = if param.ty.is_array() {
                     match &lvalue {
-                        crate::frontend::codegen::lvalue::LValue::Variable { name, .. } => {
-                            if let Some(var_name) = name {
-                                if let Some(var_info) = ctx.lookup_var_info(var_name) {
-                                    if let Some(arr_ptr) = var_info.array_ptr {
-                                        // Use existing array pointer - function writes directly to array
-                                        arr_ptr
-                                    } else {
-                                        return Err(GlslError::new(
-                                            ErrorCode::E0400,
-                                            format!(
-                                                "Array variable {} does not have array pointer",
-                                                var_name
-                                            ),
-                                        ));
-                                    }
-                                } else {
-                                    return Err(GlslError::new(
-                                        ErrorCode::E0400,
-                                        format!("Variable {} not found", var_name),
-                                    ));
-                                }
-                            } else {
-                                return Err(GlslError::new(
-                                    ErrorCode::E0400,
-                                    "Array lvalue missing variable name",
-                                ));
-                            }
+                        crate::frontend::codegen::lvalue::LValue::PointerBased { ptr, .. } => {
+                            // Out/inout arrays use PointerBased variant
+                            *ptr
                         }
-                        crate::frontend::codegen::lvalue::LValue::PointerBased { .. } => {
-                            // TODO: Handle PointerBased arrays in Phase 4
+                        crate::frontend::codegen::lvalue::LValue::Variable { .. } => {
+                            // Regular arrays: need to look up by extracting identifier from expression
+                            // This is a limitation - we need the variable name to look up array_ptr
+                            // For now, return an error suggesting to use PointerBased
                             return Err(GlslError::new(
                                 ErrorCode::E0400,
-                                "PointerBased array handling not yet implemented",
+                                "Array out/inout parameter must be resolved as PointerBased",
                             ));
                         }
                         _ => {
@@ -524,39 +502,17 @@ fn prepare_call_arguments<M: cranelift_module::Module>(
                 // For arrays: use existing array pointer directly (no copy-back needed)
                 let stack_slot_ptr = if param.ty.is_array() {
                     match &lvalue {
-                        crate::frontend::codegen::lvalue::LValue::Variable { name, .. } => {
-                            if let Some(var_name) = name {
-                                if let Some(var_info) = ctx.lookup_var_info(var_name) {
-                                    if let Some(arr_ptr) = var_info.array_ptr {
-                                        // Use existing array pointer - function writes directly to array
-                                        arr_ptr
-                                    } else {
-                                        return Err(GlslError::new(
-                                            ErrorCode::E0400,
-                                            format!(
-                                                "Array variable {} does not have array pointer",
-                                                var_name
-                                            ),
-                                        ));
-                                    }
-                                } else {
-                                    return Err(GlslError::new(
-                                        ErrorCode::E0400,
-                                        format!("Variable {} not found", var_name),
-                                    ));
-                                }
-                            } else {
-                                return Err(GlslError::new(
-                                    ErrorCode::E0400,
-                                    "Array lvalue missing variable name",
-                                ));
-                            }
+                        crate::frontend::codegen::lvalue::LValue::PointerBased { ptr, .. } => {
+                            // Out/inout arrays use PointerBased variant
+                            *ptr
                         }
-                        crate::frontend::codegen::lvalue::LValue::PointerBased { .. } => {
-                            // TODO: Handle PointerBased arrays in Phase 4
+                        crate::frontend::codegen::lvalue::LValue::Variable { .. } => {
+                            // Regular arrays: need to look up by extracting identifier from expression
+                            // This is a limitation - we need the variable name to look up array_ptr
+                            // For now, return an error suggesting to use PointerBased
                             return Err(GlslError::new(
                                 ErrorCode::E0400,
-                                "PointerBased array handling not yet implemented",
+                                "Array out/inout parameter must be resolved as PointerBased",
                             ));
                         }
                         _ => {

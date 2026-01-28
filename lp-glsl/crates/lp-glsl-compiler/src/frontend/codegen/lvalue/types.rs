@@ -1,7 +1,7 @@
 //! LValue type definitions
 
 use crate::semantic::types::Type as GlslType;
-use alloc::{string::String, vec::Vec};
+use alloc::vec::Vec;
 use cranelift_codegen::ir::Value;
 use cranelift_frontend::Variable;
 
@@ -35,18 +35,13 @@ pub enum PointerAccessPattern {
 #[derive(Debug, Clone)]
 pub enum LValue {
     /// Simple variable: `x`
-    Variable {
-        vars: Vec<Variable>,
-        ty: GlslType,
-        name: Option<String>,
-    }, // name for out/inout parameter lookup
+    Variable { vars: Vec<Variable>, ty: GlslType },
     /// Vector component access: `v.x` or `v.xy`
     Component {
         base_vars: Vec<Variable>,
         base_ty: GlslType,
         indices: Vec<usize>, // Component indices
         result_ty: GlslType,
-        name: Option<String>, // Variable name for out/inout parameter lookup
     },
     /// Matrix element: `m[0][1]` (single scalar)
     MatrixElement {

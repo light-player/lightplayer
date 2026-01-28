@@ -1,7 +1,7 @@
 //! Component access on Variable LValue
 
 use crate::semantic::types::Type as GlslType;
-use alloc::{string::String, vec::Vec};
+use alloc::vec::Vec;
 use cranelift_codegen::ir::Value;
 use cranelift_frontend::Variable;
 
@@ -13,14 +13,12 @@ pub fn resolve_component_on_variable(
     base_ty: GlslType,
     indices: Vec<usize>,
     result_ty: GlslType,
-    name: Option<String>,
 ) -> LValue {
     LValue::Component {
         base_vars: vars,
         base_ty,
         indices,
         result_ty,
-        name,
     }
 }
 
