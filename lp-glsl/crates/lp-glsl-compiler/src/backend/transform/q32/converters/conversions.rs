@@ -208,7 +208,7 @@ pub(crate) fn convert_fcvt_to_uint(
     let target_type = format.cranelift_type();
 
     // Truncate toward zero: shift right, but for negative values we need to round up (toward zero)
-    let shift_const = builder.ins().iconst(target_type, i64::from(shift_amount));
+    let shift_const = builder.ins().iconst(target_type, shift_amount);
     let zero = builder.ins().iconst(target_type, 0);
     let is_negative = builder.ins().icmp(
         cranelift_codegen::ir::condcodes::IntCC::SignedLessThan,
