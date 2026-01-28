@@ -172,13 +172,33 @@ fn emit_lp_lib_fn_call_expr<M: cranelift_module::Module>(
                             *ptr
                         }
                         crate::frontend::codegen::lvalue::LValue::Variable { .. } => {
-                            // Regular arrays: need to look up by extracting identifier from expression
-                            // This is a limitation - we need the variable name to look up array_ptr
-                            // For now, return an error suggesting to use PointerBased
-                            return Err(GlslError::new(
-                                ErrorCode::E0400,
-                                "Array out/inout parameter must be resolved as PointerBased",
-                            ));
+                            // Regular arrays: extract variable name from expression to look up array_ptr
+                            if let glsl::syntax::Expr::Variable(ident, _) = arg_expr {
+                                if let Some(var_info) = ctx.lookup_var_info(&ident.name) {
+                                    if let Some(arr_ptr) = var_info.array_ptr {
+                                        // Use existing array pointer - function writes directly to array
+                                        arr_ptr
+                                    } else {
+                                        return Err(GlslError::new(
+                                            ErrorCode::E0400,
+                                            format!(
+                                                "Array variable {} does not have array pointer",
+                                                ident.name
+                                            ),
+                                        ));
+                                    }
+                                } else {
+                                    return Err(GlslError::new(
+                                        ErrorCode::E0400,
+                                        format!("Variable {} not found", ident.name),
+                                    ));
+                                }
+                            } else {
+                                return Err(GlslError::new(
+                                    ErrorCode::E0400,
+                                    "Array out/inout parameter must be array variable, not array element",
+                                ));
+                            }
                         }
                         _ => {
                             return Err(GlslError::new(
@@ -507,13 +527,33 @@ fn prepare_call_arguments<M: cranelift_module::Module>(
                             *ptr
                         }
                         crate::frontend::codegen::lvalue::LValue::Variable { .. } => {
-                            // Regular arrays: need to look up by extracting identifier from expression
-                            // This is a limitation - we need the variable name to look up array_ptr
-                            // For now, return an error suggesting to use PointerBased
-                            return Err(GlslError::new(
-                                ErrorCode::E0400,
-                                "Array out/inout parameter must be resolved as PointerBased",
-                            ));
+                            // Regular arrays: extract variable name from expression to look up array_ptr
+                            if let glsl::syntax::Expr::Variable(ident, _) = arg_expr {
+                                if let Some(var_info) = ctx.lookup_var_info(&ident.name) {
+                                    if let Some(arr_ptr) = var_info.array_ptr {
+                                        // Use existing array pointer - function writes directly to array
+                                        arr_ptr
+                                    } else {
+                                        return Err(GlslError::new(
+                                            ErrorCode::E0400,
+                                            format!(
+                                                "Array variable {} does not have array pointer",
+                                                ident.name
+                                            ),
+                                        ));
+                                    }
+                                } else {
+                                    return Err(GlslError::new(
+                                        ErrorCode::E0400,
+                                        format!("Variable {} not found", ident.name),
+                                    ));
+                                }
+                            } else {
+                                return Err(GlslError::new(
+                                    ErrorCode::E0400,
+                                    "Array out/inout parameter must be array variable, not array element",
+                                ));
+                            }
                         }
                         _ => {
                             return Err(GlslError::new(

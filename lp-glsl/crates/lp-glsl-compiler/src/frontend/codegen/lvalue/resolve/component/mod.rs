@@ -39,10 +39,7 @@ pub fn resolve_component_lvalue<M: cranelift_module::Module>(
         LValue::Component { result_ty, .. } => result_ty.clone(),
         LValue::MatrixColumn { result_ty, .. } => result_ty.clone(),
         LValue::ArrayElement { element_ty, .. } => element_ty.clone(),
-        LValue::PointerBased { base_ty, .. } => {
-            // TODO: Handle PointerBased in Phase 2/3
-            base_ty.clone()
-        }
+        LValue::PointerBased { base_ty, .. } => base_ty.clone(),
         LValue::MatrixElement { .. } | LValue::VectorElement { .. } => {
             // Can't access components of a scalar
             let span = extract_span_from_expr(base_expr);

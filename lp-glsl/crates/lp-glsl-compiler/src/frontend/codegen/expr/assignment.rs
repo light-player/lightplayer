@@ -116,7 +116,6 @@ pub fn emit_assignment_typed<M: cranelift_module::Module>(
             }
         }
         crate::frontend::codegen::lvalue::LValue::PointerBased { access_pattern, .. } => {
-            // TODO: Implement in Phase 3
             match access_pattern {
                 crate::frontend::codegen::lvalue::PointerAccessPattern::Direct {
                     component_count,
