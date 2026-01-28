@@ -86,7 +86,7 @@ This pattern is repeated in:
 - Could be useful for error messages and debugging
 - But adds complexity if kept
 
-**Answer**: TBD
+**Answer**: Remove the `name` field after migration. If variable names are needed for error messages later, we can add them back or access them through other means (like the original AST node or source location).
 
 ### Q6: Out/Inout Array Parameters
 
@@ -97,7 +97,7 @@ This pattern is repeated in:
 - Should they use `PointerBased` with `Direct` pattern?
 - Or keep current array handling separate?
 
-**Answer**: TBD
+**Answer**: Migrate out/inout arrays to `PointerBased` with `Direct` pattern for full unification. The `ArrayElement` access pattern in `PointerBased` can still handle array element access (`arr[i]`), while `Direct` handles the array variable itself (`arr` as an out/inout parameter).
 
 ### Q7: VarInfo.out_inout_ptr Cleanup
 
@@ -108,7 +108,7 @@ This pattern is repeated in:
 - Keeping it allows gradual migration
 - Could deprecate and remove later
 
-**Answer**: TBD
+**Answer**: Remove it immediately after migration. We're doing this refactoring in one shot, so cleaner is better.
 
 ## Implementation Phases
 

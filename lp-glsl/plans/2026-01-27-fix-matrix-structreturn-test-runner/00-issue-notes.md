@@ -3,9 +3,10 @@
 ## Problem
 
 All matrix-returning test functions fail with:
+
 ```
-error[E0400]: Argument count mismatch calling function 'test_mat2_transpose_simple': 
-expected 1 parameter(s), got 0 argument(s). 
+error[E0400]: Argument count mismatch calling function 'test_mat2_transpose_simple':
+expected 1 parameter(s), got 0 argument(s).
 Signature: Signature { params: [AbiParam { value_type: types::I32, purpose: StructReturn, extension: None }], returns: [], call_conv: SystemV }
 ```
 
@@ -59,6 +60,7 @@ Signature: Signature { params: [AbiParam { value_type: types::I32, purpose: Stru
 ## Expected Behavior
 
 When calling a matrix-returning function:
+
 1. Test runner should detect that function uses StructReturn
 2. Allocate a buffer for the return value
 3. Pass the buffer pointer as the first argument

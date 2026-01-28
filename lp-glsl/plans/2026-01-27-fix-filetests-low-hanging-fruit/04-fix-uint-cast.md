@@ -18,7 +18,7 @@ Fix the `uint()` cast function to wrap negative float values according to GLSL s
 - **`convert_fcvt_to_uint()` function** (around line 189-236):
   - Current: Clamps negative values to 0 (line 222: `select(is_negative, zero, shifted)`)
   - Fix: Wrap negative values instead of clamping
-  - Implementation: 
+  - Implementation:
     - For negative values, convert to i32, then cast to u32 (wraps)
     - Remove clamping logic, use wrapping conversion
 

@@ -11,7 +11,7 @@ mat2 test_mat2_assign_simple() {
     return result;
 }
 
-// run: test_mat2_assign_simple() ~= mat2(1.0, 2.0, 3.0, 4.0) [expect-fail]
+// run: test_mat2_assign_simple() ~= mat2(1.0, 2.0, 3.0, 4.0)
 
 mat2 test_mat2_assign_variables() {
     mat2 a = mat2(5.0, 6.0, 7.0, 8.0);
@@ -20,7 +20,7 @@ mat2 test_mat2_assign_variables() {
     return result;
 }
 
-// run: test_mat2_assign_variables() ~= mat2(5.0, 6.0, 7.0, 8.0) [expect-fail]
+// run: test_mat2_assign_variables() ~= mat2(5.0, 6.0, 7.0, 8.0)
 
 mat2 test_mat2_assign_expressions() {
     mat2 result;
@@ -28,7 +28,7 @@ mat2 test_mat2_assign_expressions() {
     return result;
 }
 
-// run: test_mat2_assign_expressions() ~= mat2(1.5, 2.5, 3.5, 4.5) [expect-fail]
+// run: test_mat2_assign_expressions() ~= mat2(1.5, 2.5, 3.5, 4.5)
 
 mat2 test_mat2_assign_identity() {
     mat2 result;
@@ -36,7 +36,7 @@ mat2 test_mat2_assign_identity() {
     return result;
 }
 
-// run: test_mat2_assign_identity() ~= mat2(1.0, 0.0, 0.0, 1.0) [expect-fail]
+// run: test_mat2_assign_identity() ~= mat2(1.0, 0.0, 0.0, 1.0)
 
 mat2 test_mat2_assign_zero() {
     mat2 result;
@@ -44,7 +44,7 @@ mat2 test_mat2_assign_zero() {
     return result;
 }
 
-// run: test_mat2_assign_zero() ~= mat2(0.0, 0.0, 0.0, 0.0) [expect-fail]
+// run: test_mat2_assign_zero() ~= mat2(0.0, 0.0, 0.0, 0.0)
 
 mat2 test_mat2_assign_negative() {
     mat2 result;
@@ -52,7 +52,7 @@ mat2 test_mat2_assign_negative() {
     return result;
 }
 
-// run: test_mat2_assign_negative() ~= mat2(-1.0, -2.0, -3.0, -4.0) [expect-fail]
+// run: test_mat2_assign_negative() ~= mat2(-1.0, -2.0, -3.0, -4.0)
 
 mat2 test_mat2_assign_chained() {
     mat2 a, b;
@@ -61,7 +61,7 @@ mat2 test_mat2_assign_chained() {
     return b;
 }
 
-// run: test_mat2_assign_chained() ~= mat2(1.0, 2.0, 3.0, 4.0) [expect-fail]
+// run: test_mat2_assign_chained() ~= mat2(1.0, 2.0, 3.0, 4.0)
 
 mat2 test_mat2_assign_function_result() {
     mat2 result;
@@ -69,7 +69,7 @@ mat2 test_mat2_assign_function_result() {
     return result;
 }
 
-// run: test_mat2_assign_function_result() ~= mat2(2.0, 0.0, 0.0, 2.0) [expect-fail]
+// run: test_mat2_assign_function_result() ~= mat2(2.0, 0.0, 0.0, 2.0)
 
 mat2 test_mat2_assign_after_operations() {
     mat2 a = mat2(1.0, 2.0, 3.0, 4.0);

@@ -12,7 +12,7 @@ mat2 test_mat2_multiply_identity() {
     return a * identity;
 }
 
-// run: test_mat2_multiply_identity() ~= mat2(1.0, 2.0, 3.0, 4.0) [expect-fail]
+// run: test_mat2_multiply_identity() ~= mat2(1.0, 2.0, 3.0, 4.0)
 
 mat2 test_mat2_multiply_simple() {
     // Simple matrix multiplication
@@ -39,7 +39,7 @@ mat2 test_mat2_multiply_zero() {
     return a * zero;
 }
 
-// run: test_mat2_multiply_zero() ~= mat2(0.0, 0.0, 0.0, 0.0) [expect-fail]
+// run: test_mat2_multiply_zero() ~= mat2(0.0, 0.0, 0.0, 0.0)
 
 mat2 test_mat2_multiply_variables() {
     mat2 a = mat2(1.0, 0.0, 0.0, 1.0); // identity
@@ -47,7 +47,7 @@ mat2 test_mat2_multiply_variables() {
     return a * b;
 }
 
-// run: test_mat2_multiply_variables() ~= mat2(2.0, 3.0, 4.0, 5.0) [expect-fail]
+// run: test_mat2_multiply_variables() ~= mat2(2.0, 3.0, 4.0, 5.0)
 
 mat2 test_mat2_multiply_expressions() {
     return mat2(1.0, 1.0, 0.0, 1.0) * mat2(1.0, 0.0, 1.0, 1.0);
@@ -61,7 +61,7 @@ mat2 test_mat2_multiply_in_assignment() {
     return result;
 }
 
-// run: test_mat2_multiply_in_assignment() ~= mat2(1.0, 2.0, 3.0, 4.0) [expect-fail]
+// run: test_mat2_multiply_in_assignment() ~= mat2(1.0, 2.0, 3.0, 4.0)
 
 mat2 test_mat2_multiply_associative() {
     mat2 a = mat2(1.0, 2.0, 3.0, 4.0);

@@ -109,6 +109,7 @@ if_stmt.rs - # UPDATE: Fix variable scoping
 ### Phase 2: Add Precision Tolerances
 
 Add explicit tolerances to precision-sensitive tests:
+
 - `builtins/angle-degrees.glsl`: Add `(tolerance: 0.001)` to all `~=` comparisons
 - `builtins/angle-radians.glsl`: Add `(tolerance: 0.001)` to all `~=` comparisons
 - `builtins/common-roundeven.glsl`: Add tolerance to failing test

@@ -12,15 +12,15 @@ Analysis of filetest failures to identify which ones should be fixed before mark
 
 ### Quick Reference
 
-| Category | Priority | Status | Affected Tests | Issue Type |
-|----------|----------|--------|----------------|------------|
-| Matrix Struct Return ABI | **HIGH** | Broken | All matrix tests | Test infrastructure bug |
-| Control Flow Scoping | **HIGH** | Broken | for/if variable-scope | Compiler bug |
-| Builtin Precision | **HIGH** | Broken | angle-degrees, radians, etc. | Precision/tolerance |
-| Vec Comparison | **MEDIUM** | Broken | vec2/ivec2 fn-equal | Function bug |
-| Vec Conversion | **MEDIUM** | Broken | uvec2/3/4 from-scalars | Cast function bug |
-| Missing Builtins | **LOW** | Not Implemented | trunc, fma, frexp, etc. | Feature not implemented |
-| Type Error Tests | **N/A** | ✅ Passing | incdec-bool, etc. | Previously fixed |
+| Category                 | Priority   | Status          | Affected Tests               | Issue Type              |
+| ------------------------ | ---------- | --------------- | ---------------------------- | ----------------------- |
+| Matrix Struct Return ABI | **HIGH**   | Broken          | All matrix tests             | Test infrastructure bug |
+| Control Flow Scoping     | **HIGH**   | Broken          | for/if variable-scope        | Compiler bug            |
+| Builtin Precision        | **HIGH**   | Broken          | angle-degrees, radians, etc. | Precision/tolerance     |
+| Vec Comparison           | **MEDIUM** | Broken          | vec2/ivec2 fn-equal          | Function bug            |
+| Vec Conversion           | **MEDIUM** | Broken          | uvec2/3/4 from-scalars       | Cast function bug       |
+| Missing Builtins         | **LOW**    | Not Implemented | trunc, fma, frexp, etc.      | Feature not implemented |
+| Type Error Tests         | **N/A**    | ✅ Passing      | incdec-bool, etc.            | Previously fixed        |
 
 ## Summary
 
@@ -31,6 +31,7 @@ Analysis of filetest failures to identify which ones should be fixed before mark
 **Status**: Broken - Precision tolerance issues
 
 **Affected Tests**:
+
 - `builtins/angle-degrees.glsl` - 7/8 tests failing
 - `builtins/angle-radians.glsl` - 7/8 tests failing
 - `builtins/common-roundeven.glsl` - 1/9 tests failing
@@ -44,6 +45,7 @@ Analysis of filetest failures to identify which ones should be fixed before mark
 **Issue**: Tests are failing due to floating-point precision mismatches. The actual values are very close to expected values but exceed the default tolerance.
 
 **Example from `angle-degrees.glsl`**:
+
 ```
 expected: 90.0
   actual: 90.000244
@@ -51,7 +53,8 @@ expected: 90.0
 
 **Root Cause**: The `degrees()` and `radians()` functions (and possibly others) are producing results with small precision errors. The tests use `~=` (approximate equality) but don't specify a tolerance, so the default tolerance may be too strict.
 
-**Recommendation**: 
+**Recommendation**:
+
 - Check if these functions are implemented correctly
 - Consider adding explicit tolerance to tests: `~= 90.0 (tolerance: 0.001)`
 - OR fix the implementation to be more precise
@@ -62,6 +65,7 @@ expected: 90.0
 **Status**: Broken - Test runner doesn't handle struct returns
 
 **Affected Tests**:
+
 - `builtins/matrix-compmult.glsl` - 0/17 tests passing
 - `builtins/matrix-determinant.glsl` - 20/21 tests passing (1 precision issue)
 - `builtins/matrix-inverse.glsl` - 0/16 tests passing
@@ -75,22 +79,26 @@ expected: 90.0
 - All other matrix tests (mat3, mat4) likely affected
 
 **Issue**: All tests that call functions returning matrices fail with:
+
 ```
-error[E0400]: Argument count mismatch calling function 'test_mat2_transpose_simple': 
-expected 1 parameter(s), got 0 argument(s). 
+error[E0400]: Argument count mismatch calling function 'test_mat2_transpose_simple':
+expected 1 parameter(s), got 0 argument(s).
 Signature: Signature { params: [AbiParam { value_type: types::I32, purpose: StructReturn, extension: None }], returns: [], call_conv: SystemV }
 ```
 
-**Root Cause**: 
+**Root Cause**:
+
 - Matrix-returning functions use StructReturn ABI (correct)
 - The test runner (`execute_fn.rs` or test harness) doesn't handle StructReturn when calling test functions
 - The test runner calls functions with 0 arguments, but StructReturn functions expect 1 parameter (the return buffer pointer)
 
-**Code Location**: 
+**Code Location**:
+
 - Function signature generation: `lp-glsl/crates/lp-glsl-compiler/src/frontend/codegen/signature.rs:132-140`
 - Test execution: `lp-glsl/crates/lp-glsl-compiler/src/exec/execute_fn.rs` or test harness
 
-**Recommendation**: 
+**Recommendation**:
+
 - **CRITICAL**: Fix the test runner to handle StructReturn for matrix-returning functions
 - This is a test infrastructure bug, not a compiler bug
 - All matrix tests will pass once this is fixed (except precision issues)
@@ -101,6 +109,7 @@ Signature: Signature { params: [AbiParam { value_type: types::I32, purpose: Stru
 **Status**: Broken - Variable shadowing not working correctly
 
 **Affected Tests**:
+
 - `control/for/variable-scope.glsl` - 0/8 tests passing
 - `control/if/variable-scope.glsl` - 4/5 tests passing (1 failing)
 
@@ -109,6 +118,7 @@ Signature: Signature { params: [AbiParam { value_type: types::I32, purpose: Stru
 **Issue**: Variable shadowing in for loop init-expression doesn't work correctly.
 
 **Example from `control/for/variable-scope.glsl:21-31`**:
+
 ```glsl
 int test_for_loop_init_shadowing() {
     int i = 100;
@@ -129,9 +139,11 @@ int test_for_loop_init_shadowing() {
 **Note**: There's a discrepancy - the test expects `3` but the comment says outer `i` should be unchanged. This might be a test bug, but the variable scoping is definitely broken.
 
 **Additional Issue**: Line 92-101 has a compilation error:
+
 ```glsl
 for (int i = 0; int j = i < 3; i++) {
 ```
+
 This tries to declare a variable in the condition expression, which is invalid GLSL syntax. The test expects this to work, but it's not valid GLSL.
 
 #### If Block Scoping
@@ -139,6 +151,7 @@ This tries to declare a variable in the condition expression, which is invalid G
 **Issue**: Variable shadowing in if blocks doesn't work correctly.
 
 **Example from `control/if/variable-scope.glsl:29-38`**:
+
 ```glsl
 int test_if_variable_shadowing() {
     int x = 5;
@@ -158,6 +171,7 @@ int test_if_variable_shadowing() {
 **Note**: Again, there's a discrepancy between the test expectation and the comment. The comment says inner shadows outer (so outer should be 5), but test expects 10. This suggests the test might be wrong, OR the comment is wrong and the test is checking that shadowing doesn't work (which would be a bug).
 
 **Recommendation**:
+
 - Fix variable shadowing in for loops and if blocks
 - Clarify test expectations vs comments (there are contradictions)
 - Fix the invalid GLSL syntax test (`int j = i < 3` in for condition)
@@ -168,6 +182,7 @@ int test_if_variable_shadowing() {
 **Status**: Broken - Nested `equal()` calls return incorrect results
 
 **Affected Tests**:
+
 - `vec/vec2/fn-equal.gen.glsl` - 7/8 tests passing
 - `vec/ivec2/fn-equal.gen.glsl` - 7/8 tests passing
 - Possibly other vec comparison tests
@@ -175,6 +190,7 @@ int test_if_variable_shadowing() {
 **Issue**: When `equal()` is called with bvec2 arguments (nested calls), it returns incorrect results.
 
 **Example from `vec/vec2/fn-equal.gen.glsl:67-78`**:
+
 ```glsl
 bvec2 test_vec2_equal_function_in_expression() {
     vec2 a = vec2(1.0, 3.0);
@@ -195,6 +211,7 @@ bvec2 test_vec2_equal_function_in_expression() {
 **Root Cause**: The `equal()` function may not be handling bvec2 arguments correctly, or there's an issue with nested function calls returning bvec2.
 
 **Recommendation**:
+
 - Fix the `equal()` function to handle bvec2 arguments correctly
 - This is a bug that should be fixed
 - Check if other comparison functions (`notEqual`, `lessThan`, etc.) have similar issues
@@ -204,6 +221,7 @@ bvec2 test_vec2_equal_function_in_expression() {
 **Status**: Broken - Negative float to uint conversion incorrect
 
 **Affected Tests**:
+
 - `vec/uvec2/from-scalars.glsl` - 9/10 tests passing
 - `vec/uvec3/from-scalars.glsl` - 10/11 tests passing
 - `vec/uvec4/from-scalars.glsl` - 11/12 tests passing
@@ -212,6 +230,7 @@ bvec2 test_vec2_equal_function_in_expression() {
 **Issue**: Converting negative floats to uint doesn't wrap correctly.
 
 **Example from `vec/uvec2/from-scalars.glsl:59-63`**:
+
 ```glsl
 uvec2 test_uvec2_from_scalars_function_results() {
     return uvec2(uint(7.8), uint(-3.2)); // float to uint conversion (truncates)
@@ -226,6 +245,7 @@ uvec2 test_uvec2_from_scalars_function_results() {
 **Root Cause**: The `uint()` cast function may be clamping negative values to 0 instead of wrapping them according to GLSL spec (which should wrap).
 
 **Recommendation**:
+
 - Fix `uint()` cast to wrap negative floats correctly
 - Check if `int()` cast has similar issues
 - This is a bug that should be fixed
@@ -235,6 +255,7 @@ uvec2 test_uvec2_from_scalars_function_results() {
 **Status**: Not Implemented
 
 **Affected Tests**:
+
 - `builtins/common-trunc.glsl` - 0/8 tests passing
 - `builtins/common-floatbitstoint.glsl` - 0/8 tests passing
 - `builtins/common-fma.glsl` - 0/8 tests passing
@@ -248,6 +269,7 @@ uvec2 test_uvec2_from_scalars_function_results() {
 **Issue**: These builtin functions are not implemented. Tests fail with "undefined function" errors.
 
 **Recommendation**:
+
 - These can be marked as expected failures until implemented
 - Lower priority than bugs
 
@@ -256,6 +278,7 @@ uvec2 test_uvec2_from_scalars_function_results() {
 **Status**: ✅ Passing
 
 **Affected Tests**:
+
 - `type_errors/incdec-bool.glsl` - ✅ Passing
 - `type_errors/incdec-nested.glsl` - ✅ Passing
 - `type_errors/incdec-non-lvalue.glsl` - ✅ Passing

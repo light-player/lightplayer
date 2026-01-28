@@ -174,24 +174,28 @@ match lvalue {
 }
 ```
 
-#### Step 5: Migrate Arrays (Optional)
+#### Step 5: Migrate Out/Inout Arrays
 
-Arrays could also use `PointerBased`, but this is optional since `ArrayElement` already works well:
+Out/inout array parameters should also use `PointerBased` with `Direct` pattern:
 
 ```rust
-// Option: Migrate arrays too
+// Out/inout array parameter: `arr` (where arr is out/inout)
 LValue::PointerBased {
     ptr: array_ptr,
     base_ty: array_ty,
-    access_pattern: PointerAccessPattern::ArrayElement { ... },
+    access_pattern: PointerAccessPattern::Direct {
+        component_count: array_size * element_component_count,
+    },
 }
 ```
 
+Note: Regular array element access (`arr[i]`) will continue to use `LValue::ArrayElement` for now, or could be migrated to `PointerBased` with `ArrayElement` pattern in a future refactoring.
+
 #### Step 6: Remove Old Code
 
-- Remove `name` field from `Variable` and `Component`
+- Remove `name` field from `Variable` and `Component` variants
 - Remove runtime lookups in read/write functions
-- Remove `out_inout_ptr` from `VarInfo` (or keep for backwards compatibility during migration)
+- Remove `out_inout_ptr` from `VarInfo` (removed immediately after migration)
 
 ## Implementation Details
 
@@ -236,8 +240,9 @@ All pointer-based access uses the same offset calculation:
 
 Arrays as out/inout parameters:
 
-- Currently handled specially (use `array_ptr` directly)
-- With unified variant, would use `PointerBased` with `Direct` pattern
+- Currently handled specially (use `array_ptr` from `VarInfo`)
+- After migration: use `PointerBased` with `Direct` pattern
+- Array element access (`arr[i]`) continues to use `LValue::ArrayElement` (or could be migrated later)
 
 ### Component Swizzling
 
