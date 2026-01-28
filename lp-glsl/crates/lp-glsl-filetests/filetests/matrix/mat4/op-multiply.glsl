@@ -12,7 +12,7 @@ mat4 test_mat4_multiply_identity() {
     return a * identity;
 }
 
-// run: test_mat4_multiply_identity() ~= mat4(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0) [expect-fail]
+// run: test_mat4_multiply_identity() ~= mat4(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0)
 
 mat4 test_mat4_multiply_simple() {
     // Simple matrix multiplication
@@ -21,7 +21,7 @@ mat4 test_mat4_multiply_simple() {
     return a * b;
 }
 
-// run: test_mat4_multiply_simple() ~= mat4(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0) [expect-fail]
+// run: test_mat4_multiply_simple() ~= mat4(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0)
 
 mat4 test_mat4_multiply_scale() {
     // Scaling matrix multiplication
@@ -38,7 +38,7 @@ mat4 test_mat4_multiply_zero() {
     return a * zero;
 }
 
-// run: test_mat4_multiply_zero() ~= mat4(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0) [expect-fail]
+// run: test_mat4_multiply_zero() ~= mat4(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 mat4 test_mat4_multiply_variables() {
     mat4 a = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0); // identity
@@ -46,7 +46,7 @@ mat4 test_mat4_multiply_variables() {
     return a * b;
 }
 
-// run: test_mat4_multiply_variables() ~= mat4(2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0) [expect-fail]
+// run: test_mat4_multiply_variables() ~= mat4(2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0)
 
 mat4 test_mat4_multiply_expressions() {
     return mat4(1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0) * mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
@@ -60,7 +60,7 @@ mat4 test_mat4_multiply_in_assignment() {
     return result;
 }
 
-// run: test_mat4_multiply_in_assignment() ~= mat4(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0) [expect-fail]
+// run: test_mat4_multiply_in_assignment() ~= mat4(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0)
 
 mat4 test_mat4_multiply_associative() {
     mat4 a = mat4(1.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
@@ -69,7 +69,7 @@ mat4 test_mat4_multiply_associative() {
     return (a * b) * c;
 }
 
-// run: test_mat4_multiply_associative() ~= mat4(2.0, 4.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0) [expect-fail]
+// run: test_mat4_multiply_associative() ~= mat4(2.0, 4.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0)
 
 
 
