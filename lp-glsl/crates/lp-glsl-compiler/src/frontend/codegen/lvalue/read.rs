@@ -20,103 +20,21 @@ pub fn read_lvalue<M: cranelift_module::Module>(
     ctx.ensure_block()?;
 
     match lvalue {
-        LValue::Variable { vars, ty, name } => {
-            // Check if this is an out/inout parameter (has pointer)
-            if let Some(var_name) = name {
-                if let Some(var_info) = ctx.lookup_var_info(var_name) {
-                    if let Some(ptr) = var_info.out_inout_ptr {
-                        // Out/inout parameter: load from pointer
-                        let component_count = if ty.is_vector() {
-                            ty.component_count().unwrap()
-                        } else if ty.is_matrix() {
-                            ty.matrix_element_count().unwrap()
-                        } else {
-                            1
-                        };
-
-                        let base_cranelift_ty = if ty.is_vector() {
-                            ty.vector_base_type()
-                                .unwrap()
-                                .to_cranelift_type()
-                                .map_err(|e| {
-                                    GlslError::new(
-                                        ErrorCode::E0400,
-                                        format!("Failed to convert type: {}", e.message),
-                                    )
-                                })?
-                        } else if ty.is_matrix() {
-                            cranelift_codegen::ir::types::F32
-                        } else {
-                            ty.to_cranelift_type().map_err(|e| {
-                                GlslError::new(
-                                    ErrorCode::E0400,
-                                    format!("Failed to convert type: {}", e.message),
-                                )
-                            })?
-                        };
-
-                        let flags = cranelift_codegen::ir::MemFlags::trusted();
-                        let mut vals = Vec::new();
-                        for i in 0..component_count {
-                            let offset =
-                                (i * crate::frontend::codegen::constants::F32_SIZE_BYTES) as i32;
-                            let val = ctx
-                                .builder
-                                .ins()
-                                .load(base_cranelift_ty, flags, ptr, offset);
-                            vals.push(val);
-                        }
-                        return Ok((vals, ty.clone()));
-                    }
-                }
-            }
-
+        LValue::Variable { vars, ty, .. } => {
             // Normal variable or array: use vars (arrays have empty vars)
+            // Out/inout parameters now use PointerBased variant
             let vals: Vec<Value> = vars.iter().map(|&v| ctx.builder.use_var(v)).collect();
             Ok((vals, ty.clone()))
         }
 
         LValue::Component {
             base_vars,
-            base_ty,
             indices,
             result_ty,
-            name,
             ..
         } => {
-            // Check if this is an out/inout parameter (has pointer)
-            if let Some(var_name) = name {
-                if let Some(var_info) = ctx.lookup_var_info(var_name) {
-                    if let Some(ptr) = var_info.out_inout_ptr {
-                        // Out/inout parameter: load components from pointer
-                        // Use base_ty to get the component type (base_ty is the original vector type)
-                        let base_cranelift_ty = base_ty
-                            .vector_base_type()
-                            .unwrap()
-                            .to_cranelift_type()
-                            .map_err(|e| {
-                                GlslError::new(
-                                    ErrorCode::E0400,
-                                    format!("Failed to convert type: {}", e.message),
-                                )
-                            })?;
-                        let component_size_bytes = base_cranelift_ty.bytes() as usize;
-                        let flags = cranelift_codegen::ir::MemFlags::trusted();
-                        let mut vals = Vec::new();
-                        for &idx in indices {
-                            let offset = (idx * component_size_bytes) as i32;
-                            let val = ctx
-                                .builder
-                                .ins()
-                                .load(base_cranelift_ty, flags, ptr, offset);
-                            vals.push(val);
-                        }
-                        return Ok((vals, result_ty.clone()));
-                    }
-                }
-            }
-
             // Normal component access: use vars
+            // Out/inout component access now uses PointerBased variant
             let mut vals = Vec::new();
             for &idx in indices {
                 vals.push(ctx.builder.use_var(base_vars[idx]));

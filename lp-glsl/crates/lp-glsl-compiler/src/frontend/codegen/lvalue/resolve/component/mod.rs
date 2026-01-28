@@ -86,18 +86,8 @@ pub fn resolve_component_lvalue<M: cranelift_module::Module>(
             name,
             ..
         } => {
-            // Check if this is an out/inout parameter (has name for lookup)
-            if let Some(var_name) = &name {
-                if let Some(var_info) = ctx.lookup_var_info(var_name) {
-                    if let Some(ptr) = var_info.out_inout_ptr {
-                        // Out/inout parameter: create PointerBased with Component pattern
-                        return Ok(resolve_component_on_pointer_based(
-                            ptr, base_ty, indices, result_ty,
-                        ));
-                    }
-                }
-            }
             // Regular variable: use SSA vars
+            // Out/inout parameters now use PointerBased variant directly
             Ok(resolve_component_on_variable(
                 vars, base_ty, indices, result_ty, name,
             ))
