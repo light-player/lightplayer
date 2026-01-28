@@ -9,10 +9,10 @@ use crate::util::q32::Q32;
 
 /// Convert RGB color to HSV color (extern C wrapper for compiler).
 ///
-/// Uses StructReturn to return vec3: writes all components to memory.
+/// Uses result pointer parameter to return vec3: writes all components to memory.
 ///
 /// # Arguments
-/// * `result_ptr` - Pointer to memory where vec3 result will be written (StructReturn)
+/// * `result_ptr` - Pointer to memory where vec3 result will be written (result pointer parameter)
 /// * `x` - R component as f32
 /// * `y` - G component as f32
 /// * `z` - B component as f32
@@ -39,10 +39,10 @@ pub extern "C" fn __lpfx_rgb2hsv_f32(result_ptr: *mut f32, x: f32, y: f32, z: f3
 
 /// Convert RGB color to HSV color with alpha (extern C wrapper for compiler).
 ///
-/// Uses StructReturn to return vec4: writes all components to memory.
+/// Uses result pointer parameter to return vec4: writes all components to memory.
 ///
 /// # Arguments
-/// * `result_ptr` - Pointer to memory where vec4 result will be written (StructReturn)
+/// * `result_ptr` - Pointer to memory where vec4 result will be written (result pointer parameter)
 /// * `x` - R component as f32
 /// * `y` - G component as f32
 /// * `z` - B component as f32

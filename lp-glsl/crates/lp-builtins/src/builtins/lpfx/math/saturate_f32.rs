@@ -24,10 +24,10 @@ pub extern "C" fn __lpfx_saturate_f32(value: f32) -> f32 {
 
 /// Saturate function for vec3 (extern C wrapper for compiler).
 ///
-/// Uses StructReturn to return vec3: writes all components to memory.
+/// Uses result pointer parameter to return vec3: writes all components to memory.
 ///
 /// # Arguments
-/// * `result_ptr` - Pointer to memory where vec3 result will be written (StructReturn)
+/// * `result_ptr` - Pointer to memory where vec3 result will be written (result pointer parameter)
 /// * `x` - X component as f32
 /// * `y` - Y component as f32
 /// * `z` - Z component as f32
@@ -55,10 +55,10 @@ pub extern "C" fn __lpfx_saturate_vec3_f32(result_ptr: *mut f32, x: f32, y: f32,
 
 /// Saturate function for vec4 (extern C wrapper for compiler).
 ///
-/// Uses StructReturn to return vec4: writes all components to memory.
+/// Uses result pointer parameter to return vec4: writes all components to memory.
 ///
 /// # Arguments
-/// * `result_ptr` - Pointer to memory where vec4 result will be written (StructReturn)
+/// * `result_ptr` - Pointer to memory where vec4 result will be written (result pointer parameter)
 /// * `x` - X component as f32
 /// * `y` - Y component as f32
 /// * `z` - Z component as f32

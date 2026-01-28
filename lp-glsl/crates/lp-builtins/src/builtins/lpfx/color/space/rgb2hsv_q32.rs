@@ -86,10 +86,10 @@ pub fn lpfx_rgb2hsv_vec4_q32(rgb: Vec4Q32) -> Vec4Q32 {
 
 /// Convert RGB color to HSV color (extern C wrapper for compiler).
 ///
-/// Uses StructReturn to return vec3: writes all components to memory.
+/// Uses result pointer parameter to return vec3: writes all components to memory.
 ///
 /// # Arguments
-/// * `result_ptr` - Pointer to memory where vec3 result will be written (StructReturn)
+/// * `result_ptr` - Pointer to memory where vec3 result will be written (result pointer parameter)
 /// * `x` - R component as i32 (Q32 fixed-point)
 /// * `y` - G component as i32 (Q32 fixed-point)
 /// * `z` - B component as i32 (Q32 fixed-point)
@@ -107,10 +107,10 @@ pub extern "C" fn __lpfx_rgb2hsv_q32(result_ptr: *mut i32, x: i32, y: i32, z: i3
 
 /// Convert RGB color to HSV color with alpha (extern C wrapper for compiler).
 ///
-/// Uses StructReturn to return vec4: writes all components to memory.
+/// Uses result pointer parameter to return vec4: writes all components to memory.
 ///
 /// # Arguments
-/// * `result_ptr` - Pointer to memory where vec4 result will be written (StructReturn)
+/// * `result_ptr` - Pointer to memory where vec4 result will be written (result pointer parameter)
 /// * `x` - R component as i32 (Q32 fixed-point)
 /// * `y` - G component as i32 (Q32 fixed-point)
 /// * `z` - B component as i32 (Q32 fixed-point)

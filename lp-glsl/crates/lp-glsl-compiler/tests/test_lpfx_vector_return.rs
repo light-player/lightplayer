@@ -1,20 +1,20 @@
-//! Test LPFX functions with struct return (vector return types)
+//! Test LPFX functions with vector return types
 //!
 //! This test exercises both emulator and JIT execution paths for LPFX functions
-//! that return vectors (using StructReturn calling convention). This helps debug
+//! that return vectors (using result pointer parameters). This helps debug
 //! pointer type mismatches between architectures (i32 on RISC-V 32-bit, i64 on native JIT).
 
 #[cfg(feature = "emulator")]
 use lp_glsl_compiler::glsl_emu_riscv32;
-use lp_glsl_compiler::{DecimalFormat, GlslExecutable, GlslOptions, GlslValue, RunMode, glsl_jit};
+use lp_glsl_compiler::{DecimalFormat, GlslOptions, GlslValue, RunMode, glsl_jit};
 
-/// Test lpfx_hsv2rgb with vec3 return (struct return) in JIT mode
+/// Test lpfx_hsv2rgb with vec3 return (result pointer parameter) in JIT mode
 #[test]
 fn test_lpfx_hsv2rgb_jit() {
     let glsl = r#"
 vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     vec3 hsv = vec3(0.5, 1.0, 1.0); // Hue=0.5 (cyan), Saturation=1.0, Value=1.0
-    // THIS IS THE STRUCT RETURN CALL - tests pointer type matching
+    // THIS IS THE RESULT POINTER PARAMETER CALL - tests pointer type matching
     vec3 rgb = lpfx_hsv2rgb(hsv);
     return vec4(rgb, 1.0);
 }
@@ -32,7 +32,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
         Ok(mut executable) => {
             // DEBUG: Print CLIF/v-code if available
             println!("=== DEBUG: Checking compiled function ===");
-            let (original_clif, transformed_clif) = executable.format_clif_ir();
+            let (_original_clif, transformed_clif) = executable.format_clif_ir();
             if let Some(ref clif) = transformed_clif {
                 println!("=== Transformed CLIF IR ===\n{}", clif);
             }
@@ -85,7 +85,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     }
 }
 
-/// Test lpfx_hsv2rgb with vec3 return (struct return) in emulator mode
+/// Test lpfx_hsv2rgb with vec3 return (result pointer parameter) in emulator mode
 #[cfg(feature = "emulator")]
 #[test]
 fn test_lpfx_hsv2rgb_emulator() {
@@ -175,7 +175,7 @@ vec4 main(vec2 fragCoord, vec2 outputSize, float time) {
     float noiseValue = lpfx_snoise(vec3(scaledCoord, pan), 0u);
     float hue = cos(noiseValue * 3.1415 + time) / 2.0 + 0.5;
     
-    // Convert HSV to RGB - THIS IS THE STRUCT RETURN CALL
+    // Convert HSV to RGB - THIS IS THE RESULT POINTER PARAMETER CALL
     vec3 rgb = lpfx_hsv2rgb(vec3(hue, 1.0, 1.0));
     
     // Clamp to [0, 1] and return

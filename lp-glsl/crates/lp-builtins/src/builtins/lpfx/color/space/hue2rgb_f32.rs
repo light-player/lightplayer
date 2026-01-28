@@ -8,10 +8,10 @@ use crate::util::q32::Q32;
 
 /// Convert hue value to RGB color (extern C wrapper for compiler).
 ///
-/// Uses StructReturn to return vec3: writes all components to memory.
+/// Uses result pointer parameter to return vec3: writes all components to memory.
 ///
 /// # Arguments
-/// * `result_ptr` - Pointer to memory where vec3 result will be written (StructReturn)
+/// * `result_ptr` - Pointer to memory where vec3 result will be written (result pointer parameter)
 /// * `hue` - Hue value as f32
 #[lpfx_impl_macro::lpfx_impl(f32, "vec3 lpfx_hue2rgb(float hue)")]
 #[unsafe(no_mangle)]

@@ -56,12 +56,12 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
         }
         let flat_args = expand_vector_args(&param_types, &flat_values);
 
-        // Check if function uses StructReturn (vector return type)
+        // Check if function returns a vector (needs result pointer parameter)
         let return_type = &func.glsl_sig.return_type;
-        let uses_struct_return = return_type.is_vector();
+        let uses_result_ptr = return_type.is_vector();
 
-        // Setup StructReturn buffer if needed
-        let return_buffer_ptr = if uses_struct_return {
+        // Setup result buffer if needed (for vector returns)
+        let return_buffer_ptr = if uses_result_ptr {
             let element_count = return_type.component_count().unwrap();
             let buffer_size = (element_count * F32_SIZE_BYTES) as u32;
             let pointer_type = self.gl_module.module_internal().isa().pointer_type();
@@ -79,7 +79,8 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
             None
         };
 
-        // Prepare call arguments: StructReturn pointer first (if present), then regular args
+        // Prepare call arguments: result pointer first (if present), then regular args
+        // Note: result pointer is a normal parameter, not StructReturn
         let mut call_args = Vec::new();
         if let Some(buffer_ptr) = return_buffer_ptr {
             call_args.push(buffer_ptr);
@@ -101,7 +102,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
                 // Handle return values
                 if let Some(buffer_ptr) = return_buffer_ptr {
-                    // StructReturn: load values from buffer
+                    // Vector return: load values from buffer (written by function via result pointer)
                     let element_count = return_type.component_count().unwrap();
                     let base_type = return_type.vector_base_type().unwrap();
                     let cranelift_ty = base_type.to_cranelift_type().map_err(|e| {
@@ -153,7 +154,7 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
 
                 // Handle return values
                 if let Some(buffer_ptr) = return_buffer_ptr {
-                    // StructReturn: load values from buffer
+                    // Result pointer: load values from buffer
                     let element_count = return_type.component_count().unwrap();
                     let base_type = return_type.vector_base_type().unwrap();
                     let cranelift_ty = base_type.to_cranelift_type().map_err(|e| {
@@ -213,15 +214,75 @@ impl<'a, M: cranelift_module::Module> CodegenContext<'a, M> {
         // TestCase name is the builtin ID name (includes variant info for overloads)
         let testcase_name = builtin_id.name();
 
-        // Get pointer type for StructReturn (if needed)
+        // Get pointer type for result pointer parameter (if needed for vector returns)
         let pointer_type = self.gl_module.module_internal().isa().pointer_type();
+
+        // Debug: Log pointer type to help diagnose architecture-specific issues
+        crate::debug!(
+            "get_lpfx_testcase_call: function={}, pointer_type={:?}",
+            testcase_name,
+            pointer_type
+        );
 
         // Build signature with Float format (f32 args, f32 return)
         // The transform will convert this to q32 when processing the call
         let sig = build_call_signature(func, builtin_id, DecimalFormat::Float, pointer_type);
+        if func.glsl_sig.return_type.is_vector() {
+            let _result_ptr_param = sig
+                .params
+                .first()
+                .expect("Result pointer param should exist");
+            crate::debug!(
+                "get_lpfx_testcase_call: Result pointer param type={:?}, purpose={:?} (should be Normal, not StructReturn)",
+                _result_ptr_param.value_type,
+                _result_ptr_param.purpose
+            );
+        }
+
+        // Verify signature before importing (to catch issues early)
+        let built_result_ptr_type = if func.glsl_sig.return_type.is_vector() {
+            Some(
+                sig.params
+                    .first()
+                    .expect("Result pointer param should exist")
+                    .value_type,
+            )
+        } else {
+            None
+        };
+        if let Some(built_type) = built_result_ptr_type {
+            if built_type != pointer_type {
+                return Err(GlslError::new(
+                    ErrorCode::E0400,
+                    format!(
+                        "Signature build error: Built signature has result pointer type {built_type:?}, expected {pointer_type:?} (ISA pointer type)."
+                    ),
+                ));
+            }
+        }
 
         // Create TestCase name for external function call
-        let sig_ref = self.builder.func.import_signature(sig);
+        let sig_ref = self.builder.func.import_signature(sig.clone());
+
+        // Verify the imported signature matches what we built (check for deduplication issues)
+        let imported_sig = &self.builder.func.dfg.signatures[sig_ref];
+        if func.glsl_sig.return_type.is_vector() {
+            let result_ptr_param = imported_sig
+                .params
+                .first()
+                .expect("Result pointer param should exist");
+            if result_ptr_param.value_type != pointer_type {
+                return Err(GlslError::new(
+                    ErrorCode::E0400,
+                    format!(
+                        "Signature mismatch after import: Result pointer param type is {:?}, expected {:?} (ISA pointer type). \
+                         Built signature had {:?}. This indicates a signature deduplication bug - Cranelift matched to an old signature with wrong pointer type.",
+                        result_ptr_param.value_type, pointer_type, built_result_ptr_type
+                    ),
+                ));
+            }
+        }
+
         let ext_name = ExternalName::testcase(testcase_name.as_bytes());
         let ext_func = ExtFuncData {
             name: ext_name,
