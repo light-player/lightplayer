@@ -26,6 +26,8 @@ pub struct FixtureRuntime {
     transform: [[f32; 4]; 4],
     texture_width: Option<u32>,
     texture_height: Option<u32>,
+    /// Last sampled lamp colors (RGB per lamp, ordered by channel index)
+    lamp_colors: Vec<u8>,
 }
 
 impl FixtureRuntime {
@@ -45,6 +47,7 @@ impl FixtureRuntime {
             ], // Identity matrix
             texture_width: None,
             texture_height: None,
+            lamp_colors: Vec::new(),
         }
     }
 
@@ -75,6 +78,12 @@ impl FixtureRuntime {
     /// Get output handle (for state extraction)
     pub fn get_output_handle(&self) -> Option<OutputHandle> {
         self.output_handle
+    }
+
+    /// Get lamp colors (for state extraction)
+    /// Returns RGB values per lamp, ordered by channel index (3 bytes per lamp)
+    pub fn get_lamp_colors(&self) -> &[u8] {
+        &self.lamp_colors
     }
 
     /// Regenerate mapping when texture resolution changes
@@ -284,9 +293,6 @@ impl NodeRuntime for FixtureRuntime {
         // Regenerate mapping if texture resolution changed
         self.regenerate_mapping_if_needed(texture_width, texture_height)?;
 
-        let texture_width = texture_width as f32;
-        let texture_height = texture_height as f32;
-
         // Sample all mapping points and collect results
         let mut sampled_values: Vec<(u32, [u8; 4])> = Vec::new();
 
@@ -321,12 +327,8 @@ impl NodeRuntime for FixtureRuntime {
                 let sample_u = sample_u.max(0.0).min(1.0);
                 let sample_v = sample_v.max(0.0).min(1.0);
 
-                // Convert normalized coordinates to pixel coordinates
-                let x = (sample_u * texture_width).clamp(0.0, texture_width - 1.0) as u32;
-                let y = (sample_v * texture_height).clamp(0.0, texture_height - 1.0) as u32;
-
-                // Sample texture
-                if let Some(pixel) = texture.get_pixel(x, y) {
+                // Sample texture using bilinear interpolation (smooth sampling)
+                if let Some(pixel) = texture.sample(sample_u, sample_v) {
                     let weight = sample.weight;
                     r_sum += pixel[0] as f32 * weight;
                     g_sum += pixel[1] as f32 * weight;
@@ -357,6 +359,25 @@ impl NodeRuntime for FixtureRuntime {
         let output_handle = self.output_handle.ok_or_else(|| Error::Other {
             message: String::from("Output handle not resolved"),
         })?;
+
+        // Store lamp colors for state extraction
+        // Find max channel to determine array size, then store RGB values indexed by channel
+        let max_channel = sampled_values
+            .iter()
+            .map(|(channel, _)| *channel)
+            .max()
+            .unwrap_or(0);
+
+        // Create dense array: each channel uses 3 bytes (RGB), so (max_channel + 1) * 3 total bytes
+        self.lamp_colors.clear();
+        self.lamp_colors.resize((max_channel as usize + 1) * 3, 0);
+
+        for (channel, [r, g, b, _a]) in &sampled_values {
+            let idx = (*channel as usize) * 3;
+            self.lamp_colors[idx] = *r;
+            self.lamp_colors[idx + 1] = *g;
+            self.lamp_colors[idx + 2] = *b;
+        }
 
         // Write sampled values to output buffer
         // For now, use universe 0 and channel_offset 0 (sequential writing)

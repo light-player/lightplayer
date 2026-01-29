@@ -1014,8 +1014,11 @@ impl ProjectRuntime {
                                     .get_output_handle()
                                     .map(|h| h.as_node_handle());
 
+                                // Extract lamp colors from runtime
+                                let lamp_colors = fixture_runtime.get_lamp_colors().to_vec();
+
                                 NodeState::Fixture(lp_model::nodes::fixture::FixtureState {
-                                    lamp_colors: Vec::new(), // TODO: Extract from runtime if needed
+                                    lamp_colors,
                                     mapping_cells,
                                     texture_handle,
                                     output_handle,

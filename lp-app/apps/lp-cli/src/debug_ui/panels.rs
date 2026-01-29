@@ -38,6 +38,9 @@ pub fn render_all_nodes_panel(
     view: &ClientProjectView,
     tracked_nodes: &mut std::collections::BTreeSet<NodeHandle>,
     all_detail: &mut bool,
+    show_texture_background: &mut bool,
+    show_texture_labels: &mut bool,
+    show_texture_strokes: &mut bool,
 ) -> bool {
     let mut changed = false;
 
@@ -54,6 +57,14 @@ pub fn render_all_nodes_panel(
             tracked_nodes.clear();
         }
     }
+
+    ui.separator();
+
+    // Fixture display options
+    ui.label("Fixture Display Options:");
+    ui.checkbox(show_texture_background, "Show texture background");
+    ui.checkbox(show_texture_labels, "Show index labels");
+    ui.checkbox(show_texture_strokes, "Show strokes");
 
     ui.separator();
 
@@ -110,7 +121,14 @@ pub fn render_all_nodes_panel(
                         NodeKind::Texture,
                         lp_model::project::api::NodeState::Texture(texture_state),
                     ) => {
-                        texture::render_texture_panel(ui, entry, texture_state);
+                        texture::render_texture_panel(
+                            ui,
+                            entry,
+                            texture_state,
+                            *show_texture_background,
+                            *show_texture_labels,
+                            *show_texture_strokes,
+                        );
                     }
                     (NodeKind::Shader, lp_model::project::api::NodeState::Shader(shader_state)) => {
                         shader::render_shader_panel(ui, entry, shader_state);
@@ -119,7 +137,15 @@ pub fn render_all_nodes_panel(
                         NodeKind::Fixture,
                         lp_model::project::api::NodeState::Fixture(fixture_state),
                     ) => {
-                        fixture::render_fixture_panel(ui, view, entry, fixture_state, handle);
+                        fixture::render_fixture_panel(
+                            ui,
+                            view,
+                            entry,
+                            fixture_state,
+                            *show_texture_background,
+                            *show_texture_labels,
+                            *show_texture_strokes,
+                        );
                     }
                     (NodeKind::Output, lp_model::project::api::NodeState::Output(output_state)) => {
                         output::render_output_panel(ui, entry, output_state);

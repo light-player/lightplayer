@@ -45,6 +45,10 @@ pub struct DebugUiState {
     server_fps_history: Vec<f32>,
     /// Current theoretical FPS from server (based on frame processing time)
     theoretical_fps: Option<f32>,
+    /// Texture display options
+    show_texture_background: bool,
+    show_texture_labels: bool,
+    show_texture_strokes: bool,
 }
 
 impl DebugUiState {
@@ -70,6 +74,9 @@ impl DebugUiState {
             last_server_frame_time: None,
             server_fps_history: Vec::new(),
             theoretical_fps: None,
+            show_texture_background: false,
+            show_texture_labels: false,
+            show_texture_strokes: false,
         }
     }
 
@@ -291,6 +298,9 @@ impl eframe::App for DebugUiState {
                         &view,
                         &mut self.tracked_nodes,
                         &mut self.all_detail,
+                        &mut self.show_texture_background,
+                        &mut self.show_texture_labels,
+                        &mut self.show_texture_strokes,
                     );
                     if nodes_changed {
                         self.tracked_nodes_changed = true;
