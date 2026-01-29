@@ -1,21 +1,14 @@
 use crate::error::Error;
-use crate::nodes::fixture::mapping_compute::{PrecomputedMapping, compute_mapping};
+use crate::nodes::fixture::mapping::{
+    MappingPoint, PrecomputedMapping, accumulate_from_mapping, compute_mapping,
+    generate_mapping_points,
+};
 use crate::nodes::{NodeConfig, NodeRuntime};
 use crate::runtime::contexts::{NodeInitContext, OutputHandle, RenderContext, TextureHandle};
 use alloc::{boxed::Box, string::String, vec::Vec};
-use lp_builtins::glsl::q32::types::q32::{Q32, ToQ32};
 use lp_model::FrameId;
-use lp_model::nodes::fixture::mapping::{MappingConfig, PathSpec, RingOrder};
 use lp_model::nodes::fixture::{ColorOrder, FixtureConfig};
 use lp_shared::fs::fs_event::FsChange;
-
-/// Mapping point representing a single LED sampling location
-#[derive(Debug, Clone)]
-pub struct MappingPoint {
-    pub channel: u32,
-    pub center: [f32; 2], // Texture space coordinates [0, 1]
-    pub radius: f32,
-}
 
 /// Fixture node runtime
 pub struct FixtureRuntime {
@@ -143,131 +136,6 @@ impl FixtureRuntime {
     }
 }
 
-/// Generate mapping points from MappingConfig
-fn generate_mapping_points(
-    config: &MappingConfig,
-    texture_width: u32,
-    texture_height: u32,
-) -> Vec<MappingPoint> {
-    match config {
-        MappingConfig::PathPoints {
-            paths,
-            sample_diameter,
-        } => {
-            let mut all_points = Vec::new();
-            let mut channel_offset = 0u32;
-
-            for path_spec in paths {
-                let points = match path_spec {
-                    PathSpec::RingArray {
-                        center,
-                        diameter,
-                        start_ring_inclusive,
-                        end_ring_exclusive,
-                        ring_lamp_counts,
-                        offset_angle,
-                        order,
-                    } => generate_ring_array_points(
-                        *center,
-                        *diameter,
-                        *start_ring_inclusive,
-                        *end_ring_exclusive,
-                        ring_lamp_counts,
-                        *offset_angle,
-                        *order,
-                        *sample_diameter,
-                        texture_width,
-                        texture_height,
-                        channel_offset,
-                    ),
-                };
-
-                channel_offset += points.len() as u32;
-                all_points.extend(points);
-            }
-
-            all_points
-        }
-    }
-}
-
-/// Generate mapping points from RingArray path specification
-fn generate_ring_array_points(
-    center: (f32, f32),
-    diameter: f32,
-    start_ring_inclusive: u32,
-    end_ring_exclusive: u32,
-    ring_lamp_counts: &Vec<u32>,
-    offset_angle: f32,
-    order: RingOrder,
-    sample_diameter: f32,
-    texture_width: u32,
-    texture_height: u32,
-    channel_offset: u32,
-) -> Vec<MappingPoint> {
-    let (center_x, center_y) = center;
-    let start_ring = start_ring_inclusive;
-    let end_ring = end_ring_exclusive;
-
-    // Calculate max ring index for spacing
-    let max_ring_index = if end_ring > start_ring {
-        (end_ring - start_ring - 1) as f32
-    } else {
-        0.0
-    };
-
-    // Convert sample_diameter (pixels) to normalized radius
-    let max_dimension = texture_width.max(texture_height) as f32;
-    let normalized_radius = (sample_diameter / 2.0) / max_dimension;
-
-    // Determine ring processing order
-    let ring_indices: Vec<u32> = match order {
-        RingOrder::InnerFirst => (start_ring..end_ring).collect(),
-        RingOrder::OuterFirst => (start_ring..end_ring).rev().collect(),
-    };
-
-    let mut points = Vec::new();
-    let mut current_channel = channel_offset;
-
-    for ring_index in ring_indices {
-        // Calculate ring radius (even spacing)
-        let ring_radius = if max_ring_index > 0.0 {
-            (diameter / 2.0) * ((ring_index - start_ring) as f32 / max_ring_index)
-        } else {
-            0.0
-        };
-
-        // Get lamp count for this ring
-        let lamp_count = ring_lamp_counts
-            .get(ring_index as usize)
-            .copied()
-            .unwrap_or(0);
-
-        // Generate points for each lamp in the ring
-        for lamp_index in 0..lamp_count {
-            let angle = (2.0 * core::f32::consts::PI * lamp_index as f32 / lamp_count as f32)
-                + offset_angle;
-
-            let x = center_x + ring_radius * angle.cos();
-            let y = center_y + ring_radius * angle.sin();
-
-            // Clamp to [0, 1] range
-            let x = x.max(0.0).min(1.0);
-            let y = y.max(0.0).min(1.0);
-
-            points.push(MappingPoint {
-                channel: current_channel,
-                center: [x, y],
-                radius: normalized_radius,
-            });
-
-            current_channel += 1;
-        }
-    }
-
-    points
-}
-
 impl NodeRuntime for FixtureRuntime {
     fn init(&mut self, ctx: &dyn NodeInitContext) -> Result<(), Error> {
         // Get config
@@ -326,80 +194,21 @@ impl NodeRuntime for FixtureRuntime {
                 message: String::from("Precomputed mapping not available"),
             })?;
 
-        // Initialize channel accumulators (16.16 fixed-point, one per channel)
-        // Find max channel from mapping entries
-        let max_channel = mapping
-            .entries
-            .iter()
-            .filter_map(|e| {
-                if !e.is_skip() {
-                    Some(e.channel())
-                } else {
-                    None
-                }
-            })
-            .max()
-            .unwrap_or(0);
+        // Accumulate channel values using format-specific sampling
+        let texture_data = texture.data();
+        let texture_format = texture.format();
+        let accumulators = accumulate_from_mapping(
+            &mapping.entries,
+            texture_data,
+            texture_format,
+            texture_width,
+            texture_height,
+        );
 
-        let mut ch_values_r: Vec<Q32> = Vec::with_capacity((max_channel + 1) as usize);
-        let mut ch_values_g: Vec<Q32> = Vec::with_capacity((max_channel + 1) as usize);
-        let mut ch_values_b: Vec<Q32> = Vec::with_capacity((max_channel + 1) as usize);
-        ch_values_r.resize((max_channel + 1) as usize, Q32::ZERO);
-        ch_values_g.resize((max_channel + 1) as usize, Q32::ZERO);
-        ch_values_b.resize((max_channel + 1) as usize, Q32::ZERO);
-
-        // Iterate through entries and accumulate
-        // Entries are ordered by pixel (x, y), with consecutive entries per pixel
-        let mut pixel_index = 0u32;
-
-        for entry in &mapping.entries {
-            if entry.is_skip() {
-                // SKIP entry - advance to next pixel
-                pixel_index += 1;
-                continue;
-            }
-
-            // Get pixel coordinates
-            let x = pixel_index % texture_width;
-            let y = pixel_index / texture_width;
-
-            // Get pixel value from texture
-            if let Some(pixel) = texture.get_pixel(x, y) {
-                let channel = entry.channel() as usize;
-                if channel < ch_values_r.len() {
-                    let contribution_raw = entry.contribution_raw() as i32;
-
-                    let pixel_r = pixel[0].to_q32();
-                    let pixel_g = pixel[1].to_q32();
-                    let pixel_b = pixel[2].to_q32();
-
-                    if contribution_raw == 0 {
-                        ch_values_r[channel] += pixel_r;
-                        ch_values_g[channel] += pixel_g;
-                        ch_values_b[channel] += pixel_b;
-                    } else {
-                        let contributing = Q32(contribution_raw);
-
-                        // Note: this is safe, because contribution_raw is in range [1, 65535]
-                        //       and thusly cannot overflow when multiplying by an 8-bit value
-                        //       0xFF * 0xFFFF = 0xFEFF01
-
-                        let accumulated_r = contributing * pixel_r;
-                        let accumulated_g = contributing * pixel_g;
-                        let accumulated_b = contributing * pixel_b;
-
-                        ch_values_r[channel] += accumulated_r;
-                        ch_values_g[channel] += accumulated_g;
-                        ch_values_b[channel] += accumulated_b;
-                    }
-                }
-            }
-
-            // Advance pixel_index if this is the last entry for this pixel
-            if !entry.has_more() {
-                pixel_index += 1;
-            }
-        }
+        let max_channel = accumulators.max_channel;
+        let ch_values_r = &accumulators.r;
+        let ch_values_g = &accumulators.g;
+        let ch_values_b = &accumulators.b;
 
         // Get output handle
         let output_handle = self.output_handle.ok_or_else(|| Error::Other {
@@ -411,30 +220,22 @@ impl NodeRuntime for FixtureRuntime {
         self.lamp_colors.clear();
         self.lamp_colors.resize((max_channel as usize + 1) * 3, 0);
 
-        for channel in 0..=max_channel as usize {
-            // Values are already in 0-255 range (accumulated as regular integers)
-            // Just clamp to ensure they're in valid range
-            let r = ch_values_r[channel].to_i32().clamp(0, 255) as u8;
-            let g = ch_values_g[channel].to_i32().clamp(0, 255) as u8;
-            let b = ch_values_b[channel].to_i32().clamp(0, 255) as u8;
-
-            let idx = channel * 3;
-            self.lamp_colors[idx] = r;
-            self.lamp_colors[idx + 1] = g;
-            self.lamp_colors[idx + 2] = b;
-        }
-
         // Write sampled values to output buffer
         // For now, use universe 0 and channel_offset 0 (sequential writing)
         // TODO: Add universe and channel_offset fields to FixtureConfig when needed
         let universe = 0u32;
         let channel_offset = 0u32;
-        for channel in 0..=max_channel {
-            let r = ch_values_r[channel as usize].to_i32().clamp(0, 255) as u8;
-            let g = ch_values_g[channel as usize].to_i32().clamp(0, 255) as u8;
-            let b = ch_values_b[channel as usize].to_i32().clamp(0, 255) as u8;
+        for channel in 0..=max_channel as usize {
+            let r = ch_values_r[channel].to_u8_clamped();
+            let g = ch_values_g[channel].to_u8_clamped();
+            let b = ch_values_b[channel].to_u8_clamped();
 
-            let start_ch = channel_offset + channel * 3; // 3 bytes per RGB
+            let idx = channel * 3;
+            self.lamp_colors[idx] = r;
+            self.lamp_colors[idx + 1] = g;
+            self.lamp_colors[idx + 2] = b;
+
+            let start_ch = channel_offset + (channel as u32) * 3; // 3 bytes per RGB
             let buffer = ctx.get_output(output_handle, universe, start_ch, 3)?;
             self.color_order.write_rgb(buffer, 0, r, g, b);
         }
@@ -526,7 +327,7 @@ mod tests {
     fn test_pixel_index_advancement() {
         // Test that pixel_index advances correctly
         // Simulate: pixel 0 has 2 entries (channels 0 and 1), pixel 1 has 1 entry (channel 0)
-        use crate::nodes::fixture::mapping_compute::{PixelMappingEntry, PrecomputedMapping};
+        use crate::nodes::fixture::mapping::{PixelMappingEntry, PrecomputedMapping};
         use lp_builtins::glsl::q32::types::q32::Q32;
         use lp_model::FrameId;
 
@@ -585,7 +386,7 @@ mod tests {
     fn test_channel_contribution_sum() {
         // Test that all pixel contributions to a channel sum correctly
         // Create a simple mapping: one circle (one channel) that covers some pixels
-        use crate::nodes::fixture::mapping_compute::compute_mapping;
+        use crate::nodes::fixture::mapping::compute_mapping;
         use lp_model::FrameId;
         use lp_model::nodes::fixture::mapping::{MappingConfig, PathSpec, RingOrder};
 
@@ -924,28 +725,8 @@ mod tests {
         assert_eq!(points[7].channel, 7);
     }
 
-    #[test]
-    fn test_channel_offset() {
-        // Test with channel_offset > 0 (simulated by using generate_ring_array_points directly)
-        let points = generate_ring_array_points(
-            (0.5, 0.5),
-            1.0,
-            0,
-            1,
-            &vec![3],
-            0.0,
-            RingOrder::InnerFirst,
-            2.0,
-            100,
-            100,
-            10, // channel_offset = 10
-        );
-
-        assert_eq!(points.len(), 3);
-        assert_eq!(points[0].channel, 10);
-        assert_eq!(points[1].channel, 11);
-        assert_eq!(points[2].channel, 12);
-    }
+    // Note: test_channel_offset removed - channel_offset is now handled internally
+    // by generate_mapping_points which accumulates offsets across paths
 
     #[test]
     fn test_edge_cases_empty_ring() {

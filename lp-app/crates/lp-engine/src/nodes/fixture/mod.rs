@@ -1,4 +1,4 @@
-pub mod mapping_compute;
+pub mod mapping;
 pub mod runtime;
 
 pub use runtime::FixtureRuntime;
