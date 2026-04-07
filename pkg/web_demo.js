@@ -75,6 +75,10 @@ function __wbg_get_imports() {
             const ret = arg0 === undefined;
             return ret;
         },
+        __wbg___wbindgen_memory_edb3f01e3930bbf6: function() {
+            const ret = wasm.memory;
+            return ret;
+        },
         __wbg___wbindgen_string_get_395e606bd0ee4427: function(arg0, arg1) {
             const obj = arg1;
             const ret = typeof(obj) === 'string' ? obj : undefined;
@@ -90,6 +94,10 @@ function __wbg_get_imports() {
             const ret = arg0.apply(arg1, arg2);
             return ret;
         }, arguments); },
+        __wbg_buffer_eb2779983eb67380: function(arg0) {
+            const ret = arg0.buffer;
+            return ret;
+        },
         __wbg_get_3ef1eba1850ade27: function() { return handleError(function (arg0, arg1) {
             const ret = Reflect.get(arg0, arg1);
             return ret;
@@ -98,8 +106,22 @@ function __wbg_get_imports() {
             const ret = arg0[arg1 >>> 0];
             return ret;
         },
+        __wbg_grow_fc2b4696482e6f10: function(arg0, arg1) {
+            const ret = arg0.grow(arg1 >>> 0);
+            return ret;
+        },
         __wbg_imports_e31b15cba4c1e750: function(arg0) {
             const ret = WebAssembly.Module.imports(arg0);
+            return ret;
+        },
+        __wbg_instanceof_Memory_c492b7d1a51b453d: function(arg0) {
+            let result;
+            try {
+                result = arg0 instanceof WebAssembly.Memory;
+            } catch (_) {
+                result = false;
+            }
+            const ret = result;
             return ret;
         },
         __wbg_length_b3416cf66a5452c8: function(arg0) {
@@ -110,14 +132,14 @@ function __wbg_get_imports() {
             const ret = arg0.length;
             return ret;
         },
-        __wbg_new_3037462ecfc6d374: function() { return handleError(function (arg0) {
-            const ret = new WebAssembly.Memory(arg0);
-            return ret;
-        }, arguments); },
         __wbg_new_592b75079b91788e: function() { return handleError(function (arg0, arg1) {
             const ret = new WebAssembly.Instance(arg0, arg1);
             return ret;
         }, arguments); },
+        __wbg_new_5f486cdf45a04d78: function(arg0) {
+            const ret = new Uint8Array(arg0);
+            return ret;
+        },
         __wbg_new_a70fbab9066b301f: function() {
             const ret = new Array();
             return ret;
