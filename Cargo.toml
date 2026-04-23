@@ -2,6 +2,8 @@
 members = [
     # lp-base workspace members
     "lp-base/lp-perf",
+    "lp-base/lpfs",
+    "lp-domain/lp-domain",
     # lp-app workspace members
     "lp-core/lp-engine",
     "lp-core/lp-engine-client",
@@ -50,6 +52,9 @@ resolver = "2"
 # They're still in workspace members so they can use workspace dependencies
 # Build them explicitly with: just build-builtins, just build-rv32, or just build-fw-esp32
 default-members = [
+    # lp-base workspace members
+    "lp-base/lpfs",
+    "lp-domain/lp-domain",
     # lp-app workspace members
     "lp-core/lp-engine",
     "lp-core/lp-engine-client",
@@ -145,7 +150,8 @@ object = { version = "0.37.3", default-features = false, features = ['read_core'
 critical-section = { version = "1.2.0", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 serde = { version = "1.0.228", default-features = false, features = ["alloc"] }
-toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
+toml = { version = "0.9", default-features = false, features = ["parse", "serde", "preserve_order"] }
+schemars = { version = "1.2.1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.80", default-features = false, features = ["alloc"] }
 base64 = { version = "0.22", default-features = false, features = ["alloc"] }
 
