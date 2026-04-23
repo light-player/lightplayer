@@ -72,6 +72,30 @@ pub fn object_bytes_from_ir(
     ir: &LpirModule,
     options: &CompileOptions,
 ) -> Result<Vec<u8>, CompilerError> {
+    let mut ir_opt = ir.clone();
+    let inline_result = lpir::inline_module(&mut ir_opt, &options.config.inline);
+    if inline_result.call_sites_replaced > 0 {
+        log::info!(
+            "[cranelift] inline: replaced {} call sites",
+            inline_result.call_sites_replaced
+        );
+    }
+    if !matches!(
+        options.config.dead_func_elim.mode,
+        lpir::DeadFuncElimMode::Never
+    ) {
+        let roots = lpir::roots_from_is_entry(&ir_opt);
+        if !roots.is_empty() {
+            let dfe = lpir::dead_func_elim(&mut ir_opt, &roots);
+            if dfe.functions_removed > 0 {
+                log::info!(
+                    "[cranelift] dead_func_elim: removed {} functions",
+                    dfe.functions_removed
+                );
+            }
+        }
+    }
+
     let _codegen_guard = process_sync::codegen_guard();
 
     let isa = riscv32_owned_isa()?;
@@ -84,7 +108,7 @@ pub fn object_bytes_from_ir(
     let mut object_module = ObjectModule::new(builder);
     lower_lpir_into_module(
         &mut object_module,
-        ir,
+        &ir_opt,
         options.clone(),
         LpirFuncEmitOrder::Name,
     )?;

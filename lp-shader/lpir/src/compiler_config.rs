@@ -11,6 +11,7 @@ use core::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompilerConfig {
     pub inline: InlineConfig,
+    pub dead_func_elim: DeadFuncElimConfig,
     pub q32: lps_q32::q32_options::Q32Options,
 }
 
@@ -18,6 +19,7 @@ impl Default for CompilerConfig {
     fn default() -> Self {
         Self {
             inline: InlineConfig::default(),
+            dead_func_elim: DeadFuncElimConfig::default(),
             q32: lps_q32::q32_options::Q32Options::default(),
         }
     }
@@ -47,14 +49,19 @@ impl fmt::Display for InlineMode {
 impl FromStr for InlineMode {
     type Err = ();
 
-    /// Accepts lowercase names: `auto`, `always`, `never`.
+    /// Accepts `auto`, `always`, `never` (ASCII case-insensitive).
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.trim() {
-            "auto" => Ok(InlineMode::Auto),
-            "always" => Ok(InlineMode::Always),
-            "never" => Ok(InlineMode::Never),
-            _ => Err(()),
+        let s = s.trim();
+        if s.eq_ignore_ascii_case("auto") {
+            return Ok(InlineMode::Auto);
         }
+        if s.eq_ignore_ascii_case("always") {
+            return Ok(InlineMode::Always);
+        }
+        if s.eq_ignore_ascii_case("never") {
+            return Ok(InlineMode::Never);
+        }
+        Err(())
     }
 }
 
@@ -63,6 +70,9 @@ impl FromStr for InlineMode {
 pub struct InlineConfig {
     pub mode: InlineMode,
     pub always_inline_single_site: bool,
+    /// Maximum `func_weight` for "small" callees that are inlined unconditionally
+    /// (subject to budgets). Empirically tuned against the rv32n cost model on the
+    /// `inline-weights.glsl` corpus — see `docs/roadmaps/2026-04-15-lpir-inliner/m3.1-tune-inline-weights.md`.
     pub small_func_threshold: usize,
     pub max_growth_budget: Option<usize>,
     pub module_op_budget: Option<usize>,
@@ -73,37 +83,180 @@ impl Default for InlineConfig {
         Self {
             mode: InlineMode::Auto,
             always_inline_single_site: true,
-            small_func_threshold: 20,
+            small_func_threshold: 16,
             max_growth_budget: None,
             module_op_budget: None,
         }
     }
 }
 
+/// Controls dead function elimination.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum DeadFuncElimMode {
+    /// Run the pass when explicit roots exist (production).
+    Auto,
+    /// Skip the pass entirely (default — keeps filetests safe).
+    #[default]
+    Never,
+}
+
+impl fmt::Display for DeadFuncElimMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            DeadFuncElimMode::Auto => "auto",
+            DeadFuncElimMode::Never => "never",
+        })
+    }
+}
+
+impl FromStr for DeadFuncElimMode {
+    type Err = ();
+
+    /// Accepts `auto`, `never` (ASCII case-insensitive).
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.trim();
+        if s.eq_ignore_ascii_case("auto") {
+            return Ok(DeadFuncElimMode::Auto);
+        }
+        if s.eq_ignore_ascii_case("never") {
+            return Ok(DeadFuncElimMode::Never);
+        }
+        Err(())
+    }
+}
+
+/// Options for the dead function elimination pass.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeadFuncElimConfig {
+    pub mode: DeadFuncElimMode,
+}
+
+impl Default for DeadFuncElimConfig {
+    fn default() -> Self {
+        Self {
+            mode: DeadFuncElimMode::Never,
+        }
+    }
+}
+
+/// Keys accepted by [`CompilerConfig::apply`] (for error messages and tooling).
+pub const COMPILER_CONFIG_KEYS_HELP: &str = "inline.mode, inline.always_inline_single_site, inline.small_func_threshold, inline.max_growth_budget, inline.module_op_budget, dead_func_elim.mode";
+
+/// Multi-line listing of keys and allowed values (e.g. `shader-debug --compiler-opt` with no value).
+pub const COMPILER_CONFIG_APPLY_HELP: &str = r#"Valid `--compiler-opt` entries use KEY=value. Repeat the flag for multiple overrides.
+
+Keys and values:
+
+  inline.mode
+      auto | always | never   (ASCII case-insensitive; default: auto)
+
+  inline.always_inline_single_site
+      true | false | 1 | 0   (default: true)
+
+  inline.small_func_threshold
+      non-negative integer   (default: 16)
+
+  inline.max_growth_budget
+      non-negative integer   (optional per-module growth cap)
+
+  inline.module_op_budget
+      non-negative integer   (optional whole-module op budget)
+
+  dead_func_elim.mode
+      auto | never   (ASCII case-insensitive; default: never)
+
+Examples:
+  --compiler-opt inline.mode=never
+  --compiler-opt inline.mode=always --compiler-opt inline.small_func_threshold=8
+"#;
+
 /// Error applying a single `compile-opt` key/value pair.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ConfigError {
-    UnknownKey { key: String },
-    InvalidValue { key: String, value: String },
+    UnknownKey {
+        key: String,
+    },
+    InvalidValue {
+        key: String,
+        value: String,
+        expected: &'static str,
+    },
 }
 
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ConfigError::UnknownKey { key } => write!(f, "unknown config key {key:?}"),
-            ConfigError::InvalidValue { key, value } => {
-                write!(f, "invalid value {value:?} for config key {key:?}")
-            }
+            ConfigError::UnknownKey { key } => write!(
+                f,
+                "unknown config key {key:?} (valid keys: {COMPILER_CONFIG_KEYS_HELP})"
+            ),
+            ConfigError::InvalidValue {
+                key,
+                value,
+                expected,
+            } => write!(
+                f,
+                "invalid value {value:?} for config key {key:?} (expected {expected})"
+            ),
         }
     }
 }
 
 impl core::error::Error for ConfigError {}
 
-fn invalid(key: &str, value: &str) -> ConfigError {
+fn invalid_usize(key: &str, value: &str) -> ConfigError {
     ConfigError::InvalidValue {
         key: String::from(key),
         value: String::from(value),
+        expected: "a non-negative integer",
+    }
+}
+
+fn invalid_bool(key: &str, value: &str) -> ConfigError {
+    ConfigError::InvalidValue {
+        key: String::from(key),
+        value: String::from(value),
+        expected: "true, false, 1, or 0",
+    }
+}
+
+fn invalid_inline_mode(key: &str, value: &str) -> ConfigError {
+    ConfigError::InvalidValue {
+        key: String::from(key),
+        value: String::from(value),
+        expected: "one of: auto, always, never (ASCII case-insensitive)",
+    }
+}
+
+fn invalid_dead_func_elim_mode(key: &str, value: &str) -> ConfigError {
+    ConfigError::InvalidValue {
+        key: String::from(key),
+        value: String::from(value),
+        expected: "one of: auto, never (ASCII case-insensitive)",
+    }
+}
+
+fn invalid_q32_addsub(key: &str, value: &str) -> ConfigError {
+    ConfigError::InvalidValue {
+        key: String::from(key),
+        value: String::from(value),
+        expected: "one of: saturating, wrapping",
+    }
+}
+
+fn invalid_q32_mul(key: &str, value: &str) -> ConfigError {
+    ConfigError::InvalidValue {
+        key: String::from(key),
+        value: String::from(value),
+        expected: "one of: saturating, wrapping",
+    }
+}
+
+fn invalid_q32_div(key: &str, value: &str) -> ConfigError {
+    ConfigError::InvalidValue {
+        key: String::from(key),
+        value: String::from(value),
+        expected: "one of: saturating, reciprocal",
     }
 }
 
@@ -112,32 +265,60 @@ impl CompilerConfig {
     pub fn apply(&mut self, key: &str, value: &str) -> Result<(), ConfigError> {
         match key.trim() {
             "inline.mode" => {
-                self.inline.mode = value.trim().parse().map_err(|_| invalid(key, value))?;
+                self.inline.mode = value
+                    .trim()
+                    .parse()
+                    .map_err(|_| invalid_inline_mode(key, value))?;
             }
             "inline.always_inline_single_site" => {
                 self.inline.always_inline_single_site =
-                    parse_bool(value).ok_or_else(|| invalid(key, value))?;
+                    parse_bool(value).ok_or_else(|| invalid_bool(key, value))?;
             }
             "inline.small_func_threshold" => {
-                self.inline.small_func_threshold =
-                    value.trim().parse().map_err(|_| invalid(key, value))?;
+                self.inline.small_func_threshold = value
+                    .trim()
+                    .parse()
+                    .map_err(|_| invalid_usize(key, value))?;
             }
             "inline.max_growth_budget" => {
-                self.inline.max_growth_budget =
-                    Some(value.trim().parse().map_err(|_| invalid(key, value))?);
+                self.inline.max_growth_budget = Some(
+                    value
+                        .trim()
+                        .parse()
+                        .map_err(|_| invalid_usize(key, value))?,
+                );
             }
             "inline.module_op_budget" => {
-                self.inline.module_op_budget =
-                    Some(value.trim().parse().map_err(|_| invalid(key, value))?);
+                self.inline.module_op_budget = Some(
+                    value
+                        .trim()
+                        .parse()
+                        .map_err(|_| invalid_usize(key, value))?,
+                );
+            }
+            "dead_func_elim.mode" => {
+                self.dead_func_elim.mode = value
+                    .trim()
+                    .parse()
+                    .map_err(|_| invalid_dead_func_elim_mode(key, value))?;
             }
             "q32.add_sub" => {
-                self.q32.add_sub = value.trim().parse().map_err(|_| invalid(key, value))?;
+                self.q32.add_sub = value
+                    .trim()
+                    .parse()
+                    .map_err(|_| invalid_q32_addsub(key, value))?;
             }
             "q32.mul" => {
-                self.q32.mul = value.trim().parse().map_err(|_| invalid(key, value))?;
+                self.q32.mul = value
+                    .trim()
+                    .parse()
+                    .map_err(|_| invalid_q32_mul(key, value))?;
             }
             "q32.div" => {
-                self.q32.div = value.trim().parse().map_err(|_| invalid(key, value))?;
+                self.q32.div = value
+                    .trim()
+                    .parse()
+                    .map_err(|_| invalid_q32_div(key, value))?;
             }
             _ => {
                 return Err(ConfigError::UnknownKey {
@@ -196,8 +377,14 @@ mod tests {
     #[test]
     fn apply_unknown_key_errors() {
         let mut c = CompilerConfig::default();
-        let r = c.apply("inline.unknown", "x");
-        assert!(matches!(r, Err(ConfigError::UnknownKey { .. })));
+        let err = c.apply("inline.unknown", "x").unwrap_err();
+        assert!(matches!(err, ConfigError::UnknownKey { .. }));
+        let msg = err.to_string();
+        assert!(
+            msg.contains("inline.mode"),
+            "error should list valid keys: {msg}"
+        );
+        assert!(msg.contains("inline.unknown"));
     }
 
     #[test]
@@ -205,6 +392,25 @@ mod tests {
         let mut c = CompilerConfig::default();
         assert!(c.apply("inline.mode", "bogus").is_err());
         assert!(c.apply("inline.small_func_threshold", "nope").is_err());
+        let msg = c.apply("inline.mode", "bogus").unwrap_err().to_string();
+        assert!(msg.contains("auto"));
+        assert!(msg.contains("always"));
+        assert!(msg.contains("never"));
+        let dfe = c
+            .apply("dead_func_elim.mode", "bogus")
+            .unwrap_err()
+            .to_string();
+        assert!(dfe.contains("auto"));
+        assert!(dfe.contains("never"));
+    }
+
+    #[test]
+    fn apply_inline_mode_case_insensitive() {
+        let mut c = CompilerConfig::default();
+        c.apply("inline.mode", "Never").unwrap();
+        assert_eq!(c.inline.mode, InlineMode::Never);
+        c.apply("inline.mode", "AUTO").unwrap();
+        assert_eq!(c.inline.mode, InlineMode::Auto);
     }
 
     #[test]
@@ -213,6 +419,38 @@ mod tests {
             let m: InlineMode = s.parse().expect(s);
             assert_eq!(m.to_string(), s);
         }
+        let m: InlineMode = "Never".parse().unwrap();
+        assert_eq!(m, InlineMode::Never);
+        assert_eq!(m.to_string(), "never");
+    }
+
+    #[test]
+    fn apply_dead_func_elim_mode() {
+        let mut c = CompilerConfig::default();
+        c.apply("dead_func_elim.mode", "auto").unwrap();
+        assert_eq!(c.dead_func_elim.mode, DeadFuncElimMode::Auto);
+        c.apply("dead_func_elim.mode", "never").unwrap();
+        assert_eq!(c.dead_func_elim.mode, DeadFuncElimMode::Never);
+    }
+
+    #[test]
+    fn apply_dead_func_elim_mode_case_insensitive() {
+        let mut c = CompilerConfig::default();
+        c.apply("dead_func_elim.mode", "Never").unwrap();
+        assert_eq!(c.dead_func_elim.mode, DeadFuncElimMode::Never);
+        c.apply("dead_func_elim.mode", "AUTO").unwrap();
+        assert_eq!(c.dead_func_elim.mode, DeadFuncElimMode::Auto);
+    }
+
+    #[test]
+    fn dead_func_elim_mode_from_str_and_display_round_trip() {
+        for s in ["auto", "never"] {
+            let m: DeadFuncElimMode = s.parse().expect(s);
+            assert_eq!(m.to_string(), s);
+        }
+        let m: DeadFuncElimMode = "Never".parse().unwrap();
+        assert_eq!(m, DeadFuncElimMode::Never);
+        assert_eq!(m.to_string(), "never");
     }
 
     #[test]

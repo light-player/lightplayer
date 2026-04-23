@@ -115,6 +115,30 @@ pub(crate) fn build_jit_module(
     glsl_meta: LpsModuleSig,
     options: CompileOptions,
 ) -> Result<JitModule, CompilerError> {
+    let mut ir_opt = ir.clone();
+    let inline_result = lpir::inline_module(&mut ir_opt, &options.config.inline);
+    if inline_result.call_sites_replaced > 0 {
+        log::info!(
+            "[cranelift] inline: replaced {} call sites",
+            inline_result.call_sites_replaced
+        );
+    }
+    if !matches!(
+        options.config.dead_func_elim.mode,
+        lpir::DeadFuncElimMode::Never
+    ) {
+        let roots = lpir::roots_from_is_entry(&ir_opt);
+        if !roots.is_empty() {
+            let dfe = lpir::dead_func_elim(&mut ir_opt, &roots);
+            if dfe.functions_removed > 0 {
+                log::info!(
+                    "[cranelift] dead_func_elim: removed {} functions",
+                    dfe.functions_removed
+                );
+            }
+        }
+    }
+
     let _codegen_guard = process_sync::codegen_guard();
 
     let mut flag_builder = settings::builder();
@@ -140,7 +164,8 @@ pub(crate) fn build_jit_module(
 
     let mut jit_module = JITModule::new(jit_builder);
 
-    let lowered = lower_lpir_into_module(&mut jit_module, ir, options, LpirFuncEmitOrder::Source)?;
+    let lowered =
+        lower_lpir_into_module(&mut jit_module, &ir_opt, options, LpirFuncEmitOrder::Source)?;
 
     jit_module.finalize_definitions().map_err(|e| {
         CompilerError::Codegen(CompileError::cranelift(alloc::format!(

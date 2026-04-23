@@ -15,7 +15,9 @@ in LPIR to handle multi-return callees without fake-loop overhead.
 | M0 | Stable CalleeRef refactor | [m0](m0-stable-callee-ref.md) | — |
 | M1 | OptPass enum + filetest annotations | [m1](m1-optpass-filetests.md) | — |
 | M2 | Block/EndBlock/ExitBlock LPIR ops | [m2](m2-block-ops.md) | — |
-| M3 | LPIR inlining pass | [m3](m3-inlining-pass.md) | M2 |
+| M2.5 | `Continuing` marker op | [m2.5](m2.5-continuing-marker.md) | M2 |
+| M3 | LPIR inlining pass | [m3](m3-inlining-pass.md) | M2.5 |
+| M3.1 | Tune `func_weight` empirically | [m3.1](m3.1-tune-inline-weights.md) | M3 |
 | M4 | Wire into native + validation | [m4](m4-wire-and-validate.md) | M1, M3 |
 | M5 | Dead function elimination | [m5](m5-dead-func-elim.md) | M0, M4 |
 
@@ -49,7 +51,7 @@ functions to eliminate).
 - 53 tests under `filetests/function/` covering call semantics
 - `call-simple`, `call-nested`, `call-multiple`, `call-order`, `call-return-value`
   are the direct call-graph tests
-- `debug/rainbow.glsl` is a real shader with many small helper calls
+- `examples/rainbow.glsl` is a real shader with many small helper calls
 - One compile per file per target; no per-test compile flag mechanism today
 - `NativeCompileOptions` has float_mode, debug_info, emu_trace, alloc_trace
 - Env var pattern exists: `LPVM_ALLOC_TRACE=1` → option field

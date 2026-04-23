@@ -8,8 +8,7 @@ use core::fmt::Write as _;
 
 use crate::lpir_module::{ImportDecl, IrFunction, LpirModule, VMCTX_VREG};
 use crate::lpir_op::LpirOp;
-use crate::types::ImportId;
-use crate::types::{CalleeRef, IrType, VReg};
+use crate::types::{CalleeRef, ImportId, IrType, VReg};
 
 fn callee_needs_vmctx_operand(module: &LpirModule, callee: CalleeRef) -> bool {
     match callee {
@@ -37,6 +36,7 @@ enum Block {
     If,
     Else,
     Loop {
+        #[allow(dead_code)]
         start_pc: usize,
     },
     Switch,
@@ -176,17 +176,6 @@ fn print_op_at(
     pc: &mut usize,
     depth: &mut usize,
 ) {
-    if let Some(Block::Loop { start_pc }) = stack.last() {
-        if let LpirOp::LoopStart {
-            continuing_offset, ..
-        } = &body[*start_pc]
-        {
-            let co = *continuing_offset as usize;
-            if co != *start_pc + 1 && *pc == co {
-                let _ = writeln!(out, "{}continuing:", indent_str(*depth));
-            }
-        }
-    }
     let ind = indent_str(*depth);
     match &body[*pc] {
         LpirOp::IfStart { cond, .. } => {
@@ -203,6 +192,10 @@ fn print_op_at(
                 stack.push(Block::Else);
             }
             let _ = writeln!(out, "{}}} else {{", indent_str(*depth - 1));
+            *pc += 1;
+        }
+        LpirOp::Continuing => {
+            let _ = writeln!(out, "{ind}continuing:");
             *pc += 1;
         }
         LpirOp::LoopStart { .. } => {

@@ -399,6 +399,7 @@ mod tests {
     // Snapshot test helpers for allocator
     fn expect_alloc(input: &str, expected: &str) {
         use crate::debug::vinst;
+        use crate::isa::rv32::abi;
         use crate::regalloc::render::render_alloc_output;
         use crate::regalloc::test::abi_fixtures;
         use crate::regalloc::walk::walk_linear;

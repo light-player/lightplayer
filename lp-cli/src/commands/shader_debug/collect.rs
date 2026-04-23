@@ -22,14 +22,37 @@ pub fn collect_fa_data(
     use lpvm_native::regalloc::allocate;
     use lpvm_native::regalloc::render::render_interleaved;
 
-    let module_abi = ModuleAbi::from_ir_and_sig(IsaTarget::Rv32imac, ir, sig);
+    let mut ir_opt = ir.clone();
+    lpir::inline_module(&mut ir_opt, &compiler_config.inline);
+    if !matches!(
+        compiler_config.dead_func_elim.mode,
+        lpir::DeadFuncElimMode::Never
+    ) {
+        let roots = lpir::roots_from_is_entry(&ir_opt);
+        if roots.is_empty() {
+            log::info!(
+                "[shader-debug] dead_func_elim: skipped (no is_entry roots); kept={}",
+                ir_opt.functions.len(),
+            );
+        } else {
+            let dfe = lpir::dead_func_elim(&mut ir_opt, &roots);
+            log::info!(
+                "[shader-debug] dead_func_elim: removed={} kept={} roots={}",
+                dfe.functions_removed,
+                ir_opt.functions.len(),
+                roots.len(),
+            );
+        }
+    }
+
+    let module_abi = ModuleAbi::from_ir_and_sig(IsaTarget::Rv32imac, &ir_opt, sig);
 
     let sig_map: std::collections::BTreeMap<&str, &lps_frontend::LpsFnSig> =
         sig.functions.iter().map(|s| (s.name.as_str(), s)).collect();
 
     let mut backend_data = BackendDebugData::new("rv32n");
 
-    for func in ir.functions.values() {
+    for func in ir_opt.functions.values() {
         // Filter if specified
         if let Some(name) = func_filter {
             if func.name != name {
@@ -55,7 +78,7 @@ pub fn collect_fa_data(
             float_mode,
             q32: &compiler_config.q32,
         };
-        let lowered = lower_ops(func, ir, &module_abi, &lower_opts)
+        let lowered = lower_ops(func, &ir_opt, &module_abi, &lower_opts)
             .map_err(|e| anyhow::anyhow!("lower: {e:?}"))?;
 
         let slots = func.total_param_slots() as usize;
@@ -66,7 +89,7 @@ pub fn collect_fa_data(
         // Generate interleaved output
         let interleaved = render_interleaved(
             func,
-            ir,
+            &ir_opt,
             &lowered.vinsts,
             &lowered.vreg_pool,
             &alloc_result.output,
@@ -124,6 +147,29 @@ pub fn collect_cranelift_data(
 ) -> Result<BackendDebugData> {
     use lpvm_cranelift::{CompileOptions, link_object_with_builtins, object_bytes_from_ir};
 
+    let mut ir_metrics = ir.clone();
+    lpir::inline_module(&mut ir_metrics, &compiler_config.inline);
+    if !matches!(
+        compiler_config.dead_func_elim.mode,
+        lpir::DeadFuncElimMode::Never
+    ) {
+        let roots = lpir::roots_from_is_entry(&ir_metrics);
+        if roots.is_empty() {
+            log::info!(
+                "[shader-debug] dead_func_elim: skipped (no is_entry roots); kept={}",
+                ir_metrics.functions.len(),
+            );
+        } else {
+            let dfe = lpir::dead_func_elim(&mut ir_metrics, &roots);
+            log::info!(
+                "[shader-debug] dead_func_elim: removed={} kept={} roots={}",
+                dfe.functions_removed,
+                ir_metrics.functions.len(),
+                roots.len(),
+            );
+        }
+    }
+
     let options = CompileOptions {
         float_mode,
         config: compiler_config.clone(),
@@ -139,7 +185,7 @@ pub fn collect_cranelift_data(
     let backend_name = if is_emu { "emu" } else { "rv32c" };
     let mut backend_data = BackendDebugData::new(backend_name);
 
-    for func in ir.functions.values() {
+    for func in ir_metrics.functions.values() {
         if let Some(name) = func_filter {
             if func.name != name {
                 continue;
