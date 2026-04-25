@@ -1,6 +1,6 @@
 //! Texture buffer backed by [`lpvm::LpvmBuffer`] shared memory.
 
-use lps_shared::{TextureBuffer, TextureStorageFormat};
+use lps_shared::{LpsTexture2DDescriptor, TextureBuffer, TextureStorageFormat};
 use lpvm::LpvmBuffer;
 use lpvm::LpvmPtr;
 
@@ -37,10 +37,37 @@ impl LpsTextureBuf {
         self.buffer.as_ptr()
     }
 
+    #[must_use]
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    #[must_use]
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    #[must_use]
+    pub fn format(&self) -> TextureStorageFormat {
+        self.format
+    }
+
     /// Row stride in bytes (tightly packed, no padding).
     #[must_use]
     pub fn row_stride(&self) -> usize {
         self.width as usize * self.format.bytes_per_pixel()
+    }
+
+    /// Opaque std430 token for this resource (`LpsType::Texture2D`).
+    #[must_use]
+    pub fn to_texture2d_descriptor(&self) -> LpsTexture2DDescriptor {
+        let row = self.row_stride();
+        LpsTexture2DDescriptor {
+            ptr: self.guest_ptr().guest_value() as u32,
+            width: self.width,
+            height: self.height,
+            row_stride: row as u32,
+        }
     }
 
     /// Underlying shared allocation (host pointer, size, guest base).
@@ -52,15 +79,15 @@ impl LpsTextureBuf {
 
 impl TextureBuffer for LpsTextureBuf {
     fn width(&self) -> u32 {
-        self.width
+        LpsTextureBuf::width(self)
     }
 
     fn height(&self) -> u32 {
-        self.height
+        LpsTextureBuf::height(self)
     }
 
     fn format(&self) -> TextureStorageFormat {
-        self.format
+        LpsTextureBuf::format(self)
     }
 
     fn data(&self) -> &[u8] {

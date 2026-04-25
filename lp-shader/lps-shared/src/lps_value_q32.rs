@@ -12,6 +12,7 @@ use core::fmt;
 use lps_q32::Q32;
 use lps_q32::q32_encode::q32_encode;
 
+use crate::texture_format::LpsTexture2DDescriptor;
 use crate::{LpsType, LpsValueF32};
 
 /// Fixed-point semantic values aligned with [`LpsValueF32`] shape.
@@ -41,6 +42,8 @@ pub enum LpsValueQ32 {
         name: Option<String>,
         fields: Vec<(String, LpsValueQ32)>,
     },
+    /// Same ABI token as [`LpsValueF32::Texture2D`].
+    Texture2D(LpsTexture2DDescriptor),
 }
 
 /// Conversion error for [`lps_value_f32_to_q32`] / [`q32_to_lps_value_f32`].
@@ -74,6 +77,12 @@ pub fn lps_value_f32_to_q32(
     v: &LpsValueF32,
 ) -> Result<LpsValueQ32, LpsValueQ32Error> {
     Ok(match (ty, v) {
+        (LpsType::Texture2D, LpsValueF32::Texture2D(d)) => LpsValueQ32::Texture2D(*d),
+        (LpsType::Texture2D, _) => {
+            return Err(LpsValueQ32Error::TypeMismatch(String::from(
+                "LpsType::Texture2D expects LpsValueF32::Texture2D (opaque descriptor), not a uvec4 stand-in",
+            )));
+        }
         (LpsType::Float, LpsValueF32::F32(x)) => LpsValueQ32::F32(f32_to_q32_abi(*x)),
         (LpsType::Int, LpsValueF32::I32(x)) => LpsValueQ32::I32(*x),
         (LpsType::UInt, LpsValueF32::U32(x)) => LpsValueQ32::U32(*x),
@@ -207,6 +216,12 @@ pub fn q32_to_lps_value_f32(ty: &LpsType, v: LpsValueQ32) -> Result<LpsValueF32,
     let bad = || LpsValueQ32Error::TypeMismatch(format!("return shape mismatch for type {ty:?}"));
 
     Ok(match (ty, v) {
+        (LpsType::Texture2D, LpsValueQ32::Texture2D(d)) => LpsValueF32::Texture2D(d),
+        (LpsType::Texture2D, _) => {
+            return Err(LpsValueQ32Error::TypeMismatch(String::from(
+                "LpsType::Texture2D expects LpsValueQ32::Texture2D (opaque descriptor), not a uvec4 stand-in",
+            )));
+        }
         (LpsType::Float, LpsValueQ32::F32(x)) => LpsValueF32::F32(x.to_f32()),
         (LpsType::Int, LpsValueQ32::I32(x)) => LpsValueF32::I32(x),
         (LpsType::UInt, LpsValueQ32::U32(x)) => LpsValueF32::U32(x),
@@ -319,5 +334,23 @@ mod tests {
         let q = lps_value_f32_to_q32(&ty, &v).unwrap();
         let back = q32_to_lps_value_f32(&ty, q).unwrap();
         assert!(back.approx_eq_default(&v));
+    }
+
+    #[test]
+    fn texture2d_f32_q32_noop() {
+        use crate::LpsTexture2DDescriptor;
+
+        let ty = LpsType::Texture2D;
+        let d = LpsTexture2DDescriptor {
+            ptr: 0x10,
+            width: 2,
+            height: 3,
+            row_stride: 8,
+        };
+        let v = LpsValueF32::Texture2D(d);
+        let q = lps_value_f32_to_q32(&ty, &v).unwrap();
+        assert_eq!(q, LpsValueQ32::Texture2D(d));
+        let back = q32_to_lps_value_f32(&ty, q).unwrap();
+        assert!(back.eq(&v));
     }
 }
