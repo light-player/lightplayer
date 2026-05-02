@@ -1,10 +1,13 @@
 //! Main UI state and egui App implementation
 
-use crate::client::{LpClient, serializable_response_to_project_response};
+use crate::client::{
+    LpClient, ProjectGetChangesOptions, serializable_response_to_project_response,
+};
 use crate::debug_ui::panels;
 use eframe::egui;
-use lp_engine_client::project::ClientProjectView;
-use lp_model::{NodeHandle, project::FrameId, project::handle::ProjectHandle};
+use lpc_model::{NodeId, project::FrameId};
+use lpc_view::project::ProjectView;
+use lpc_wire::{WireProjectHandle as ProjectHandle, legacy::SerializableProjectResponse};
 use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -13,24 +16,20 @@ use tokio::sync::oneshot;
 /// Debug UI application state
 pub struct DebugUiState {
     /// Project view (shared between sync and UI)
-    project_view: Arc<Mutex<ClientProjectView>>,
+    project_view: Arc<Mutex<ProjectView>>,
     /// Project handle
     project_handle: ProjectHandle,
     /// Async client for syncing (shared via Arc<Mutex<>>)
     async_client: Arc<tokio::sync::Mutex<LpClient>>,
     /// Nodes we're tracking detail for
-    tracked_nodes: BTreeSet<NodeHandle>,
+    tracked_nodes: BTreeSet<NodeId>,
     /// "All detail" checkbox state
     all_detail: bool,
     /// Whether a sync is currently in progress
     sync_in_progress: bool,
     /// Pending sync result receiver (if sync is in progress)
     /// Contains SerializableProjectResponse which can be sent across threads
-    pending_sync: Option<
-        oneshot::Receiver<
-            Result<lp_model::project::api::SerializableProjectResponse, anyhow::Error>,
-        >,
-    >,
+    pending_sync: Option<oneshot::Receiver<Result<SerializableProjectResponse, anyhow::Error>>>,
     /// Track if tracked_nodes changed since last sync (to trigger immediate sync)
     tracked_nodes_changed: bool,
     /// Tokio runtime handle for spawning async tasks
@@ -56,7 +55,7 @@ pub struct DebugUiState {
 impl DebugUiState {
     /// Create new debug UI state
     pub fn new(
-        project_view: Arc<Mutex<ClientProjectView>>,
+        project_view: Arc<Mutex<ProjectView>>,
         project_handle: ProjectHandle,
         async_client: LpClient,
         runtime_handle: tokio::runtime::Handle,
@@ -94,9 +93,8 @@ impl DebugUiState {
             match receiver.try_recv() {
                 Ok(Ok(serializable_response)) => {
                     // Extract theoretical FPS from response before converting
-                    let lp_model::project::api::SerializableProjectResponse::GetChanges {
-                        theoretical_fps,
-                        ..
+                    let SerializableProjectResponse::GetChanges {
+                        theoretical_fps, ..
                     } = &serializable_response;
                     self.theoretical_fps = *theoretical_fps;
 
@@ -110,8 +108,8 @@ impl DebugUiState {
                                     for change in &status_changes {
                                         match (&change.old_status, &change.new_status) {
                                             (
-                                                lp_model::project::api::NodeStatus::Ok,
-                                                lp_model::project::api::NodeStatus::Error(msg),
+                                                lpc_wire::WireNodeStatus::Ok,
+                                                lpc_wire::WireNodeStatus::Error(msg),
                                             ) => {
                                                 println!(
                                                     "[{}] Status changed: Ok -> Error(\"{}\")",
@@ -120,8 +118,8 @@ impl DebugUiState {
                                                 );
                                             }
                                             (
-                                                lp_model::project::api::NodeStatus::Error(old_msg),
-                                                lp_model::project::api::NodeStatus::Ok,
+                                                lpc_wire::WireNodeStatus::Error(old_msg),
+                                                lpc_wire::WireNodeStatus::Ok,
                                             ) => {
                                                 println!(
                                                     "[{}] Status changed: Error(\"{}\") -> Ok",
@@ -205,7 +203,7 @@ impl DebugUiState {
                 // For initial sync (empty view), request all nodes to populate the list
                 // Otherwise use normal detail_specifier
                 let detail_specifier = if is_initial_sync {
-                    lp_model::project::api::ApiNodeSpecifier::All
+                    lpc_wire::WireNodeSpecifier::All
                 } else {
                     view.detail_specifier()
                 };
@@ -226,7 +224,12 @@ impl DebugUiState {
                 let result = {
                     let client_guard = client.lock().await;
                     client_guard
-                        .project_sync_internal(handle, Some(since_frame), detail_specifier)
+                        .project_sync_internal(
+                            handle,
+                            Some(since_frame),
+                            detail_specifier,
+                            ProjectGetChangesOptions::dev_demo_full_resources(),
+                        )
                         .await
                 };
 

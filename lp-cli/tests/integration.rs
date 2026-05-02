@@ -8,13 +8,13 @@ extern crate alloc;
 
 use alloc::{boxed::Box, rc::Rc};
 use core::cell::RefCell;
-// NOTE: These integration tests use the old synchronous lp-client API which no longer exists.
+// NOTE: These integration tests use the old synchronous lpa-client API which no longer exists.
 // They need to be rewritten to use the new async LpClient API. Marked as #[ignore] for now.
 
-use lp_model::AsLpPath;
-use lp_model::Message;
-use lp_server::LpServer;
-use lp_shared::output::MemoryOutputProvider;
+use lpa_server::LpServer;
+use lpc_model::AsLpPath;
+use lpc_shared::output::MemoryOutputProvider;
+use lpc_wire::legacy::LegacyMessage;
 use lpfs::{LpFs, LpFsMemory};
 
 // Placeholder types for compilation - these tests are ignored
@@ -26,16 +26,27 @@ type ClientError = ();
 ///
 /// Returns `(server, client, client_transport, server_transport)` for
 /// synchronous message processing in tests.
-#[allow(dead_code, unused_variables)]
+#[allow(
+    dead_code,
+    unused_variables,
+    reason = "async client integration tests are being rewritten"
+)]
 fn setup_server_and_client(
     _fs: LpFsMemory,
 ) -> (LpServer, LpClient, LocalTransport, LocalTransport) {
     todo!("Rewrite for async LpClient")
 }
 
-/// Extract ClientMessage from Message envelope and send via transport
-#[allow(dead_code, unused_variables)]
-fn send_client_message(_transport: &mut LocalTransport, _msg: Message) -> Result<(), ClientError> {
+/// Extract ClientMessage from LegacyMessage envelope and send via transport
+#[allow(
+    dead_code,
+    unused_variables,
+    reason = "async client integration tests are being rewritten"
+)]
+fn send_client_message(
+    _transport: &mut LocalTransport,
+    _msg: LegacyMessage,
+) -> Result<(), ClientError> {
     todo!("Rewrite for async LpClient")
 }
 
@@ -43,7 +54,11 @@ fn send_client_message(_transport: &mut LocalTransport, _msg: Message) -> Result
 ///
 /// This bridges messages through the transport, processing them on both
 /// client and server using their tick() methods.
-#[allow(dead_code, unused_variables)]
+#[allow(
+    dead_code,
+    unused_variables,
+    reason = "async client integration tests are being rewritten"
+)]
 fn process_messages(
     _client: &mut LpClient,
     _server: &mut LpServer,
@@ -56,7 +71,10 @@ fn process_messages(
 /// Create a test project on a filesystem
 ///
 /// Creates a minimal project with project.json and returns the project UID.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "async client integration tests are being rewritten"
+)]
 fn create_test_project(fs: &mut LpFsMemory, name: &str, uid: &str) -> Result<(), ClientError> {
     // Create project.json
     let project_json = format!(
@@ -76,13 +94,13 @@ fn create_test_project(fs: &mut LpFsMemory, name: &str, uid: &str) -> Result<(),
 }
 
 #[test]
-#[ignore] // Uses old lp-client API, needs to be rewritten for async LpClient
+#[ignore] // Uses old lpa-client API, needs to be rewritten for async LpClient
 fn test_server_startup_with_memory_filesystem() {
     // Create server with memory filesystem
     let fs = LpFsMemory::new();
     let output_provider = Rc::new(RefCell::new(MemoryOutputProvider::new()));
-    let graphics: std::sync::Arc<dyn lp_server::LpGraphics> =
-        std::sync::Arc::new(lp_server::Graphics::new());
+    let graphics: std::sync::Arc<dyn lpa_server::LpGraphics> =
+        std::sync::Arc::new(lpa_server::Graphics::new());
     let _server = LpServer::new(
         output_provider,
         Box::new(fs),
@@ -98,19 +116,19 @@ fn test_server_startup_with_memory_filesystem() {
 }
 
 #[test]
-#[ignore] // Uses old lp-client API, needs to be rewritten for async LpClient
+#[ignore] // Uses old lpa-client API, needs to be rewritten for async LpClient
 fn test_client_server_communication() {
     unimplemented!("Needs to be rewritten for async LpClient")
 }
 
 #[test]
-#[ignore] // Uses old lp-client API, needs to be rewritten for async LpClient
+#[ignore] // Uses old lpa-client API, needs to be rewritten for async LpClient
 fn test_end_to_end_project_push() {
     unimplemented!("Needs to be rewritten for async LpClient")
 }
 
 #[test]
-#[ignore] // Uses old lp-client API, needs to be rewritten for async LpClient
+#[ignore] // Uses old lpa-client API, needs to be rewritten for async LpClient
 fn test_create_command_structure() {
     // Simulate create command by creating a project structure
     let mut fs = LpFsMemory::new();
@@ -129,7 +147,7 @@ fn test_create_command_structure() {
 
     // Verify project.json exists and is valid
     let content = fs.read_file("/project.json".as_path()).unwrap();
-    let config: lp_model::project::config::ProjectConfig =
+    let config: lpc_model::project::config::ProjectConfig =
         serde_json::from_slice(&content).unwrap();
     assert_eq!(config.uid, project_uid);
     assert_eq!(config.name, project_name);

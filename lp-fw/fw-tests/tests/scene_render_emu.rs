@@ -11,16 +11,16 @@ use fw_tests::shader_emu_gate::assert_shader_compiled_ok;
 use fw_tests::sync_emu_project_view;
 use fw_tests::transport_emu_serial::SerialEmuClientTransport;
 use log;
-use lp_client::LpClient;
-use lp_engine_client::ClientProjectView;
-use lp_model::{AsLpPath, FrameId};
 use lp_riscv_elf::load_elf;
 use lp_riscv_emu::{
     LogLevel, Riscv32Emulator, TimeMode,
     test_util::{BinaryBuildConfig, ensure_binary_built},
 };
 use lp_riscv_inst::Gpr;
-use lp_shared::ProjectBuilder;
+use lpa_client::LpClient;
+use lpc_model::{AsLpPath, FrameId};
+use lpc_shared::ProjectBuilder;
+use lpc_view::ProjectView;
 use lpfs::LpFsMemory;
 
 #[tokio::test]
@@ -109,7 +109,7 @@ async fn test_scene_render_fw_emu() {
         .await
         .expect("Failed to load project");
 
-    let mut client_view = ClientProjectView::new();
+    let mut client_view = ProjectView::new();
     sync_emu_project_view(&client, project_handle, &mut client_view).await;
 
     let shader_handle = client_view
@@ -214,7 +214,7 @@ fn collect_project_files(fs: &LpFsMemory) -> Vec<(String, Vec<u8>)> {
 }
 
 /// Assert that the output channel has the expected red value
-fn assert_output_red(view: &ClientProjectView, handle: lp_model::NodeHandle, expected_r: u8) {
+fn assert_output_red(view: &ProjectView, handle: lpc_model::NodeId, expected_r: u8) {
     let data = view
         .get_output_data(handle)
         .expect("Failed to get output data");

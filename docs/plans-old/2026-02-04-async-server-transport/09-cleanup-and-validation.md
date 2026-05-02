@@ -52,11 +52,11 @@ Run cargo check with warnings as errors:
 
 ```bash
 # Check all affected crates
-cd lp-core/lp-shared && cargo clippy -- -D warnings
+cd lp-core/lpc-shared && cargo clippy -- -D warnings
 cd lp-fw/fw-core && cargo clippy -- -D warnings
 cd lp-fw/fw-esp32 && cargo clippy --target riscv32imac-unknown-none-elf --features esp32c6 -- -D warnings
 cd lp-fw/fw-emu && cargo clippy -- -D warnings
-cd lp-core/lp-client && cargo clippy -- -D warnings
+cd lp-core/lpa-client && cargo clippy -- -D warnings
 cd lp-cli && cargo clippy -- -D warnings
 ```
 
@@ -72,7 +72,7 @@ Run tests for all affected crates:
 
 ```bash
 # Run tests (where applicable)
-cd lp-core/lp-client && cargo test
+cd lp-core/lpa-client && cargo test
 cd lp-cli && cargo test
 cd lp-fw/fw-core && cargo test  # If tests exist
 ```
@@ -135,16 +135,16 @@ Run final validation:
 cargo +nightly fmt --all
 
 # Check all affected crates compile
-cd lp-core/lp-shared && cargo check
+cd lp-core/lpc-shared && cargo check
 cd lp-fw/fw-core && cargo check
 cd lp-fw/fw-esp32 && cargo check --target riscv32imac-unknown-none-elf --features esp32c6
 cd lp-fw/fw-emu && cargo check
-cd lp-core/lp-client && cargo check
+cd lp-core/lpa-client && cargo check
 cd lp-cli && cargo check
-cd lp-core/lp-server && cargo check
+cd lp-core/lpa-server && cargo check
 
 # Run tests
-cd lp-core/lp-client && cargo test
+cd lp-core/lpa-client && cargo test
 cd lp-cli && cargo test
 
 # Check for warnings

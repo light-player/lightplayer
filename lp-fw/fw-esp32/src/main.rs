@@ -56,7 +56,9 @@ fn panic_handler(info: &PanicInfo) -> ! {
             } else {
                 (None, None)
             };
-            alloc::boxed::Box::new(lp_shared::backtrace::PanicPayload::new(message, file, line))
+            alloc::boxed::Box::new(lpc_shared::backtrace::PanicPayload::new(
+                message, file, line,
+            ))
         }
         #[cfg(not(feature = "server"))]
         {
@@ -184,9 +186,9 @@ use {
     alloc::{boxed::Box, rc::Rc, sync::Arc},
     board::esp32c6::init::{init_board, start_runtime},
     core::cell::RefCell,
-    lp_model::path::AsLpPath,
-    lp_server::{Graphics, LpGraphics, LpServer},
-    lp_shared::output::OutputProvider,
+    lpa_server::{Graphics, LpGraphics, LpServer},
+    lpc_model::lp_path::AsLpPath,
+    lpc_shared::output::OutputProvider,
     lpfs::LpFsMemory,
     output::Esp32OutputProvider,
     serial::io_task,

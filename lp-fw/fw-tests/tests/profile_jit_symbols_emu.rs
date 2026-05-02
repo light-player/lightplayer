@@ -13,9 +13,6 @@ use fw_tests::sync_emu_project_view;
 use fw_tests::transport_emu_serial::SerialEmuClientTransport;
 use log;
 use lp_cli::commands::profile::symbolize::symbolizer_from_meta_json_str;
-use lp_client::LpClient;
-use lp_engine_client::ClientProjectView;
-use lp_model::AsLpPath;
 use lp_riscv_elf::load_elf;
 use lp_riscv_emu::{
     LogLevel, Riscv32Emulator, TimeMode,
@@ -23,7 +20,10 @@ use lp_riscv_emu::{
     test_util::{BinaryBuildConfig, ensure_binary_built},
 };
 use lp_riscv_inst::Gpr;
-use lp_shared::ProjectBuilder;
+use lpa_client::LpClient;
+use lpc_model::AsLpPath;
+use lpc_shared::ProjectBuilder;
+use lpc_view::ProjectView;
 use lpfs::LpFsMemory;
 
 /// `ProjectBuilder::shader_basic` uses GLSL with entry point `render` (see `lp-shader`).
@@ -115,7 +115,7 @@ async fn jit_symbols_round_trip_to_meta_and_symbolizer() {
         .await
         .expect("Failed to load project");
 
-    let mut client_view = ClientProjectView::new();
+    let mut client_view = ProjectView::new();
     sync_emu_project_view(&client, project_handle, &mut client_view).await;
 
     let shader_handle = client_view

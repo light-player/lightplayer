@@ -3,8 +3,11 @@
 use crate::debug_ui::nodes::shader;
 use crate::debug_ui::nodes::{fixture, output, texture};
 use eframe::egui::{self, Color32};
-use lp_engine_client::project::ClientProjectView;
-use lp_model::{NodeHandle, NodeKind, project::FrameId, project::api::NodeStatus};
+use lpc_model::{NodeId, project::FrameId};
+use lpc_source::legacy::nodes::NodeKind;
+use lpc_view::project::ProjectView;
+use lpc_wire::WireNodeStatus;
+use lpc_wire::legacy::NodeState;
 
 /// Render status panel
 pub fn render_status_panel(
@@ -35,8 +38,8 @@ pub fn render_status_panel(
 /// Render all nodes panel (sorted by path)
 pub fn render_all_nodes_panel(
     ui: &mut egui::Ui,
-    view: &ClientProjectView,
-    tracked_nodes: &mut std::collections::BTreeSet<NodeHandle>,
+    view: &ProjectView,
+    tracked_nodes: &mut std::collections::BTreeSet<NodeId>,
     all_detail: &mut bool,
     show_texture_background: &mut bool,
     show_texture_labels: &mut bool,
@@ -80,10 +83,12 @@ pub fn render_all_nodes_panel(
         ui.horizontal(|ui| {
             // Status indicator circle
             let status_color = match &entry.status {
-                NodeStatus::Ok => Color32::from_rgb(0, 255, 0), // Green
-                NodeStatus::Error(_) | NodeStatus::InitError(_) => Color32::from_rgb(255, 0, 0), // Red
-                NodeStatus::Warn(_) => Color32::from_rgb(255, 255, 0), // Yellow
-                NodeStatus::Created => Color32::from_rgb(128, 128, 128), // Gray
+                WireNodeStatus::Ok => Color32::from_rgb(0, 255, 0), // Green
+                WireNodeStatus::Error(_) | WireNodeStatus::InitError(_) => {
+                    Color32::from_rgb(255, 0, 0)
+                } // Red
+                WireNodeStatus::Warn(_) => Color32::from_rgb(255, 255, 0), // Yellow
+                WireNodeStatus::Created => Color32::from_rgb(128, 128, 128), // Gray
             };
 
             // Draw status indicator circle using painter
@@ -117,12 +122,10 @@ pub fn render_all_nodes_panel(
         if checked {
             if let Some(state) = &entry.state {
                 match (entry.kind, state) {
-                    (
-                        NodeKind::Texture,
-                        lp_model::project::api::NodeState::Texture(texture_state),
-                    ) => {
+                    (NodeKind::Texture, NodeState::Texture(texture_state)) => {
                         texture::render_texture_panel(
                             ui,
+                            view,
                             entry,
                             texture_state,
                             *show_texture_background,
@@ -130,13 +133,10 @@ pub fn render_all_nodes_panel(
                             *show_texture_strokes,
                         );
                     }
-                    (NodeKind::Shader, lp_model::project::api::NodeState::Shader(shader_state)) => {
-                        shader::render_shader_panel(ui, entry, shader_state);
+                    (NodeKind::Shader, NodeState::Shader(shader_state)) => {
+                        shader::render_shader_panel(ui, view, entry, shader_state);
                     }
-                    (
-                        NodeKind::Fixture,
-                        lp_model::project::api::NodeState::Fixture(fixture_state),
-                    ) => {
+                    (NodeKind::Fixture, NodeState::Fixture(fixture_state)) => {
                         fixture::render_fixture_panel(
                             ui,
                             view,
@@ -147,8 +147,8 @@ pub fn render_all_nodes_panel(
                             *show_texture_strokes,
                         );
                     }
-                    (NodeKind::Output, lp_model::project::api::NodeState::Output(output_state)) => {
-                        output::render_output_panel(ui, entry, output_state);
+                    (NodeKind::Output, NodeState::Output(output_state)) => {
+                        output::render_output_panel(ui, view, *handle, entry, output_state);
                     }
                     _ => {
                         // Mismatch between kind and state - shouldn't happen but handle gracefully

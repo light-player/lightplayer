@@ -1,28 +1,33 @@
 //! Firmware integration tests
 
-use lp_client::{LpClient, serializable_response_to_project_response};
-use lp_engine_client::ClientProjectView;
-use lp_model::project::handle::ProjectHandle;
+use lpa_client::{LpClient, ProjectGetChangesOptions, serializable_response_to_project_response};
+use lpc_view::ProjectView;
+use lpc_wire::WireProjectHandle as ProjectHandle;
 
 pub mod transport_emu_serial {
-    pub use lp_client::transport_emu_serial::SerialEmuClientTransport;
+    pub use lpa_client::transport_emu_serial::SerialEmuClientTransport;
 }
 
-/// Sync [`ClientProjectView`] with the firmware over the given client (emu serial transport).
+/// Sync [`ProjectView`] with the firmware over the given client (emu serial transport).
 pub async fn sync_emu_project_view(
     client: &LpClient,
     handle: ProjectHandle,
-    view: &mut ClientProjectView,
+    view: &mut ProjectView,
 ) {
     let is_initial_sync = view.nodes.is_empty();
     let detail_spec = if is_initial_sync {
-        lp_model::project::api::ApiNodeSpecifier::All
+        lpc_wire::WireNodeSpecifier::All
     } else {
         view.detail_specifier()
     };
 
     let response = client
-        .project_sync_internal(handle, Some(view.frame_id), detail_spec)
+        .project_sync_internal(
+            handle,
+            Some(view.frame_id),
+            detail_spec,
+            ProjectGetChangesOptions::dev_demo_full_resources(),
+        )
         .await
         .expect("Failed to sync project");
 
@@ -35,11 +40,12 @@ pub async fn sync_emu_project_view(
 pub mod shader_emu_gate {
     //! Fail closed when firmware cannot compile GLSL (avoids false-green emu integration tests).
 
-    use lp_engine_client::ClientProjectView;
-    use lp_model::NodeKind;
-    use lp_model::project::api::{NodeState, NodeStatus};
+    use lpc_source::legacy::nodes::NodeKind;
+    use lpc_view::ProjectView;
+    use lpc_wire::WireNodeStatus;
+    use lpc_wire::legacy::NodeState;
 
-    pub fn assert_shader_compiled_ok(view: &ClientProjectView, shader_path: &str) {
+    pub fn assert_shader_compiled_ok(view: &ProjectView, shader_path: &str) {
         let handle = view
             .nodes
             .iter()
@@ -63,8 +69,8 @@ pub mod shader_emu_gate {
         );
 
         assert!(
-            matches!(entry.status, NodeStatus::Ok),
-            "shader must reach NodeStatus::Ok on firmware (embedded GLSL codegen); got {:?}",
+            matches!(entry.status, WireNodeStatus::Ok),
+            "shader must reach WireNodeStatus::Ok on firmware (embedded GLSL codegen); got {:?}",
             entry.status
         );
 

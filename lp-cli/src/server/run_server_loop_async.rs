@@ -1,6 +1,7 @@
-use lp_model::{Message, TransportError};
-use lp_server::LpServer;
-use lp_shared::transport::ServerTransport;
+use lpa_server::LpServer;
+use lpc_shared::transport::ServerTransport;
+use lpc_wire::TransportError;
+use lpc_wire::legacy::LegacyMessage;
 use std::time::{Duration, Instant};
 
 /// Target frame time for 60 FPS (16.67ms per frame)
@@ -37,7 +38,7 @@ pub async fn run_server_loop_async<T: ServerTransport>(
             match transport.receive().await {
                 Ok(Some(client_msg)) => {
                     // Wrap in Message envelope
-                    incoming_messages.push(Message::Client(client_msg));
+                    incoming_messages.push(LegacyMessage::Client(client_msg));
                 }
                 Ok(None) => {
                     // No more messages available
@@ -72,7 +73,7 @@ pub async fn run_server_loop_async<T: ServerTransport>(
 
                 // Send responses back via transport
                 for response in responses {
-                    if let Message::Server(server_msg) = response {
+                    if let LegacyMessage::Server(server_msg) = response {
                         if let Err(e) = transport.send(server_msg).await {
                             eprintln!("Failed to send response: {e}");
                         }

@@ -18,17 +18,17 @@ use fw_tests::shader_emu_gate::assert_shader_compiled_ok;
 use fw_tests::sync_emu_project_view;
 use fw_tests::transport_emu_serial::SerialEmuClientTransport;
 use log;
-use lp_client::LpClient;
-use lp_engine_client::ClientProjectView;
-use lp_model::nodes::fixture::{MappingConfig, PathSpec, RingOrder};
-use lp_model::{AsLpPath, FrameId};
 use lp_riscv_elf::load_elf;
 use lp_riscv_emu::{
     LogLevel, Riscv32Emulator, TimeMode,
     test_util::{BinaryBuildConfig, ensure_binary_built},
 };
 use lp_riscv_inst::Gpr;
-use lp_shared::ProjectBuilder;
+use lpa_client::LpClient;
+use lpc_model::{AsLpPath, FrameId};
+use lpc_shared::ProjectBuilder;
+use lpc_source::legacy::nodes::fixture::{MappingConfig, PathSpec, RingOrder};
+use lpc_view::ProjectView;
 use lpfs::LpFsMemory;
 
 /// UV-gradient shader: red varies with x, green varies with y.
@@ -148,7 +148,7 @@ async fn test_scene_render_position_varies_fw_emu() {
         .await
         .expect("Failed to load project");
 
-    let mut client_view = ClientProjectView::new();
+    let mut client_view = ProjectView::new();
     sync_emu_project_view(&client, project_handle, &mut client_view).await;
 
     let shader_handle = client_view

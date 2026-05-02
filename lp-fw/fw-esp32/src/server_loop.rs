@@ -1,6 +1,6 @@
 //! Server loop for ESP32 firmware
 //!
-//! Main async loop that handles hardware I/O and calls lp-server::tick().
+//! Main async loop that handles hardware I/O and calls lpa-server::tick().
 //!
 //! # Heartbeat Messages
 //!
@@ -26,12 +26,12 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use lp_model::Message;
-use lp_server::LpServer;
-use lp_shared::fps::FpsTracker;
-use lp_shared::stats::WindowedStatsCollector;
-use lp_shared::time::TimeProvider;
-use lp_shared::transport::ServerTransport;
+use lpa_server::LpServer;
+use lpc_shared::fps::FpsTracker;
+use lpc_shared::stats::WindowedStatsCollector;
+use lpc_shared::time::TimeProvider;
+use lpc_shared::transport::ServerTransport;
+use lpc_wire::legacy::{LegacyMessage, LegacyServerMessage};
 
 use crate::time::Esp32TimeProvider;
 
@@ -75,7 +75,7 @@ pub async fn run_server_loop<T: ServerTransport>(
         loop {
             match transport.receive().await {
                 Ok(Some(msg)) => {
-                    incoming_messages.push(Message::Client(msg));
+                    incoming_messages.push(LegacyMessage::Client(msg));
                 }
                 Ok(None) => {
                     // No more messages available
@@ -98,7 +98,7 @@ pub async fn run_server_loop<T: ServerTransport>(
             Ok(responses) => {
                 // Send responses
                 for response in responses {
-                    if let Message::Server(server_msg) = response {
+                    if let LegacyMessage::Server(server_msg) = response {
                         if let Err(e) = transport.send(server_msg).await {
                             log::warn!("run_server_loop: Failed to send response: {e:?}");
                             // Transport error - continue with next message
@@ -145,16 +145,16 @@ pub async fn run_server_loop<T: ServerTransport>(
             // Query heap memory from esp_alloc
             let used_bytes = esp_alloc::HEAP.used().min(u32::MAX as usize) as u32;
             let free_bytes = esp_alloc::HEAP.free().min(u32::MAX as usize) as u32;
-            let memory = Some(lp_model::server::MemoryStats {
+            let memory = Some(lpc_wire::server::MemoryStats {
                 free_bytes,
                 used_bytes,
                 total_bytes: used_bytes.saturating_add(free_bytes),
             });
 
             // Create heartbeat message
-            let heartbeat_msg = lp_model::ServerMessage {
+            let heartbeat_msg = LegacyServerMessage {
                 id: HEARTBEAT_MESSAGE_ID,
-                msg: lp_model::server::ServerMsgBody::Heartbeat {
+                msg: lpc_wire::server::ServerMsgBody::Heartbeat {
                     fps: fps_stats,
                     frame_count: frame_count as u64,
                     loaded_projects,
