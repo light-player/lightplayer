@@ -556,6 +556,301 @@ pub(crate) fn shader_face(speed_bound: bool, agent_status: UiAgentStatus) -> UiS
         controls: shader_controls(speed_bound),
         agent: Some(shader_agent_view(agent_status)),
         code_drawer: Some(shader_code_editor()),
+        space: Some(shader_space_section()),
+    }
+}
+
+// -- space sections (plan-B P3/P4) -------------------------------------------
+//
+// Hand-built mirrors of what `node_space_section` derives from the real
+// `space` / `consume` rows, so the space stories stay a faithful design
+// record of the two-sided model: same DTO on both sides, addresses that a
+// live card would really dispatch `EnsurePresent`/`SetValue` at.
+
+/// One space cell, addressed at `path` so the story's picker is live.
+fn space_cell(
+    role: lpa_studio_core::UiSpaceCellRole,
+    label: &str,
+    path: &str,
+    active: &str,
+    choices: &[(&str, &str, Option<lpa_studio_core::UiCellProjection>)],
+) -> lpa_studio_core::UiSpaceCell {
+    lpa_studio_core::UiSpaceCell {
+        role,
+        label: label.to_string(),
+        active: active.to_string(),
+        active_label: choices
+            .iter()
+            .find(|(variant, ..)| *variant == active)
+            .map(|(_, label, _)| (*label).to_string())
+            .unwrap_or_else(|| active.to_string()),
+        choices: choices
+            .iter()
+            .map(
+                |(variant, label, projection)| lpa_studio_core::UiSpaceChoice {
+                    variant: (*variant).to_string(),
+                    label: (*label).to_string(),
+                    projection: *projection,
+                    selected: *variant == active,
+                },
+            )
+            .collect(),
+        address: Some(story_slot_address(path)),
+        state: UiSlotFieldState::editable(),
+    }
+}
+
+/// The ordinary producer section: a 2D shader, answering 1D consumers with
+/// the only answer there is (centre scanline).
+pub(crate) fn shader_space_section() -> lpa_studio_core::UiSpaceSection {
+    use lpa_studio_core::{UiSpaceCellRole, UiSpaceSection, UiSpaceSide, UiVisualSpace};
+    UiSpaceSection {
+        side: UiSpaceSide::Producer,
+        primary: space_cell(
+            UiSpaceCellRole::Primary,
+            "Space",
+            "space",
+            "TwoD",
+            &[("TwoD", "2D", None), ("OneD", "1D", None)],
+        ),
+        declared_space: Some(UiVisualSpace::TwoD),
+        cells: vec![space_cell(
+            UiSpaceCellRole::ProducerIn1d,
+            "To 1D consumers",
+            "space.TwoD.in_1d",
+            "Default",
+            &[("Default", "default", None)],
+        )],
+        flags: Vec::new(),
+        mismatch: None,
+    }
+}
+
+/// The consumer mirror in its unexpanded state: `Auto`, plus the
+/// strip-order declaration (D3).
+pub(crate) fn fixture_space_section() -> lpa_studio_core::UiSpaceSection {
+    use lpa_studio_core::{
+        UiSpaceCellRole, UiSpaceFlag, UiSpaceFlagRole, UiSpaceSection, UiSpaceSide,
+    };
+    UiSpaceSection {
+        side: UiSpaceSide::Consumer,
+        primary: space_cell(
+            UiSpaceCellRole::Primary,
+            "Consume",
+            "consume",
+            "Auto",
+            &[("Auto", "auto", None), ("Policy", "policy", None)],
+        ),
+        declared_space: None,
+        cells: Vec::new(),
+        flags: vec![UiSpaceFlag {
+            role: UiSpaceFlagRole::StripOrderMeaningful,
+            label: "Strip order means something".to_string(),
+            value: true,
+            address: Some(story_slot_address("strip_order_meaningful")),
+            state: UiSlotFieldState::editable(),
+        }],
+        mismatch: None,
+    }
+}
+
+/// Every projection a 1D producer can answer 2D consumers with — the
+/// choices the tile picker lays out.
+const PRODUCER_IN_2D_CHOICES: &[(&str, &str, Option<lpa_studio_core::UiCellProjection>)] = &[
+    ("Default", "default", None),
+    (
+        "Extrude",
+        "extrude",
+        Some(lpa_studio_core::UiCellProjection::Extrude),
+    ),
+    (
+        "Radial",
+        "radial",
+        Some(lpa_studio_core::UiCellProjection::Radial),
+    ),
+    (
+        "Angular",
+        "angular",
+        Some(lpa_studio_core::UiCellProjection::Angular),
+    ),
+    (
+        "Mirror",
+        "mirror",
+        Some(lpa_studio_core::UiCellProjection::Mirror),
+    ),
+];
+
+/// The consumer's own list: no `Default` here — a fixture that has opened a
+/// policy has to name one (`node_space_section`'s "no Default on the
+/// consumer side").
+const CONSUMER_FROM_1D_CHOICES: &[(&str, &str, Option<lpa_studio_core::UiCellProjection>)] = &[
+    (
+        "Extrude",
+        "extrude",
+        Some(lpa_studio_core::UiCellProjection::Extrude),
+    ),
+    (
+        "Radial",
+        "radial",
+        Some(lpa_studio_core::UiCellProjection::Radial),
+    ),
+    (
+        "Angular",
+        "angular",
+        Some(lpa_studio_core::UiCellProjection::Angular),
+    ),
+    (
+        "Mirror",
+        "mirror",
+        Some(lpa_studio_core::UiCellProjection::Mirror),
+    ),
+];
+
+/// A 1D producer declaring `answer` for 2D consumers (P4: the case P3's
+/// fixtures deliberately left out — the shader half of fire2012 /
+/// palette-waves).
+pub(crate) fn shader_space_section_one_d(answer: &str) -> lpa_studio_core::UiSpaceSection {
+    use lpa_studio_core::{UiSpaceCellRole, UiSpaceSection, UiSpaceSide, UiVisualSpace};
+    UiSpaceSection {
+        side: UiSpaceSide::Producer,
+        primary: space_cell(
+            UiSpaceCellRole::Primary,
+            "Space",
+            "space",
+            "OneD",
+            &[("TwoD", "2D", None), ("OneD", "1D", None)],
+        ),
+        declared_space: Some(UiVisualSpace::OneD),
+        cells: vec![space_cell(
+            UiSpaceCellRole::ProducerIn2d,
+            "Default projection",
+            "space.OneD.in_2d",
+            answer,
+            PRODUCER_IN_2D_CHOICES,
+        )],
+        flags: Vec::new(),
+        mismatch: None,
+    }
+}
+
+/// D1: the slot says 1D and the GLSL defines the 2D entry. The compiler
+/// refuses outright, and this is what the card does with that refusal.
+pub(crate) fn shader_space_section_mismatch() -> lpa_studio_core::UiSpaceSection {
+    use lpa_studio_core::{UiSpaceMismatch, UiVisualSpace};
+    let mut section = shader_space_section_one_d("Default");
+    section.mismatch = Some(UiSpaceMismatch {
+        declared: UiVisualSpace::OneD,
+        entry: UiVisualSpace::TwoD,
+        message: "shader compile: declared 1D but defines `render_2d`: a 1D-declared shader's \
+                  entry is `vec4 render_1d(float pos)`"
+            .to_string(),
+    });
+    section
+}
+
+/// The consumer side with an authored policy: a default projection for 1D
+/// sources plus the inline `force` bit that decides who wins.
+pub(crate) fn fixture_space_section_policy(force: bool) -> lpa_studio_core::UiSpaceSection {
+    use lpa_studio_core::{UiSpaceCellRole, UiSpaceFlag, UiSpaceFlagRole};
+    let mut section = fixture_space_section();
+    section.primary = space_cell(
+        UiSpaceCellRole::Primary,
+        "Consume",
+        "consume",
+        "Policy",
+        &[("Auto", "auto", None), ("Policy", "policy", None)],
+    );
+    section.cells = vec![space_cell(
+        UiSpaceCellRole::ConsumerFrom1d,
+        "From 1D sources",
+        "consume.Policy.from_1d",
+        "Radial",
+        CONSUMER_FROM_1D_CHOICES,
+    )];
+    section.flags.push(UiSpaceFlag {
+        role: UiSpaceFlagRole::ForcePolicy,
+        label: "Force".to_string(),
+        value: force,
+        address: Some(story_slot_address("consume.Policy.force")),
+        state: UiSlotFieldState::editable(),
+    });
+    section
+}
+
+/// A 1D shader card: the strip-native hero, and the declaration that says
+/// how it fills 2D space.
+pub(crate) fn shader_face_one_d(answer: &str) -> UiShaderFace {
+    let mut face = shader_face(false, UiAgentStatus::Idle);
+    face.space = Some(shader_space_section_one_d(answer));
+    face.preview.spaces = vec![one_d_space_view(true)];
+    face.preview.preview = comet_strip_preview();
+    face.preview.frame = UiProductPreviewFrame::new(48, 1);
+    face
+}
+
+/// Both boxes on: the stacked view (D15's free best-of-both). The 1D band
+/// is what the shader RENDERS; the square below it is the same product
+/// projected, and its caption says who chose that projection.
+pub(crate) fn shader_face_stacked_preview(
+    projection: lpa_studio_core::UiCellProjection,
+    origin: lpa_studio_core::UiProjectionOrigin,
+) -> UiShaderFace {
+    use lpa_studio_core::{UiProductSpaceView, UiVisualProductSpace, UiVisualSpace};
+    let mut face = shader_face_one_d("Radial");
+    face.preview.spaces = vec![
+        one_d_space_view(true),
+        UiProductSpaceView {
+            space: UiVisualSpace::TwoD,
+            preview: aurora_preview(32, 32, 1.4),
+            frame: UiProductPreviewFrame::new(32, 32),
+            meta: Some(UiVisualProductSpace {
+                space: UiVisualSpace::TwoD,
+                projection: Some(projection),
+                origin: Some(origin),
+                primary: UiVisualSpace::OneD,
+            }),
+            hero: false,
+        },
+    ];
+    face
+}
+
+/// The 1D half of a stacked hero: a strip probe (`N × 1`) that reports
+/// itself as the producer's native space.
+fn one_d_space_view(hero: bool) -> lpa_studio_core::UiProductSpaceView {
+    use lpa_studio_core::{UiProductSpaceView, UiVisualProductSpace, UiVisualSpace};
+    UiProductSpaceView {
+        space: UiVisualSpace::OneD,
+        preview: comet_strip_preview(),
+        frame: UiProductPreviewFrame::new(48, 1),
+        meta: Some(UiVisualProductSpace {
+            space: UiVisualSpace::OneD,
+            projection: None,
+            origin: None,
+            primary: UiVisualSpace::OneD,
+        }),
+        hero,
+    }
+}
+
+/// A comet-ish 1D strip: one bright head with a decaying tail, which is
+/// what a 1D probe's single row actually looks like.
+fn comet_strip_preview() -> UiProductPreview {
+    const WIDTH: u32 = 48;
+    let mut bytes = Vec::with_capacity((WIDTH * 3) as usize);
+    for x in 0..WIDTH {
+        let position = x as f32 / WIDTH as f32;
+        let tail = (1.0 - (position - 0.68).abs() * 4.2).clamp(0.0, 1.0);
+        let heat = tail * tail;
+        bytes.push((30.0 + 220.0 * heat) as u8);
+        bytes.push((20.0 + 150.0 * heat * heat) as u8);
+        bytes.push((60.0 + 120.0 * heat.powi(3)) as u8);
+    }
+    UiProductPreview::VisualSrgb8 {
+        width: WIDTH,
+        height: 1,
+        revision: 104,
+        bytes: bytes.into(),
     }
 }
 
@@ -604,6 +899,16 @@ pub(crate) fn fixture_face() -> UiFixtureFace {
         // Opted out (budget 0) — the only state with no readout now that an
         // unstated budget falls back to the default guard.
         power: None,
+        space: Some(fixture_space_section()),
+    }
+}
+
+/// The consumer mirror with a real policy on it: what a fixture that has
+/// opinions about 1D sources looks like at rest.
+pub(crate) fn fixture_face_policy(force: bool) -> UiFixtureFace {
+    UiFixtureFace {
+        space: Some(fixture_space_section_policy(force)),
+        ..fixture_face()
     }
 }
 
@@ -667,6 +972,7 @@ pub(crate) fn map2d_fixture_face(doc: &lpc_mapping::Map2dDoc) -> UiFixtureFace {
             UiSlotSourceState::Unset,
         ),
         power: None,
+        space: Some(fixture_space_section()),
     }
 }
 
